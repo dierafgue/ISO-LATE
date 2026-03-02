@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  🌐 <a href="https://iso-late.onrender.com" target="_blank"><b>Live App</b></a> • 📘 <a href="#user-manual">User Manual</a> • 🧠 <a href="#theoretical-background">Theory</a> • ⚙️ <a href="#installation">Installation</a>
+  🌐 <a href="https://iso-late.streamlit.app" target="_blank"><b>Live App</b></a> • 📘 <a href="#user-manual">User Manual</a> • 🧠 <a href="#theoretical-background">Theory</a> • ⚙️ <a href="#installation">Installation</a>
 </p>
 
 ---
