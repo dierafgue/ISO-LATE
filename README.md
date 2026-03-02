@@ -235,44 +235,35 @@ El usuario puede:
 
 ---
 
-### 🔹 Diseño del Aislador LRB
+### 🔹 Diseño del Aislador LRB y Curva de Histéresis
 
-En esta sección el usuario puede diseñar el aislador sísmico tipo **LRB (Lead Rubber Bearing)**.
+En esta sección el usuario puede diseñar el aislador sísmico tipo **LRB (Lead Rubber Bearing)** que será utilizado en la comparación entre sistema fijo y aislado.
 
-Existen dos procedimientos:
+El diseño puede realizarse mediante dos procedimientos:
 
 1. **Automático**
-   - Basado en ASCE 7 – Capítulo 17
-   - Diseño según criterios normativos
+   - Basado en los lineamientos de ASCE 7 – Capítulo 17.
+   - Genera propiedades del aislador conforme a criterios normativos.
 
 2. **Por período objetivo**
-   - Se define un período objetivo
-   - Limitado hasta 5 segundos
-   - Advierte si el período seleccionado no genera aislamiento efectivo
+   - Se define un período objetivo para el sistema aislado.
+   - El proceso está limitado hasta 5 segundos.
+   - El sistema advierte cuando el período seleccionado es demasiado bajo y no genera un aislamiento efectivo.
 
-<p align="center">
-  <img src="assets/IMA5.png" width="900"/><br>
-  <em>Figura 5 – Diseño del aislador LRB.</em>
-</p>
-
----
-
-### 🔹 Propiedades e Histéresis del Aislador
-
-Se obtienen:
+Como resultado del diseño se obtienen:
 
 - Propiedades lineales
 - Propiedades no lineales
-- Curva bilineal de histéresis
-- Energía disipada por ciclo
 - Rigidez efectiva
 - Desplazamiento de diseño
+- Energía disipada
+- Curva bilineal de histéresis
 
-El programa incluye verificaciones mínimas para validar el comportamiento esperado del sistema de aislamiento.
+Además, se realizan verificaciones básicas para comprobar que el aislador cumple con un comportamiento coherente en términos de rigidez, desplazamiento y disipación de energía.
 
 <p align="center">
-  <img src="assets/IMA6.png" width="900"/><br>
-  <em>Figura 6 – Curva de histéresis y propiedades del aislador.</em>
+  <img src="assets/IMA5.png" width="900"/><br>
+  <em>Figura – Diseño del aislador LRB y curva de histéresis bilineal.</em>
 </p>
 
 ---
@@ -291,7 +282,7 @@ Incluye:
 - Períodos modales
 
 <p align="center">
-  <img src="assets/IMA7.png" width="900"/><br>
+  <img src="assets/IMA6.png" width="900"/><br>
   <em>Figura 7 – Resultados del análisis modal.</em>
 </p>
 
@@ -302,7 +293,7 @@ Incluye:
 Se muestra el esquema normalizado de cada modo de vibración junto con su período correspondiente.
 
 <p align="center">
-  <img src="assets/IMA8.png" width="900"/><br>
+  <img src="assets/IMA7.png" width="900"/><br>
   <em>Figura 8 – Formas modales normalizadas.</em>
 </p>
 
@@ -321,7 +312,7 @@ Unidades:
 - Masa: **Tf·s²/m**
 
 <p align="center">
-  <img src="assets/IMA9.png" width="900"/><br>
+  <img src="assets/IMA8.png" width="900"/><br>
   <em>Figura 9 – Esquema tipo péndulo invertido.</em>
 </p>
 
@@ -349,7 +340,7 @@ Todos los gráficos son desplegables.
 Los resultados pueden descargarse en formato Excel.
 
 <p align="center">
-  <img src="assets/IMA10.png" width="900"/><br>
+  <img src="assets/IMA9.png" width="900"/><br>
   <em>Figura 10 – Respuestas dinámicas y descarga de resultados.</em>
 </p>
 
@@ -361,7 +352,7 @@ Cada pestaña del archivo exportado contiene:
 - Respuesta por nivel
 
 <p align="center">
-  <img src="assets/IMA11.png" width="900"/><br>
+  <img src="assets/IMA10.png" width="900"/><br>
   <em>Figura 11 – Exportación de resultados por nivel.</em>
 </p>
 
@@ -382,7 +373,7 @@ En el lado derecho:
 - Adaptación de rigidez en función del desplazamiento
 
 <p align="center">
-  <img src="assets/IMA12.png" width="900"/><br>
+  <img src="assets/IMA11.png" width="900"/><br>
   <em>Figura 12 – Espectro normativo e histéresis no lineal.</em>
 </p>
 
