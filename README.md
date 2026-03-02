@@ -1,111 +1,125 @@
 # 💻 ISO-LATE  
-### *Interactive Structural Analysis Tool – Fixed Base vs Base Isolation*
+### *Herramienta Interactiva para Análisis Estructural – Base Fija vs Aislamiento Sísmico*
 
 <p align="center">
-  <img src="assets/logo.png" alt="ISO-LATE Logo" width="220"/>
+  <img src="assets/logo.png" alt="Logo ISO-LATE" width="220"/>
 </p>
 
 <p align="center">
-  <b>ISO-LATE</b> is an interactive engineering application developed to <b>simulate, analyze, and compare the seismic response of 2D structures</b> with <b>fixed-base</b> and <b>base-isolated systems</b>, supporting learning, research, and preliminary design in earthquake engineering.
+  <b>ISO-LATE</b> es una aplicación de ingeniería interactiva desarrollada para <b>simular, analizar y comparar la respuesta sísmica de estructuras 2D</b> con <b>base fija</b> y <b>sistemas con aislamiento sísmico en la base</b>, apoyando procesos de aprendizaje, investigación y diseño preliminar en ingeniería sismorresistente.
 </p>
 
 <p align="center">
-  🌐 <a href="https://iso-late.streamlit.app" target="_blank"><b>Live App</b></a> • 📘 <a href="#user-manual">User Manual</a> • 🧠 <a href="#theoretical-background">Theory</a> • ⚙️ <a href="#installation">Installation</a>
+  🌐 <a href="https://iso-late.streamlit.app" target="_blank"><b>Aplicación en Línea</b></a> • 📘 <a href="#manual-de-usuario">Manual de Usuario</a> • 🧠 <a href="#fundamento-teorico">Fundamento Teórico</a> • ⚙️ <a href="#instalacion">Instalación</a>
 </p>
 
 ---
 
-## 📌 Table of Contents
-- [Overview](#overview)
-- [Key Features](#key-features)
-- [Engineering Scope](#engineering-scope)
-- [Theoretical Background](#theoretical-background)
-- [Application Structure](#application-structure)
-- [Installation](#installation)
-- [Usage](#usage)
-- [User Manual](#user-manual)
-- [Validation & Limitations](#validation--limitations)
-- [Technologies Used](#technologies-used)
-- [Author & Academic Context](#author--academic-context)
-- [License](#license)
+## 📌 Tabla de Contenidos
+- [Descripción General](#descripcion-general)
+- [Características Principales](#caracteristicas-principales)
+- [Alcance de Ingeniería](#alcance-de-ingenieria)
+- [Fundamento Teórico](#fundamento-teorico)
+- [Estructura de la Aplicación](#estructura-de-la-aplicacion)
+- [Instalación](#instalacion)
+- [Uso](#uso)
+- [Manual de Usuario](#manual-de-usuario)
+- [Validación y Limitaciones](#validacion-y-limitaciones)
+- [Tecnologías Utilizadas](#tecnologias-utilizadas)
+- [Autor y Contexto Académico](#autor-y-contexto-academico)
+- [Licencia](#licencia)
 
 ---
 
-## 🧭 Overview
+## 🧭 Descripción General
 
-**ISO-LATE** is designed as an educational and engineering-oriented tool that allows users to:
+**ISO-LATE** es una herramienta educativa y orientada a la ingeniería que permite a los usuarios:
 
-- Model **2D multi-storey frame structures**
-- Perform **linear dynamic analysis**
-- Compare **fixed-base** vs **base-isolated** structural behavior
-- Visualize **seismic response metrics** in a clear and intuitive way
+- Modelar **estructuras aporticadas 2D de múltiples niveles**
+- Realizar **análisis dinámico lineal**
+- Comparar el comportamiento estructural entre sistemas de **base fija** y **base aislada**
+- Visualizar **métricas de respuesta sísmica** de forma clara e intuitiva
 
-The application is especially oriented toward:
-- Structural engineering students
-- Earthquake engineering researchers
-- Practicing engineers in early-stage design or concept validation
+La aplicación está especialmente dirigida a:
 
----
-
-## ✨ Key Features
-
-✔️ Parametric definition of 2D structures (stories, bays, geometry)  
-✔️ Automatic generation of mass and stiffness matrices  
-✔️ Modal analysis and response spectrum analysis  
-✔️ Time-history analysis using **Newmark-β method**  
-✔️ Base isolation modeling (LRB / NRB – linear equivalent)  
-✔️ Side-by-side comparison: **Fixed vs Isolated**  
-✔️ Clean and scalable engineering plots  
-✔️ Web-based interactive interface (Streamlit)
+- Estudiantes de ingeniería estructural  
+- Investigadores en ingeniería sísmica  
+- Ingenieros en etapa conceptual o de validación preliminar  
 
 ---
 
-## 🏗️ Engineering Scope
+## ✨ Características Principales
 
-The application focuses on:
-
-- **Linear elastic behavior**
-- **Planar (2D) frame structures**
-- **Shear-building idealization**
-- **Equivalent linear modeling** for base isolators
-- Educational and comparative purposes (not final design)
-
-> ⚠️ *ISO-LATE is not intended to replace detailed nonlinear analysis software such as OpenSees, ETABS, or SAP2000.*
+✔️ Definición paramétrica de estructuras 2D (pisos, vanos, geometría)  
+✔️ Generación automática de matrices de masa y rigidez  
+✔️ Análisis modal y análisis por espectro de respuesta  
+✔️ Análisis en el dominio del tiempo mediante el método **Newmark-β**  
+✔️ Modelado de aislamiento sísmico (LRB / NRB – equivalente lineal)  
+✔️ Comparación lado a lado: **Base Fija vs Base Aislada**  
+✔️ Gráficos técnicos limpios y escalables  
+✔️ Interfaz interactiva basada en la web (Streamlit)  
 
 ---
 
-## 📐 Theoretical Background
+## 🏗️ Alcance de Ingeniería
 
-The core formulation is based on:
+La aplicación se enfoca en:
 
-- Matrix structural analysis
-- Equation of motion for MDOF systems  
+- Comportamiento **elástico lineal**
+- Estructuras planas (2D)
+- Idealización tipo **shear-building**
+- Modelado equivalente lineal para aisladores sísmicos
+- Uso educativo y comparativo (no destinado a diseño estructural final)
+
+> ⚠️ **ISO-LATE no está diseñado para reemplazar software profesional de análisis no lineal avanzado** como OpenSees, ETABS o SAP2000.
+
+---
+
+## 📐 Fundamento Teórico
+
+La formulación principal se basa en:
+
+- Análisis matricial de estructuras
+- Ecuación de movimiento para sistemas de múltiples grados de libertad (MDOF):
 
 \[
 \mathbf{M}\ddot{\mathbf{u}} + \mathbf{C}\dot{\mathbf{u}} + \mathbf{K}\mathbf{u} = -\mathbf{M}\mathbf{r} \ddot{u}_g
 \]
 
-- Modal superposition
-- Rayleigh damping
-- Newmark-β numerical integration
-- Simplified equivalent linear base isolation theory
+donde:
 
-References include:
-- Chopra, A.K. – *Dynamics of Structures*
-- ASCE 7 / ASCE 41
-- FEMA 440 / FEMA P-1050
+- **M** = matriz de masa  
+- **C** = matriz de amortiguamiento  
+- **K** = matriz de rigidez  
+- **u** = vector de desplazamientos relativos  
+- **ug** = aceleración del terreno  
+
+Además, se aplican:
+
+- Superposición modal  
+- Amortiguamiento de Rayleigh  
+- Integración numérica mediante el método **Newmark-β**  
+- Teoría simplificada equivalente lineal para aislamiento sísmico  
+
+### Referencias Técnicas
+
+- Chopra, A.K. – *Dynamics of Structures*  
+- ASCE 7 / ASCE 41  
+- FEMA 440 / FEMA P-1050  
 
 ---
 
-## 🧩 Application Structure
+## 🧩 Estructura de la Aplicación
 
 ```text
 ISO-LATE/
 │
-├── app.py                     # Main Streamlit application
-├── funciones_usuario.py       # Structural & dynamic analysis functions
-├── requirements.txt           # Python dependencies
-├── assets/                    # Images, logos, icons
+├── app.py                     # Aplicación principal en Streamlit
+├── funciones_usuario.py       # Funciones de modelado estructural y análisis dinámico
+├── requirements.txt           # Dependencias de Python
+├── .streamlit/
+│   └── config.toml            # Configuración visual y del servidor
+├── assets/                    # Imágenes, logotipos e íconos
 │   └── logo.png
-├── data/                      # Seismic records (optional)
-└── README.md                  # Project documentation
+├── data/                      # Registros sísmicos (opcional)
+└── README.md                  # Documentación del proyecto
