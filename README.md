@@ -263,7 +263,7 @@ Además, se realizan verificaciones básicas para comprobar que el aislador cump
 
 <p align="center">
   <img src="assets/IMA5.png" width="900"/><br>
-  <em>Figura – Diseño del aislador LRB y curva de histéresis bilineal.</em>
+  <em>Figura 5 – Diseño del aislador LRB y curva de histéresis bilineal.</em>
 </p>
 
 ---
@@ -283,7 +283,7 @@ Incluye:
 
 <p align="center">
   <img src="assets/IMA6.png" width="900"/><br>
-  <em>Figura 7 – Resultados del análisis modal.</em>
+  <em>Figura 6 – Resultados del análisis modal.</em>
 </p>
 
 ---
@@ -294,7 +294,7 @@ Se muestra el esquema normalizado de cada modo de vibración junto con su perío
 
 <p align="center">
   <img src="assets/IMA7.png" width="900"/><br>
-  <em>Figura 8 – Formas modales normalizadas.</em>
+  <em>Figura 7 – Formas modales normalizadas.</em>
 </p>
 
 ---
@@ -313,7 +313,7 @@ Unidades:
 
 <p align="center">
   <img src="assets/IMA8.png" width="900"/><br>
-  <em>Figura 9 – Esquema tipo péndulo invertido.</em>
+  <em>Figura 8 – Esquema tipo péndulo invertido.</em>
 </p>
 
 ---
@@ -341,7 +341,7 @@ Los resultados pueden descargarse en formato Excel.
 
 <p align="center">
   <img src="assets/IMA9.png" width="900"/><br>
-  <em>Figura 10 – Respuestas dinámicas y descarga de resultados.</em>
+  <em>Figura 9 – Respuestas dinámicas y descarga de resultados.</em>
 </p>
 
 ---
@@ -353,7 +353,7 @@ Cada pestaña del archivo exportado contiene:
 
 <p align="center">
   <img src="assets/IMA10.png" width="900"/><br>
-  <em>Figura 11 – Exportación de resultados por nivel.</em>
+  <em>Figura 10 – Exportación de resultados por nivel.</em>
 </p>
 
 ---
@@ -374,7 +374,7 @@ En el lado derecho:
 
 <p align="center">
   <img src="assets/IMA11.png" width="900"/><br>
-  <em>Figura 12 – Espectro normativo e histéresis no lineal.</em>
+  <em>Figura 11 – Espectro normativo e histéresis no lineal.</em>
 </p>
 
 ---
