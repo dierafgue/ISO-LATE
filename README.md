@@ -22,10 +22,6 @@
 - [Fundamento Teórico](#fundamento-teorico)
 - [Estructura de la Aplicación](#estructura-de-la-aplicacion)
 - [Manual de Usuario](#manual-de-usuario)
-- [Validación y Limitaciones](#validacion-y-limitaciones)
-- [Tecnologías Utilizadas](#tecnologias-utilizadas)
-- [Autor y Contexto Académico](#autor-y-contexto-academico)
-- [Licencia](#licencia)
 
 ---
 
@@ -430,24 +426,3 @@ Se presenta además un resumen cuantitativo de:
 - Las gráficas pueden ampliarse.
 - Los valores pueden copiarse directamente.
 - Las tablas pueden exportarse en formato CSV o Excel.
-## 🧪 Validación y Limitaciones
-
-### 🔹 Proceso de Validación
-
-### 🔹 Comparación con Software Especializado
-
-### 🔹 Supuestos del Modelo
-
-### 🔹 Limitaciones Numéricas y Teóricas
-
----
-
-## 🛠️ Tecnologías Utilizadas
-
----
-
-## 🎓 Autor y Contexto Académico
-
----
-
-## 📄 Licencia
