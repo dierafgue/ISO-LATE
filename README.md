@@ -1,12 +1,359 @@
+# 🇬🇧 ENGLISH VERSION
 # 💻 ISO-LATE  
-### *Herramienta Interactiva para Análisis Estructural – Base Fija vs Aislamiento Sísmico*
+### Interactive Tool for Structural Analysis – Fixed Base vs Seismic Isolation
+
+<p align="center">
+  <img src="assets/logo.png" alt="ISO-LATE Logo" width="400"/>
+</p>
+
+<p align="center">
+  <b>ISO-LATE</b> is an interactive engineering application developed to <b>simulate, analyze, and compare the seismic response of two-dimensional structures</b> with a <b>fixed base</b> and <b>base isolation systems</b>.
+</p>
+
+<p align="center">
+  🌐 <a href="https://iso-late.streamlit.app/" target="_blank"><b>Open Live Application</b></a>
+</p>
+
+---
+
+## 📌 Table of Contents
+
+- [General Description](#general-description)
+- [Key Features](#key-features)
+- [Engineering Scope](#engineering-scope)
+- [Theoretical Background](#theoretical-background)
+- [Application Structure](#application-structure)
+- [User Manual](#user-manual)
+
+---
+
+## 🧭 General Description
+
+ISO-LATE is an educational and engineering-oriented platform that enables users to:
+
+- Model multi-story two-dimensional frame structures.
+- Perform linear dynamic analysis.
+- Compare the structural response between fixed-base and base-isolated systems.
+- Visualize seismic response parameters in a clear and structured format.
+- Understand the mechanical and dynamic effects of seismic isolation systems.
+
+The tool is designed for academic, research, and comparative purposes, facilitating conceptual understanding of structural dynamic behavior.
+
+---
+
+## ✨ Key Features
+
+- Parametric definition of two-dimensional structures.
+- Automatic generation of global and condensed mass and stiffness matrices.
+- Matrix condensation to one horizontal degree of freedom per story.
+- Modal analysis including natural frequencies and modal periods.
+- Response Spectrum Analysis using modal superposition.
+- Time-History Analysis using the Newmark-β numerical integration method.
+- Linear-equivalent modeling of Lead Rubber Bearings and Natural Rubber Bearings.
+- Direct comparison between fixed-base and base-isolated systems.
+- Clean, scalable engineering plots and exportable tables.
+- Excel export functionality for structural response results.
+
+---
+
+## 🏗 Engineering Scope
+
+The application considers:
+
+- Linear elastic structural behavior.
+- Two-dimensional planar structural modeling.
+- Shear-building idealization with one horizontal degree of freedom per story.
+- Linear-equivalent modeling of seismic isolators.
+- Educational and comparative analysis purposes.
+
+> ISO-LATE is not intended to replace professional nonlinear structural analysis software or to be used for final structural design.
+
+---
+
+## 📐 Theoretical Background
+
+The structural formulation is based on matrix structural dynamics and the governing equation of motion for multi-degree-of-freedom systems:
+
+$$
+\mathbf{M}\ddot{\mathbf{u}} + \mathbf{C}\dot{\mathbf{u}} + \mathbf{K}\mathbf{u} = -\mathbf{M}\mathbf{r}\ddot{u}_g
+$$
+
+Where:
+
+- **M** is the mass matrix.
+- **C** is the damping matrix.
+- **K** is the stiffness matrix.
+- **u** is the relative displacement vector.
+- **u̇** is the relative velocity vector.
+- **ü** is the relative acceleration vector.
+- **üg** is the ground acceleration record.
+- **r** is the seismic influence vector.
+
+The right-hand term represents inertial forces induced by ground acceleration acting on the structural mass.
+
+ISO-LATE solves this equation using:
+
+- Modal superposition for spectral analysis.
+- Rayleigh damping formulation.
+- Newmark-β time integration method for time-history analysis.
+
+### Technical References
+
+- Chopra, A.K. – *Dynamics of Structures*  
+- ASCE 7  
+- NEC24  
+
+---
+
+## 🧩 Application Structure
+
+```text
+ISO-LATE/
+│
+├── app.py
+├── funciones_usuario.py
+├── requirements.txt
+├── .streamlit/
+│   └── config.toml
+├── assets/
+│   └── logo.png
+├── data/
+└── README.md
+```
+
+---
+
+## 📘 User Manual
+
+ISO-LATE is organized in sequential blocks that guide the user through the complete modeling and analysis workflow.
+
+Each stage progressively builds the comparison between a fixed-base system and a base-isolated system.
+
+---
+
+### 1. Initial Model Definition
+
+The user defines:
+
+- Number of stories and bays.
+- Story height and bay length.
+- Section geometry or mechanical properties.
+- Material properties.
+- Load parameters.
+
+If Advanced Mode is activated, the user directly inputs:
+
+- Cross-sectional area.
+- Moment of inertia.
+
+<p align="center">
+  <img src="assets/IMA1.png" width="900"/>
+</p>
+
+---
+
+### 2. Structural Model Generation
+
+The program automatically generates:
+
+- Nodes.
+- Structural elements.
+- Degrees of freedom.
+- Rigid diaphragm per story.
+- Global mass and stiffness matrices.
+- Condensed system matrices.
+
+Stiffness validation includes the reference expression:
+
+$$
+\frac{12EI}{L^3}
+$$
+
+<p align="center">
+  <img src="assets/IMA2.png" width="900"/>
+</p>
+
+---
+
+### 3. NEC-24 Spectrum and Ground Motion
+
+- Automatic generation of the NEC-24 design spectrum.
+- Seismic record loading in TXT or AT2 format.
+- Optional baseline correction and filtering.
+- Compatibility with RENAC and PEER databases.
+
+<p align="center">
+  <img src="assets/IMA3.png" width="900"/>
+</p>
+
+---
+
+### 4. Record Scaling
+
+- Scaling of the seismic record to match the NEC-24 target spectrum.
+- Elastic or inelastic spectrum selection.
+- Damping ratio definition.
+
+<p align="center">
+  <img src="assets/IMA4.png" width="900"/>
+</p>
+
+---
+
+### 5. LRB Isolator Design
+
+Two design methods are available:
+
+- Automatic method based on ASCE 7 Chapter 17.
+- Target period method (up to 5 seconds).
+
+Outputs include:
+
+- Effective stiffness.
+- Design displacement.
+- Energy dissipation.
+- Bilinear hysteresis representation.
+
+<p align="center">
+  <img src="assets/IMA5.png" width="900"/>
+</p>
+
+---
+
+### 6. Modal Analysis
+
+Performed for:
+
+- Fixed-base system.
+- Base-isolated system.
+
+Displays:
+
+- Natural frequencies.
+- Modal periods.
+- Mode shapes.
+
+<p align="center">
+  <img src="assets/IMA6.png" width="900"/>
+</p>
+
+---
+
+### 7. Normalized Mode Shapes
+
+Graphical representation of normalized vibration modes.
+
+<p align="center">
+  <img src="assets/IMA7.png" width="900"/>
+</p>
+
+---
+
+### 8. Inverted Pendulum Representation
+
+Summary of:
+
+- Story stiffness values.
+- Story mass distribution.
+
+<p align="center">
+  <img src="assets/IMA8.png" width="900"/>
+</p>
+
+---
+
+### 9. Dynamic Analysis – Newmark-β
+
+Time-history analysis is performed for both structural configurations.
+
+The program:
+
+- Computes Rayleigh damping.
+- Determines α and β coefficients.
+- Solves the equation of motion.
+- Generates acceleration, velocity, and displacement time histories.
+
+Results can be exported to Excel format.
+
+<p align="center">
+  <img src="assets/IMA9.png" width="900"/>
+</p>
+
+---
+
+### 10. Story Shears
+
+Shear forces are obtained using:
+
+- Response Spectrum Analysis with modal combination.
+- Time-History Analysis including maximum, minimum, and absolute values.
+
+<p align="center">
+  <img src="assets/IMA12.png" width="900"/>
+</p>
+
+---
+
+### 11. Lateral Displacements
+
+Computed using:
+
+- Response Spectrum Analysis.
+- Time-History Analysis.
+
+<p align="center">
+  <img src="assets/IMA14.png" width="900"/>
+</p>
+
+---
+
+### 12. Interstory Drifts
+
+Two drift definitions are available:
+
+Real drift:
+
+$$
+\frac{|\Delta|}{h}
+$$
+
+Code-based drift according to NEC-24:
+
+$$
+\frac{C_d |\Delta|}{h I}
+$$
+
+<p align="center">
+  <img src="assets/IMA16.png" width="900"/>
+</p>
+
+---
+
+### 13. Final Comparison – Fixed Base vs Base Isolated
+
+Overlay comparison of:
+
+- Story shears.
+- Lateral displacements.
+- Interstory drifts.
+
+Includes quantitative indicators of isolation efficiency.
+
+<p align="center">
+  <img src="assets/IMA17.png" width="900"/>
+</p>
+
+# 🇪🇸 VERSIÓN EN ESPAÑOL
+
+# 💻 ISO-LATE  
+### Herramienta Interactiva para Análisis Estructural – Base Fija vs Aislamiento Sísmico
 
 <p align="center">
   <img src="assets/logo.png" alt="Logo ISO-LATE" width="400"/>
 </p>
 
 <p align="center">
-  <b>ISO-LATE</b> es una aplicación de ingeniería interactiva desarrollada para <b>simular, analizar y comparar la respuesta sísmica de estructuras 2D</b> con <b>base fija</b> y <b>sistemas con aislamiento sísmico en la base</b>.
+  <b>ISO-LATE</b> es una aplicación de ingeniería interactiva desarrollada para <b>simular, analizar y comparar la respuesta sísmica de estructuras bidimensionales</b> con <b>base fija</b> y <b>sistemas con aislamiento sísmico en la base</b>.
 </p>
 
 <p align="center">
@@ -16,6 +363,7 @@
 ---
 
 ## 📌 Tabla de Contenidos
+
 - [Descripción General](#descripcion-general)
 - [Características Principales](#caracteristicas-principales)
 - [Alcance de Ingeniería](#alcance-de-ingenieria)
@@ -27,85 +375,79 @@
 
 ## 🧭 Descripción General
 
-**ISO-LATE** es una herramienta educativa y orientada a la ingeniería que permite a los usuarios:
+ISO-LATE es una plataforma educativa y orientada a la ingeniería estructural que permite:
 
-- Modelar **estructuras aporticadas 2D de múltiples niveles**
-- Realizar **análisis dinámico lineal**
-- Comparar el comportamiento estructural entre sistemas de **base fija** y **base aislada**
-- Visualizar **métricas de respuesta sísmica** de forma clara e intuitiva
-- Entender las diferencias y ventajas del uso de **sistemas de aislamiento**
+- Modelar estructuras aporticadas bidimensionales de múltiples niveles.
+- Realizar análisis dinámico lineal.
+- Comparar la respuesta estructural entre sistemas de base fija y sistemas con aislamiento sísmico.
+- Visualizar parámetros de respuesta sísmica de manera clara, ordenada y técnica.
+- Comprender el comportamiento mecánico y dinámico de los sistemas de aislamiento sísmico.
+
+La herramienta está diseñada con fines académicos, investigativos y comparativos, facilitando la comprensión conceptual del comportamiento dinámico estructural.
 
 ---
 
 ## ✨ Características Principales
 
-✔️ Definición paramétrica de estructuras 2D  
-✔️ Generación automática de matrices de masa y rigidez  
-✔️ Análisis modal y análisis por espectro de respuesta  
-✔️ Análisis en el dominio del tiempo mediante el método **Newmark-β**  
-✔️ Modelado de aislamiento sísmico (LRB / NRB – equivalente lineal)  
-✔️ Comparación lado a lado: **Base Fija vs Base Aislada**  
-✔️ Gráficos técnicos limpios y escalables  
-✔️ Interfaz interactiva basada en Streamlit 
+- Definición paramétrica de estructuras bidimensionales.
+- Generación automática de matrices globales y condensadas de masa y rigidez.
+- Condensación matricial a un grado de libertad horizontal por nivel.
+- Análisis modal con cálculo de frecuencias naturales y períodos modales.
+- Análisis espectral mediante superposición modal.
+- Análisis tiempo-historia utilizando el método de integración Newmark-β.
+- Modelado equivalente lineal de aisladores sísmicos tipo LRB (Lead Rubber Bearing) y NRB (Natural Rubber Bearing).
+- Comparación directa entre sistema de base fija y sistema con aislamiento sísmico.
+- Visualización gráfica técnica limpia y escalable.
+- Exportación de resultados en formato Excel.
 
 ---
 
 ## 🏗️ Alcance de Ingeniería
 
-La aplicación se enfoca en:
+La aplicación considera:
 
-- Comportamiento **elástico lineal**
-- Estructuras planas (2D)
-- Idealización tipo **shear-building**
-- Modelado equivalente lineal para aisladores sísmicos
-- Uso educativo y comparativo (no destinado a diseño estructural final)
+- Comportamiento estructural elástico lineal.
+- Modelado estructural bidimensional.
+- Idealización tipo shear-building con un grado de libertad horizontal por piso.
+- Modelado equivalente lineal de aisladores sísmicos.
+- Uso educativo, académico y comparativo.
 
-> ⚠️ **ISO-LATE no está diseñado para reemplazar software profesional de análisis no lineal avanzado**.
+> ISO-LATE no está diseñado para reemplazar software profesional de análisis estructural no lineal avanzado ni para diseño estructural definitivo.
 
 ---
 
 ## 📐 Fundamento Teórico
 
-La formulación principal se basa en:
-
-- Análisis matricial de estructuras
-- Ecuación de movimiento para sistemas de múltiples grados de libertad (MDOF):
+La formulación estructural se basa en la dinámica matricial de estructuras y en la ecuación de movimiento para sistemas de múltiples grados de libertad:
 
 $$
 \mathbf{M}\ddot{\mathbf{u}} + \mathbf{C}\dot{\mathbf{u}} + \mathbf{K}\mathbf{u} = -\mathbf{M}\mathbf{r}\ddot{u}_g
 $$
 
-- **M** = matriz de masa del sistema  
-- **C** = matriz de amortiguamiento  
-- **K** = matriz de rigidez  
-- **u** = vector de desplazamientos relativos respecto al terreno  
-- **u̇** = vector de velocidades relativas  
-- **ü** = vector de aceleraciones relativas  
-- **u<sub>g</sub>̈** = aceleración del terreno (registro sísmico)  
-- **r** = vector de influencia sísmica (usualmente un vector de unos que indica cómo la aceleración del terreno afecta a cada grado de libertad)
+Donde:
 
-El término del lado derecho representa las fuerzas inerciales inducidas por la aceleración del terreno sobre la masa estructural.
+- **M** es la matriz de masa.
+- **C** es la matriz de amortiguamiento.
+- **K** es la matriz de rigidez.
+- **u** es el vector de desplazamientos relativos respecto al terreno.
+- **u̇** es el vector de velocidades relativas.
+- **ü** es el vector de aceleraciones relativas.
+- **üg** es la aceleración del terreno correspondiente al registro sísmico.
+- **r** es el vector de influencia sísmica.
 
----
-
-### Interpretación Física
-
-- El primer término representa las fuerzas inerciales internas.
-- El segundo término corresponde a la disipación de energía por amortiguamiento.
-- El tercer término describe la respuesta elástica del sistema.
-- El término del lado derecho modela la excitación sísmica impuesta por el movimiento del suelo.
+El término del lado derecho representa las fuerzas inerciales inducidas por la aceleración del terreno actuando sobre la masa estructural.
 
 ISO-LATE resuelve esta ecuación utilizando:
 
-- Superposición modal (para análisis espectral)
-- Amortiguamiento de Rayleigh
-- Integración numérica mediante el método de **Newmark-β**
+- Superposición modal para el análisis espectral.
+- Formulación de amortiguamiento de Rayleigh.
+- Integración numérica mediante el método Newmark-β para el análisis tiempo-historia.
 
 ### Referencias Técnicas
 
 - Chopra, A.K. – *Dynamics of Structures*  
-- ASCE 7 / ASCE 41  
-- FEMA 440 / FEMA P-1050  
+- ASCE 7  
+- NEC24  
 
 ---
 
@@ -114,315 +456,235 @@ ISO-LATE resuelve esta ecuación utilizando:
 ```text
 ISO-LATE/
 │
-├── app.py                     # Aplicación principal en Streamlit
-├── funciones_usuario.py       # Funciones de modelado estructural y análisis dinámico
-├── requirements.txt           # Dependencias de Python
+├── app.py
+├── funciones_usuario.py
+├── requirements.txt
 ├── .streamlit/
-│   └── config.toml            # Configuración visual y del servidor
-├── assets/                    # Imágenes, logotipos e íconos
+│   └── config.toml
+├── assets/
 │   └── logo.png
-├── data/                      # Registros sísmicos (opcional)
-└── README.md                  # Documentación del proyecto
+├── data/
+└── README.md
 ```
+
 ---
 
 ## 📘 Manual de Usuario
 
-ISO-LATE está estructurado en bloques secuenciales que permiten al usuario definir, analizar y comparar el comportamiento estructural de un sistema de base fija y uno con aislamiento sísmico.
+ISO-LATE está organizado en bloques secuenciales que guían al usuario a través del proceso completo de modelado y análisis estructural.
 
-Cada sección guía al usuario paso a paso a través del proceso completo de modelado y análisis dinámico.
+Cada etapa construye progresivamente la comparación entre un sistema de base fija y un sistema con aislamiento sísmico.
 
 ---
 
-### 🔹 1. Definición inicial del modelo
+### 1. Definición Inicial del Modelo
 
-Al iniciar la aplicación, el usuario debe seleccionar el idioma de trabajo:  
-- Inglés (**en**)  
-- Español (**es**)  
+El usuario define:
 
-Posteriormente, se definen los parámetros generales del modelo estructural:
+- Número de niveles y vanos.
+- Altura de entrepiso y longitud de vano.
+- Geometría de las secciones o propiedades mecánicas.
+- Propiedades del material.
+- Parámetros de carga.
 
-- Geometría del sistema (número de niveles y vanos)
-- Dimensiones de las secciones estructurales
-- Propiedades mecánicas de los materiales
-- Cargas consideradas en el análisis
+Si se activa el Modo Avanzado, el usuario ingresa directamente:
 
-Por defecto, las secciones se definen mediante dimensiones geométricas (por ejemplo, ancho y altura para secciones rectangulares).
-
-Si se activa la opción **"Modo avanzado"**, las propiedades de los elementos se ingresan directamente mediante:
-
-- Área transversal (A)
-- Momento de inercia (I)
-
-Este modo es especialmente útil cuando se modelan secciones no rectangulares o cuando se dispone directamente de propiedades obtenidas de catálogos estructurales.
+- Área transversal.
+- Momento de inercia.
 
 <p align="center">
-  <img src="assets/IMA1.png" width="900"/><br>
-  <em>Figura 1 – Ventana inicial y definición de parámetros estructurales.</em>
+  <img src="assets/IMA1.png" width="900"/>
 </p>
 
 ---
 
-### 🔹 2. Generación del modelo estructural
+### 2. Generación del Modelo Estructural
 
-Una vez ingresados los parámetros, se presiona el botón **"Generar modelo estructural"**.
+El programa genera automáticamente:
 
-El programa construye automáticamente:
+- Nodos.
+- Elementos estructurales.
+- Grados de libertad.
+- Diafragma rígido por piso.
+- Matrices globales de masa y rigidez.
+- Matrices condensadas del sistema.
 
-- Nodos
-- Elementos
-- Grados de libertad (GDL)
-
-El modelo implementa un **diafragma rígido por piso**, lo que implica:
-
-- Un único grado de libertad horizontal (UX) por nivel.
-- Los grados de libertad verticales (UY) y rotacionales (θ) permanecen en cada nodo.
-
-Posteriormente se realiza la **condensación de la matriz global**, reduciendo el sistema a un único grado de libertad horizontal por planta.
-
-En esta sección el usuario puede visualizar:
-
-- Matriz global de rigidez
-- Matriz global de masa
-- Matriz de transformación
-- Matrices condensadas K y M
-
-También se incluye una pestaña de **chequeo rápido de rigideces**, donde se comparan los valores obtenidos con la expresión aproximada:
+La validación de rigidez incluye la expresión de referencia:
 
 $$
 \frac{12EI}{L^3}
 $$
 
 <p align="center">
-  <img src="assets/IMA2.png" width="900"/><br>
-  <em>Figura 2 – Resumen del modelo y matrices condensadas.</em>
+  <img src="assets/IMA2.png" width="900"/>
 </p>
 
 ---
 
-### 🔹 3. Espectro NEC-24 y Registro Sísmico
+### 3. Espectro NEC-24 y Registro Sísmico
 
-En esta sección se define el espectro de diseño conforme a la **Normativa Ecuatoriana de la Construcción NEC-24**.
-
-El programa:
-
-- Genera el espectro automáticamente.
-- Muestra los coeficientes normativos utilizados.
-- Indica aceleraciones espectrales relevantes (meseta y 1 segundo).
-
-Además, se carga el registro sísmico para el análisis dinámico.
-
-El usuario puede:
-
-- Cargar archivos en formato **.TXT** o **.AT2**
-- Utilizar un registro de ejemplo incorporado
-
-Se admiten registros compatibles con:
-
-- RENAC (Red Nacional de Acelerógrafos)
-- PEER Ground Motion Database
-
-El usuario puede optar por:
-
-- Utilizar el registro crudo
-- Aplicar filtrado y corrección de línea base
+- Generación automática del espectro de diseño conforme a la NEC-24.
+- Carga de registros sísmicos en formato TXT o AT2.
+- Corrección opcional de línea base y filtrado.
+- Compatibilidad con bases de datos RENAC y PEER.
 
 <p align="center">
-  <img src="assets/IMA3.png" width="900"/><br>
-  <em>Figura 3 – Espectro NEC-24 y carga del registro sísmico.</em>
+  <img src="assets/IMA3.png" width="900"/>
 </p>
 
 ---
 
-### 🔹 4. Escalamiento del registro
+### 4. Escalamiento del Registro
 
-El programa genera el espectro del registro ingresado y permite:
-
-- Escalarlo al espectro NEC-24
-- Seleccionar espectro elástico o inelástico
-- Definir el amortiguamiento
+- Escalamiento del registro sísmico para ajustarlo al espectro objetivo NEC-24.
+- Selección de espectro elástico o inelástico.
+- Definición del nivel de amortiguamiento.
 
 <p align="center">
-  <img src="assets/IMA4.png" width="900"/><br>
-  <em>Figura 4 – Escalamiento del espectro.</em>
+  <img src="assets/IMA4.png" width="900"/>
 </p>
 
 ---
 
-### 🔹 5. Diseño del Aislador LRB
+### 5. Diseño del Aislador LRB
 
-El usuario puede diseñar un aislador tipo **LRB (Lead Rubber Bearing)** mediante:
+Se disponen dos métodos de diseño:
 
-**Método automático**
-- Basado en ASCE 7 – Capítulo 17.
-
-**Método por período objetivo**
-- Define un período deseado (hasta 5 s).
-- Advierte si el período no genera aislamiento efectivo.
+- Método automático basado en el Capítulo 17 de ASCE 7.
+- Método por período objetivo (hasta 5 segundos).
 
 Se obtienen:
 
-- Rigidez efectiva
-- Desplazamiento de diseño
-- Energía disipada
-- Propiedades lineales y no lineales
-- Curva bilineal de histéresis
+- Rigidez efectiva.
+- Desplazamiento de diseño.
+- Energía disipada.
+- Representación bilineal de histéresis.
 
 <p align="center">
-  <img src="assets/IMA5.png" width="900"/><br>
-  <em>Figura 5 – Diseño del aislador y curva de histéresis.</em>
+  <img src="assets/IMA5.png" width="900"/>
 </p>
 
 ---
 
-### 🔹 6. Análisis Modal
+### 6. Análisis Modal
 
-Se ejecuta el análisis modal para:
+Se ejecuta para:
 
-- Sistema fijo
-- Sistema aislado
+- Sistema de base fija.
+- Sistema con aislamiento sísmico.
 
 Se muestran:
 
-- Frecuencias naturales
-- Períodos modales
-- Matrices condensadas
+- Frecuencias naturales.
+- Períodos modales.
+- Formas modales.
 
 <p align="center">
-  <img src="assets/IMA6.png" width="900"/><br>
-  <em>Figura 6 – Resultados modales.</em>
+  <img src="assets/IMA6.png" width="900"/>
 </p>
 
 ---
 
-### 🔹 7. Formas Modales Normalizadas
+### 7. Formas Modales Normalizadas
 
-Se representan gráficamente los modos de vibración normalizados junto con su período.
+Representación gráfica de los modos de vibración normalizados.
 
 <p align="center">
-  <img src="assets/IMA7.png" width="900"/><br>
-  <em>Figura 7 – Modos de vibración.</em>
+  <img src="assets/IMA7.png" width="900"/>
 </p>
 
 ---
 
-### 🔹 8. Esquema tipo Péndulo Invertido
+### 8. Representación Tipo Péndulo Invertido
 
-Se presenta un resumen gráfico de:
+Resumen de:
 
-- Rigideces por piso (Tf/m)
-- Masas por piso (Tf·s²/m)
+- Rigideces por piso.
+- Distribución de masas por nivel.
 
 <p align="center">
-  <img src="assets/IMA8.png" width="900"/><br>
-  <em>Figura 8 – Esquema de masas y rigideces.</em>
+  <img src="assets/IMA8.png" width="900"/>
 </p>
 
 ---
 
-### 🔹 9. Análisis Dinámico – Newmark-β
+### 9. Análisis Dinámico – Newmark-β
 
-Se realiza el análisis en el dominio del tiempo para ambos sistemas.
+Se realiza el análisis tiempo-historia para ambas configuraciones estructurales.
 
 El programa:
 
-- Calcula amortiguamiento Rayleigh (5%)
-- Obtiene coeficientes α y β
-- Resuelve la ecuación de movimiento
-- Genera respuestas en aceleración, velocidad y desplazamiento
+- Calcula el amortiguamiento de Rayleigh.
+- Determina los coeficientes α y β.
+- Resuelve la ecuación de movimiento.
+- Genera historias de aceleración, velocidad y desplazamiento.
 
 Los resultados pueden exportarse en formato Excel.
 
 <p align="center">
-  <img src="assets/IMA9.png" width="900"/><br>
-  <em>Figura 9 – Resultados dinámicos.</em>
+  <img src="assets/IMA9.png" width="900"/>
 </p>
 
 ---
 
-### 🔹 10. Cortantes por Piso (RSA y THA)
+### 10. Cortantes por Piso
 
-Se pueden obtener cortantes mediante:
+Los cortantes se obtienen mediante:
 
-**Modal espectral (RSA)**
-- Combinación modal SRSS.
-- Basado en espectro NEC-24.
-
-**Tiempo-historia (THA)**
-- Valores instantáneos
-- Máximo absoluto
-- Máximos y mínimos
+- Análisis espectral con combinación modal.
+- Análisis tiempo-historia considerando valores máximos, mínimos y absolutos.
 
 <p align="center">
-  <img src="assets/IMA12.png" width="900"/><br>
-  <em>Figura 12 – Cortantes por piso.</em>
+  <img src="assets/IMA12.png" width="900"/>
 </p>
 
 ---
 
-### 🔹 11. Desplazamientos Laterales
+### 11. Desplazamientos Laterales
 
-Se obtienen desplazamientos mediante:
+Se calculan mediante:
 
-- Modal espectral
-- Tiempo-historia
+- Análisis espectral.
+- Análisis tiempo-historia.
 
 <p align="center">
-  <img src="assets/IMA14.png" width="900"/><br>
-  <em>Figura 14 – Desplazamientos laterales.</em>
+  <img src="assets/IMA14.png" width="900"/>
 </p>
 
 ---
 
-### 🔹 12. Derivas de Entrepiso
+### 12. Derivas de Entrepiso
 
-Las derivas se calculan a partir de los desplazamientos obtenidos.
+Se presentan dos definiciones:
 
-Se pueden visualizar dos tipos:
-
-**Deriva real:**
+Deriva real:
 
 $$
-\displaystyle \frac{|\Delta|}{h}
+\frac{|\Delta|}{h}
 $$
 
-**Deriva NEC-24:**
+Deriva según la NEC-24:
 
 $$
-\displaystyle \frac{C_d\|\Delta|}{hI}
+\frac{C_d |\Delta|}{h I}
 $$
 
 <p align="center">
-  <img src="assets/IMA16.png" width="900"/><br>
-  <em>Figura 16 – Derivas por entrepiso.</em>
+  <img src="assets/IMA16.png" width="900"/>
 </p>
 
 ---
 
-### 🔹 13. Comparativo Final – Base Fija vs Base Aislada
+### 13. Comparativo Final – Base Fija vs Base Aislada
 
 Se superponen:
 
-- Cortantes
-- Desplazamientos
-- Derivas
+- Cortantes por piso.
+- Desplazamientos laterales.
+- Derivas de entrepiso.
 
-Se presenta además un resumen cuantitativo de:
-
-- Reducciones
-- Incrementos
-- Indicadores de eficiencia del aislamiento
+Incluye indicadores cuantitativos de eficiencia del aislamiento sísmico.
 
 <p align="center">
-  <img src="assets/IMA17.png" width="900"/><br>
-  <em>Figura 17 – Comparación final.</em>
+  <img src="assets/IMA17.png" width="900"/>
 </p>
-
----
-
-### 🔹 Funcionalidades adicionales
-
-- Cada parámetro incluye ayudas explicativas (ícono "?").
-- Las gráficas pueden ampliarse.
-- Los valores pueden copiarse directamente.
-- Las tablas pueden exportarse en formato CSV o Excel.
