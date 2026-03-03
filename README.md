@@ -384,14 +384,16 @@ Las derivas se calculan a partir de los desplazamientos obtenidos.
 
 Se pueden visualizar dos tipos:
 
-- **Deriva real:**  
+**Deriva real:**
+
 $$
-\frac{|\Delta|}{h}
+\displaystyle \frac{|\Delta|}{h}
 $$
 
-- **Deriva NEC-24:**  
+**Deriva NEC-24:**
+
 $$
-\frac{C_d |\Delta|}{h I}
+\displaystyle \frac{C_d\|\Delta|}{hI}
 $$
 
 <p align="center">
