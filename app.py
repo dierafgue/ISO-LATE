@@ -273,6 +273,19 @@ def H(key: str) -> str:
     return tr(key)
 
 # -------------------------------------------------------------------------
+# ✅ Getter seguro (evita float(None) al cambiar modos)
+# -------------------------------------------------------------------------
+def ss_num(key: str, default: float) -> float:
+    try:
+        p = st.session_state.get("param_estruct", {})
+        v = p.get(key, default) if isinstance(p, dict) else default
+        if v is None or v == "":
+            return float(default)
+        return float(v)
+    except Exception:
+        return float(default)
+
+# -------------------------------------------------------------------------
 # 🧩 UI
 # -------------------------------------------------------------------------
 st.header(f"📋 {tr('hdr_general')}")
@@ -290,7 +303,7 @@ with col_geo:
     n_pisos = c1.number_input(
         tr("n_floors"),
         min_value=1, max_value=20,
-        value=int(st.session_state.get("param_estruct", {}).get("n_pisos", 2)),
+        value=int(ss_num("n_pisos", 2)),
         step=1,
         help=tr("help_n_floors"),
     )
@@ -298,7 +311,7 @@ with col_geo:
     n_vanos = c2.number_input(
         tr("n_bays"),
         min_value=1, max_value=6,
-        value=int(st.session_state.get("param_estruct", {}).get("n_vanos", 1)),
+        value=int(ss_num("n_vanos", 1)),
         step=1,
         help=tr("help_n_bays"),
     )
@@ -308,7 +321,7 @@ with col_geo:
     l_vano = st.number_input(
         tr("bay_length"),
         min_value=1.0,
-        value=float(st.session_state.get("param_estruct", {}).get("l_vano", 5.0)),
+        value=ss_num("l_vano", 5.0),
         step=0.5,
         help=tr("help_bay_length"),
     )
@@ -317,7 +330,7 @@ with col_geo:
         st.number_input(
             tr("h_first"),
             min_value=2.0,
-            value=float(st.session_state.get("param_estruct", {}).get("h_piso_1", 4.0)),
+            value=ss_num("h_piso_1", 4.0),
             step=0.1,
             help=tr("help_h_first"),
         ),
@@ -328,7 +341,7 @@ with col_geo:
         st.number_input(
             tr("h_rest"),
             min_value=2.0,
-            value=float(st.session_state.get("param_estruct", {}).get("h_piso_restantes", 3.0)),
+            value=ss_num("h_piso_restantes", 3.0),
             step=0.1,
             help=tr("help_h_rest"),
         ),
@@ -353,13 +366,13 @@ with col_sec:
         cc1, cc2 = st.columns(2)
         b_col = cc1.number_input(
             tr("b_col"),
-            value=float(st.session_state.get("param_estruct", {}).get("b_col_cm", 50.0)),
+            value=ss_num("b_col_cm", 50.0),
             step=0.5,
             help=tr("help_b_col"),
         )
         h_col = cc2.number_input(
             tr("h_col"),
-            value=float(st.session_state.get("param_estruct", {}).get("h_col_cm", 50.0)),
+            value=ss_num("h_col_cm", 50.0),
             step=0.5,
             help=tr("help_h_col"),
         )
@@ -368,24 +381,29 @@ with col_sec:
         cv1, cv2 = st.columns(2)
         b_viga = cv1.number_input(
             tr("b_beam"),
-            value=float(st.session_state.get("param_estruct", {}).get("b_viga_cm", 30.0)),
+            value=ss_num("b_viga_cm", 30.0),
             step=0.5,
             help=tr("help_b_beam"),
         )
         h_viga = cv2.number_input(
             tr("h_beam"),
-            value=float(st.session_state.get("param_estruct", {}).get("h_viga_cm", 50.0)),
+            value=ss_num("h_viga_cm", 50.0),
             step=0.5,
             help=tr("help_h_beam"),
         )
 
-        A_col, I_col = seccion_rectangular_cm_to_SI(b_col, h_col)
+        # SI (m², m⁴) para el modelo
+        A_col, I_col   = seccion_rectangular_cm_to_SI(b_col, h_col)
         A_viga, I_viga = seccion_rectangular_cm_to_SI(b_viga, h_viga)
 
-        b_col_cm, h_col_cm = b_col, h_col
-        b_viga_cm, h_viga_cm = b_viga, h_viga
+        # ✅ Guardar también equivalentes en cm² / cm⁴ (evita float(None) al pasar a avanzado)
+        A_col_cm2  = float(b_col * h_col)
+        I_col_cm4  = float(b_col * (h_col**3) / 12.0)
+        A_viga_cm2 = float(b_viga * h_viga)
+        I_viga_cm4 = float(b_viga * (h_viga**3) / 12.0)
 
-        A_col_cm2 = I_col_cm4 = A_viga_cm2 = I_viga_cm4 = None
+        b_col_cm, h_col_cm = float(b_col), float(h_col)
+        b_viga_cm, h_viga_cm = float(b_viga), float(h_viga)
 
     else:
         st.caption(tr("advanced_mode"))
@@ -394,13 +412,13 @@ with col_sec:
         ca1, ca2 = st.columns(2)
         A_col_cm2 = ca1.number_input(
             tr("A_col"),
-            value=float(st.session_state.get("param_estruct", {}).get("A_col_cm2", 2500.00)),
+            value=ss_num("A_col_cm2", 2500.00),
             step=10.0,
             help=tr("help_A_col"),
         )
         I_col_cm4 = ca2.number_input(
             tr("I_col"),
-            value=float(st.session_state.get("param_estruct", {}).get("I_col_cm4", 520833.33)),
+            value=ss_num("I_col_cm4", 520833.33),
             step=100.0,
             help=tr("help_I_col"),
         )
@@ -409,20 +427,22 @@ with col_sec:
         cb1, cb2 = st.columns(2)
         A_viga_cm2 = cb1.number_input(
             tr("A_beam"),
-            value=float(st.session_state.get("param_estruct", {}).get("A_viga_cm2", 1500.00)),
+            value=ss_num("A_viga_cm2", 1500.00),
             step=10.0,
             help=tr("help_A_beam"),
         )
         I_viga_cm4 = cb2.number_input(
             tr("I_beam"),
-            value=float(st.session_state.get("param_estruct", {}).get("I_viga_cm4", 312500.00)),
+            value=ss_num("I_viga_cm4", 312500.00),
             step=100.0,
             help=tr("help_I_beam"),
         )
 
-        A_col, I_col = seccion_AI_cm_to_SI(A_col_cm2, I_col_cm4)
+        # SI (m², m⁴) para el modelo
+        A_col, I_col   = seccion_AI_cm_to_SI(A_col_cm2, I_col_cm4)
         A_viga, I_viga = seccion_AI_cm_to_SI(A_viga_cm2, I_viga_cm4)
 
+        # En avanzado no se usan dimensiones b/h
         b_col_cm = h_col_cm = b_viga_cm = h_viga_cm = None
 
 # -------------------------------------------------------------------------
@@ -434,14 +454,14 @@ with col_mat:
     cm1, cm2 = st.columns(2)
     E = cm1.number_input(
         tr("E"),
-        value=float(st.session_state.get("param_estruct", {}).get("E", 2534563.54)),
+        value=ss_num("E", 2534563.54),
         step=10000.0,
         help=tr("help_E"),
     )
 
     peso_especifico = cm2.number_input(
         tr("gamma"),
-        value=float(st.session_state.get("param_estruct", {}).get("peso_especifico", 2.4028)),
+        value=ss_num("peso_especifico", 2.4028),
         step=0.0001,
         format="%.4f",
         help=tr("help_gamma"),
@@ -450,7 +470,7 @@ with col_mat:
     st.markdown(f"#### ⚖️ {tr('loads')}")
     sobrecarga_muerta = st.number_input(
         tr("dl"),
-        value=float(st.session_state.get("param_estruct", {}).get("sobrecarga_muerta", 0.0)),
+        value=ss_num("sobrecarga_muerta", 0.0),
         step=1.0,
         help=tr("help_dl"),
     )
@@ -458,7 +478,7 @@ with col_mat:
     amortiguamiento = st.number_input(
         tr("damp"),
         min_value=0.0, max_value=10.0,
-        value=float(st.session_state.get("param_estruct", {}).get("amortiguamiento", 0.05)) * 100.0,
+        value=ss_num("amortiguamiento", 0.05) * 100.0,
         step=0.5,
         help=tr("help_damp"),
     )
