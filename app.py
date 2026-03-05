@@ -837,7 +837,9 @@ with col_right:
 # =============================================================================
 # ========== BLOQUE 3: NEC-24 (izq) + REGISTROS SÍSMICOS (der) ================
 # =============================================================================
+import io
 import numpy as np
+import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
 
@@ -907,7 +909,6 @@ T["en"].update({
 
     "b3_need_model_rec": "First generate the **structural model** (Section 2) to enable the record.",
     "b3_event": "Event",
-    "b3_source": "Detected source",
     "b3_dt": "Time step",
     "b3_dur": "Total duration",
     "b3_npts": "Number of points",
@@ -918,7 +919,6 @@ T["en"].update({
     "b3_time": "Time [s]",
     "b3_orig": "Original",
     "b3_proc_lab": "Filtered + corrected",
-    "b3_loaded_ok": "Record loaded successfully.",
     "b3_default_note": "RENAC (Ecuador) — 2016-04-16 earthquake, Pedernales station.",
 
     "b3_scaling_hdr": "Spectra and scaling",
@@ -947,6 +947,14 @@ T["en"].update({
     "b3_reg_un": "Record (unscaled)",
     "b3_reg_sc": "Scaled record (SF={SF:.3f})",
     "b3_need_rec_plot": "(Upload/select a record to see the spectrum)",
+
+    # ✅ descarga Excel
+    "b3_dl_hdr": "Download record (Excel)",
+    "b3_dl_pick": "Choose data to export",
+    "b3_dl_btn": "Download Excel (.xlsx)",
+    "h_b3_dl_pick": "Exports 4 columns: time, acceleration, velocity, displacement.",
+    "b3_dl_opt_orig": "Original",
+    "b3_dl_opt_proc": "Filtered + baseline-corrected",
 })
 
 T["es"].update({
@@ -988,7 +996,6 @@ T["es"].update({
 
     "b3_need_model_rec": "⚙️ Primero genera el **modelo estructural** (Sección 2) para habilitar el registro.",
     "b3_event": "Evento",
-    "b3_source": "Fuente detectada",
     "b3_dt": "Paso de tiempo",
     "b3_dur": "Duración total",
     "b3_npts": "Número de puntos",
@@ -999,7 +1006,6 @@ T["es"].update({
     "b3_time": "Tiempo [s]",
     "b3_orig": "Original",
     "b3_proc_lab": "Filtrado + corregido",
-    "b3_loaded_ok": "✅ Registro cargado correctamente.",
     "b3_default_note": "Registro RENAC (Ecuador) — sismo 16-04-2016, estación Pedernales.",
 
     "b3_scaling_hdr": "Espectros y escalamiento",
@@ -1028,6 +1034,14 @@ T["es"].update({
     "b3_reg_un": "Registro (sin escala)",
     "b3_reg_sc": "Registro escalado (SF={SF:.3f})",
     "b3_need_rec_plot": "(Cargue/seleccione un registro para ver el espectro)",
+
+    # ✅ descarga Excel
+    "b3_dl_hdr": "Descargar registro (Excel)",
+    "b3_dl_pick": "Elegir datos a exportar",
+    "b3_dl_btn": "Descargar Excel (.xlsx)",
+    "h_b3_dl_pick": "Exporta 4 columnas: tiempo, aceleracion, velocidad, desplazamiento.",
+    "b3_dl_opt_orig": "Original",
+    "b3_dl_opt_proc": "Filtrado + corregido (línea base)",
 })
 
 # -------------------------------------------------------------------------
@@ -1040,6 +1054,26 @@ COLOR_TEXT = "#E8EDF2"
 COLOR_GRID = "#5B657A"
 
 geom_ok = bool(st.session_state.get("geom_ready", False))
+
+# -------------------------------------------------------------------------
+# ✅ Ajustes visuales:
+#   1) Igualar altura de panel NEC-24 con panel "Seismic record"
+#   2) Hacer MÁS PEQUEÑO el panel "Response spectrum – NEC-24" (vertical)
+# -------------------------------------------------------------------------
+NEC24_PAD_PX = 15  # relleno para igualar alturas (ajusta si hace falta)
+NEC24_FIG_H  = 3.25 # 👈 altura del gráfico NEC-24 (antes 3.4). Baja más: 2.6 / 2.4
+st.markdown(f"""
+<style>
+.nec24-equalizer {{
+  height: {NEC24_PAD_PX}px;
+}}
+/* compacto descarga */
+.compact-download div[data-testid="stVerticalBlock"]{{ gap:0.25rem; }}
+.compact-download [data-testid="stSelectbox"]{{ padding-top:0rem !important; padding-bottom:0rem !important; }}
+.compact-download [data-testid="stDownloadButton"]{{ padding-top:0rem !important; padding-bottom:0rem !important; }}
+.compact-download button{{ padding-top:0.25rem !important; padding-bottom:0.25rem !important; }}
+</style>
+""", unsafe_allow_html=True)
 
 # =============================================================================
 # Layout principal (2 columnas)
@@ -1082,7 +1116,8 @@ with col_left:
             Sa_inelas = np.zeros_like(T_spec)
             SDS = SD1 = Fa = Fd = Fs = 0.0
 
-            fig, ax = plt.subplots(figsize=(6.0, 3.4))
+            # ✅ MÁS PEQUEÑO en vertical
+            fig, ax = plt.subplots(figsize=(6.0, NEC24_FIG_H))
             fig.patch.set_facecolor(BG)
             ax.set_facecolor(BG)
             ax.plot(T_spec, Sa_elast, lw=1.2, alpha=0.5, label=tr("b3_placeholder"))
@@ -1093,6 +1128,9 @@ with col_left:
             ax.spines["top"].set_visible(False)
             ax.spines["right"].set_visible(False)
             st.pyplot(fig, use_container_width=True)
+
+            st.markdown('<div class="nec24-equalizer"></div>', unsafe_allow_html=True)
+
         else:
             T_spec, Sa_elast, Sa_inelas, SDS, SD1, Fa, Fd, Fs = nec24_espectro(
                 z=float(z), zona=str(zona_sismica), suelo=str(tipo_suelo), R=float(R),
@@ -1105,7 +1143,8 @@ with col_left:
             st.caption(tr("b3_sds_sd1").format(SDS=SDS, SD1=SD1))
             st.caption(tr("b3_coeffs").format(Fa=Fa, Fd=Fd, Fs=Fs))
 
-            fig, ax = plt.subplots(figsize=(6.0, 3.4))
+            # ✅ MÁS PEQUEÑO en vertical
+            fig, ax = plt.subplots(figsize=(6.0, NEC24_FIG_H))
             fig.patch.set_facecolor(BG)
             ax.set_facecolor(BG)
             ax.plot(T_spec, Sa_elast, lw=2.0, label=tr("b3_elastic"))
@@ -1122,6 +1161,8 @@ with col_left:
             for t in leg.get_texts():
                 t.set_color(COLOR_TEXT)
             st.pyplot(fig, use_container_width=True)
+
+            st.markdown('<div class="nec24-equalizer"></div>', unsafe_allow_html=True)
 
 # =============================================================================
 # DERECHA: Registro
@@ -1175,7 +1216,7 @@ with col_right:
             else:
                 raw = uploaded.read()
                 texto = leer_archivo_bytes_a_texto(raw)
-                fuente = detectar_fuente(texto)
+                _fuente = detectar_fuente(texto)  # se detecta pero no se muestra
 
                 # tu parser existente:
                 nombre, unidad, dt, ag = detectar_formato_y_extraer(texto)
@@ -1204,7 +1245,6 @@ with col_right:
 
             with col_ctrl:
                 st.markdown(f"**{tr('b3_event')}:** {nombre}")
-                st.markdown(f"**{tr('b3_source')}:** {fuente}")
                 st.markdown(f"**{tr('b3_dt')}:** {dt:.4f} s")
                 st.markdown(f"**{tr('b3_dur')}:** {t_ag[-1]:.2f} s")
                 st.markdown(f"**{tr('b3_npts')}:** {len(ag_orig)}")
@@ -1216,7 +1256,7 @@ with col_right:
             LW_PROC = 0.25
 
             with col_graf:
-                fig, axs = plt.subplots(3, 1, figsize=(9, 9.6), sharex=True)
+                fig, axs = plt.subplots(3, 1, figsize=(9, 11.2), sharex=True)
                 fig.patch.set_facecolor(BG)
 
                 for ax in axs:
@@ -1229,7 +1269,7 @@ with col_right:
                 axs[0].plot(
                     t_ag, ag_orig,
                     lw=(LW_ORIG_OVER if aplicar_proc else LW_ORIG_SOLO),
-                    color=COLOR_ORIG,
+                    color="#9DBEF7",
                     label=tr("b3_orig")
                 )
                 if aplicar_proc and (ag_proc is not None):
@@ -1237,12 +1277,12 @@ with col_right:
                 axs[0].set_ylabel(tr("b3_acc"), color=COLOR_TEXT)
                 axs[0].set_title(tr("b3_reg_title").format(name=nombre), color=COLOR_TEXT)
 
-                axs[1].plot(t_ag, vel_orig, lw=(LW_ORIG_OVER if aplicar_proc else LW_ORIG_SOLO), color=COLOR_ORIG)
+                axs[1].plot(t_ag, vel_orig, lw=(LW_ORIG_OVER if aplicar_proc else LW_ORIG_SOLO), color="#9DBEF7")
                 if aplicar_proc and (vel_proc is not None):
                     axs[1].plot(t_ag, vel_proc, lw=LW_PROC, color=COLOR_PROC)
                 axs[1].set_ylabel(tr("b3_vel"), color=COLOR_TEXT)
 
-                axs[2].plot(t_ag, disp_orig, lw=(LW_ORIG_OVER if aplicar_proc else LW_ORIG_SOLO), color=COLOR_ORIG)
+                axs[2].plot(t_ag, disp_orig, lw=(LW_ORIG_OVER if aplicar_proc else LW_ORIG_SOLO), color="#9DBEF7")
                 if aplicar_proc and (disp_proc is not None):
                     axs[2].plot(t_ag, disp_proc, lw=LW_PROC, color=COLOR_PROC)
                 axs[2].set_ylabel(tr("b3_disp"), color=COLOR_TEXT)
@@ -1257,7 +1297,60 @@ with col_right:
 
                 st.pyplot(fig, use_container_width=True)
 
-            # ✅ session_state para escalamiento y bloque 6
+            with col_ctrl:
+                st.markdown('<div class="compact-download">', unsafe_allow_html=True)
+                st.caption(f"📥 **{tr('b3_dl_hdr')}**")
+
+                opts = [tr("b3_dl_opt_orig")]
+                proc_disponible = bool(aplicar_proc and (ag_proc is not None) and (vel_proc is not None) and (disp_proc is not None))
+                if proc_disponible:
+                    opts.append(tr("b3_dl_opt_proc"))
+
+                pick = st.selectbox(
+                    tr("b3_dl_pick"),
+                    options=opts,
+                    index=(1 if (proc_disponible and (tr("b3_dl_opt_proc") in opts)) else 0),
+                    key="b3_dl_pick_opt",
+                    help=tr("h_b3_dl_pick"),
+                    label_visibility="collapsed",
+                )
+
+                if (pick == tr("b3_dl_opt_proc")) and proc_disponible:
+                    a_exp = np.asarray(ag_proc, dtype=float).ravel()
+                    v_exp = np.asarray(vel_proc, dtype=float).ravel()
+                    u_exp = np.asarray(disp_proc, dtype=float).ravel()
+                    tag = "proc"
+                else:
+                    a_exp = np.asarray(ag_orig, dtype=float).ravel()
+                    v_exp = np.asarray(vel_orig, dtype=float).ravel()
+                    u_exp = np.asarray(disp_orig, dtype=float).ravel()
+                    tag = "orig"
+
+                df_xlsx = pd.DataFrame({
+                    "tiempo": np.asarray(t_ag, dtype=float).ravel(),
+                    "aceleracion": a_exp,
+                    "velocidad": v_exp,
+                    "desplazamiento": u_exp,
+                })
+
+                bio = io.BytesIO()
+                with pd.ExcelWriter(bio, engine="openpyxl") as writer:
+                    df_xlsx.to_excel(writer, index=False, sheet_name="registro")
+                bio.seek(0)
+
+                safe_name = "".join([c if (c.isalnum() or c in ("_", "-", ".")) else "_" for c in str(nombre)])
+                file_name = f"registro_{safe_name}_{tag}.xlsx"
+
+                st.download_button(
+                    label=tr("b3_dl_btn"),
+                    data=bio.getvalue(),
+                    file_name=file_name,
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    key="b3_dl_btn_xlsx",
+                    use_container_width=True,
+                )
+                st.markdown('</div>', unsafe_allow_html=True)
+
             st.session_state["rs_ready"] = True
             st.session_state["rs_nombre"] = str(nombre)
             st.session_state["rs_dt"] = float(dt)
@@ -1267,9 +1360,6 @@ with col_right:
             st.session_state["rs_Sa_elast"] = np.asarray(Sa_elast, dtype=float).ravel()
             st.session_state["rs_Sa_inelas"] = np.asarray(Sa_inelas, dtype=float).ravel()
             st.session_state["rs_Ie"] = float(Ie)
-
-            with col_ctrl:
-                st.success(tr("b3_loaded_ok"))
 
 # =============================================================================
 # rs_ok
@@ -1436,7 +1526,7 @@ with st.container(border=True):
             st.session_state["dt"] * (len(ag_final) - 1),
             len(ag_final)
         )
-
+        
 # =============================================================================
 # == BLOQUE 4: DISEÑO DEL AISLADOR LRB (MODAL + RAYLEIGH + DISEÑO + GRÁFICO) ==
 # =============================================================================
