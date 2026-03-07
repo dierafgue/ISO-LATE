@@ -855,18 +855,6 @@ from funciones_usuario import (
     G_STD,
 )
 
-# -----------------------------------------------------------------------------
-# ✅ tr() ROBUSTO (si ya tienes uno arriba, puedes BORRAR este)
-# -----------------------------------------------------------------------------
-def tr(key: str) -> str:
-    lang = st.session_state.get("lang", st.session_state.get("idioma", "es"))
-    lang = str(lang).lower().strip()
-    lang = "en" if lang.startswith("en") else "es"
-    return (T.get(lang, {}).get(key)
-            or T.get("es", {}).get(key)
-            or T.get("en", {}).get(key)
-            or key)
-
 # -------------------------------------------------------------------------
 # ✅ Textos EN/ES (solo para este bloque) + HELPERS
 # -------------------------------------------------------------------------
@@ -955,6 +943,9 @@ T["en"].update({
     "h_b3_dl_pick": "Exports 4 columns: time, acceleration, velocity, displacement.",
     "b3_dl_opt_orig": "Original",
     "b3_dl_opt_proc": "Filtered + baseline-corrected",
+    "b3_nec_dl_btn": "Download NEC-24 Excel",
+    "b3_nec_dl_help": "Exports 3 columns: periodo, elastico, inelastico.",
+
 })
 
 T["es"].update({
@@ -1042,7 +1033,26 @@ T["es"].update({
     "h_b3_dl_pick": "Exporta 4 columnas: tiempo, aceleracion, velocidad, desplazamiento.",
     "b3_dl_opt_orig": "Original",
     "b3_dl_opt_proc": "Filtrado + corregido (línea base)",
+    "b3_nec_dl_btn": "Descargar NEC-24 Excel",
+    "b3_nec_dl_help": "Exporta 3 columnas: periodo, elastico, inelastico.",
+
 })
+
+# -------------------------------------------------------------------------
+# ✅ Helper: Excel NEC-24
+# -------------------------------------------------------------------------
+def build_nec24_excel_bytes(T_spec, Sa_elast, Sa_inelas):
+    df_nec = pd.DataFrame({
+        "periodo": np.asarray(T_spec, dtype=float).ravel(),
+        "elastico": np.asarray(Sa_elast, dtype=float).ravel(),
+        "inelastico": np.asarray(Sa_inelas, dtype=float).ravel(),
+    })
+
+    bio = io.BytesIO()
+    with pd.ExcelWriter(bio, engine="openpyxl") as writer:
+        df_nec.to_excel(writer, index=False, sheet_name="NEC24")
+    bio.seek(0)
+    return bio.getvalue()
 
 # -------------------------------------------------------------------------
 # Header
@@ -1059,19 +1069,42 @@ geom_ok = bool(st.session_state.get("geom_ready", False))
 # ✅ Ajustes visuales:
 #   1) Igualar altura de panel NEC-24 con panel "Seismic record"
 #   2) Hacer MÁS PEQUEÑO el panel "Response spectrum – NEC-24" (vertical)
+#   3) Slot compacto para botón de descarga NEC-24
 # -------------------------------------------------------------------------
 NEC24_PAD_PX = 15  # relleno para igualar alturas (ajusta si hace falta)
 NEC24_FIG_H  = 3.25 # 👈 altura del gráfico NEC-24 (antes 3.4). Baja más: 2.6 / 2.4
+
 st.markdown(f"""
 <style>
+
 .nec24-equalizer {{
   height: {NEC24_PAD_PX}px;
 }}
-/* compacto descarga */
+
+/* compacto descarga registro */
 .compact-download div[data-testid="stVerticalBlock"]{{ gap:0.25rem; }}
 .compact-download [data-testid="stSelectbox"]{{ padding-top:0rem !important; padding-bottom:0rem !important; }}
 .compact-download [data-testid="stDownloadButton"]{{ padding-top:0rem !important; padding-bottom:0rem !important; }}
 .compact-download button{{ padding-top:0.25rem !important; padding-bottom:0.25rem !important; }}
+
+/* -------------------------------------------------------
+   botón NEC-24 pequeño en el espacio vacío del panel
+------------------------------------------------------- */
+.nec24-download-slot {{
+  margin-top: 0.35rem;
+}}
+
+.nec24-download-slot [data-testid="stDownloadButton"] {{
+  width: 100%;
+}}
+
+.nec24-download-slot button {{
+  width: 100%;
+  min-height: 2.85rem !important;
+  padding-top: 0.25rem !important;
+  padding-bottom: 0.25rem !important;
+}}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -1092,13 +1125,39 @@ with col_left:
             z, zona_sismica, tipo_suelo, R, Ie = 0.47, "IV", "C", 8.0, 1.0
         else:
             c1, c2 = st.columns(2)
+
             with c1:
                 z = st.number_input(tr("b3_z"), 0.1, 1.0, 0.47, 0.01, key="nec_z", help=tr("h_b3_z"))
                 zona_sismica = st.selectbox(tr("b3_zone"), ["I", "II", "III", "IV", "V"], index=3, key="nec_zona", help=tr("h_b3_zone"))
                 tipo_suelo   = st.selectbox(tr("b3_soil"), ["A", "B", "C", "D", "E"], index=2, key="nec_suelo", help=tr("h_b3_soil"))
+
             with c2:
                 R  = st.number_input(tr("b3_R"), 1.0, 10.0, 8.0, 0.1, key="nec_R", help=tr("h_b3_R"))
                 Ie = st.number_input(tr("b3_Ie"), 0.5, 2.0, 1.0, 0.1, key="nec_Ie", help=tr("h_b3_Ie"))
+
+                # ✅ generar NEC-24 para exportar Excel
+                T_spec_dl, Sa_elast_dl, Sa_inelas_dl, _, _, _, _, _ = nec24_espectro(
+                    z=float(z),
+                    zona=str(zona_sismica),
+                    suelo=str(tipo_suelo),
+                    R=float(R),
+                    T_final=5.0,
+                    delta_t=0.01
+                )
+                nec24_xlsx_bytes = build_nec24_excel_bytes(T_spec_dl, Sa_elast_dl, Sa_inelas_dl)
+
+                # ✅ botón pequeño en el espacio vacío
+                st.markdown('<div class="nec24-download-slot">', unsafe_allow_html=True)
+                st.download_button(
+                    label=tr("b3_nec_dl_btn"),
+                    data=nec24_xlsx_bytes,
+                    file_name="NEC24_spectrum.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    key="b3_nec24_dl_btn",
+                    help=tr("b3_nec_dl_help"),
+                    use_container_width=True,
+                )
+                st.markdown('</div>', unsafe_allow_html=True)
 
             st.session_state["nec24_params"] = {
                 "z": float(z), "zona": str(zona_sismica), "suelo": str(tipo_suelo), "R": float(R), "Ie": float(Ie)
@@ -1526,7 +1585,7 @@ with st.container(border=True):
             st.session_state["dt"] * (len(ag_final) - 1),
             len(ag_final)
         )
-        
+
 # =============================================================================
 # == BLOQUE 4: DISEÑO DEL AISLADOR LRB (MODAL + RAYLEIGH + DISEÑO + GRÁFICO) ==
 # =============================================================================
@@ -2227,12 +2286,23 @@ try:
     k_iso_total = keff_1ais * n_aisladores
     K_cond_ais[0, 0] += k_iso_total
 
+    # ✅ tomar b_col_x real desde Sección 1
+    param_estruct_b5 = st.session_state.get("param_estruct", {})
+    modo_avanzado_b5 = bool(param_estruct_b5.get("modo_avanzado", False))
+    b_col_cm_b5 = param_estruct_b5.get("b_col_cm", None)
+
+    if (not modo_avanzado_b5) and (b_col_cm_b5 is not None):
+        b_col_x_b5 = float(b_col_cm_b5) / 100.0
+    else:
+        b_col_x_b5 = 0.0
+
     M_cond_ais = calcular_matriz_masas_con_aislador(
         nodes,
         element_node_pairs,
         propiedades,
         peso_especifico=st.session_state["peso_especifico"],
         sobrecarga_muerta=st.session_state["sobrecarga_muerta"],
+        b_col_x=b_col_x_b5,
     )
 
     st.session_state["K_cond_ais"] = np.array(K_cond_ais, copy=True)
