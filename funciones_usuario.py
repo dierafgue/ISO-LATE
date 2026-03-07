@@ -504,12 +504,16 @@ def orden_eig(K: np.ndarray, M: np.ndarray, normalizar_masa: bool = False):
 def calcular_matriz_masas_por_piso(nodes: list,
                                    element_node_pairs: list,
                                    propiedades: dict,
-                                   peso_especifico: float = 2.4,
+                                   peso_especifico: float = 2.4028,
                                    sobrecarga_muerta: float = 0.0,
                                    b_col_x: float = 0.50) -> np.ndarray:
     """
-    Masa lumped por piso (1 GDL/piso), evitando solape viga-columna en extremos:
-      L_viga_real = L - 0.5*b_col_x(izq) - 0.5*b_col_x(der)
+    Masa lumped por piso (1 GDL/piso).
+
+    Criterio:
+    - Columnas: masa repartida 50% y 50% entre extremos, con longitud eje a eje.
+    - Vigas: peso propio usando longitud libre sin solape con columnas.
+    - Carga adicional lineal: usando longitud eje a eje completa.
 
     Unidades:
       peso_especifico [Tf/m³], A [m²], L [m] => peso [Tf], masa = peso/g [Tf·s²/m]
@@ -530,30 +534,32 @@ def calcular_matriz_masas_por_piso(nodes: list,
         A = float(propiedades[tipo]["A"])
 
         if tipo == "col":
-            # columna: tramo eje-a-eje (mínimo cambio)
             L = float(np.hypot(x2 - x1, y2 - y1))
             peso_elem = peso_especifico * A * L
+
             altura_inf = round(min(y1, y2), 6)
             altura_sup = round(max(y1, y2), 6)
 
             if altura_inf > 0:
-                masas_por_piso[y_to_idx[altura_inf]] += (peso_elem / 2) / g
+                masas_por_piso[y_to_idx[altura_inf]] += (peso_elem / 2.0) / g
             if altura_sup > 0:
-                masas_por_piso[y_to_idx[altura_sup]] += (peso_elem / 2) / g
+                masas_por_piso[y_to_idx[altura_sup]] += (peso_elem / 2.0) / g
 
         elif tipo == "viga":
-            # viga: longitud real sin solape con columnas en extremos
-            L = abs(float(x2 - x1))  # horizontal
-            L_real = max(L - 0.5*b_col_x - 0.5*b_col_x, 0.0)
+            L = abs(float(x2 - x1))  # longitud eje a eje
+            L_real = max(L - 0.5 * b_col_x - 0.5 * b_col_x, 0.0)  # longitud libre
 
+            # peso propio de viga
             peso_elem = peso_especifico * A * L_real
+
             altura_viga = round(y1, 6)
             if altura_viga in y_to_idx:
                 idx = y_to_idx[altura_viga]
                 masas_por_piso[idx] += (peso_elem / g)
 
+                # carga adicional lineal
                 if sobrecarga_muerta > 0:
-                    peso_sob = sobrecarga_muerta * L_real
+                    peso_sob = sobrecarga_muerta * L
                     masas_por_piso[idx] += (peso_sob / g)
 
     return np.diag(masas_por_piso)
@@ -1039,26 +1045,26 @@ def calcular_matriz_masas_con_aislador(
     propiedades,
     peso_especifico=2.4,
     sobrecarga_muerta=0.0,
-    b_col_x=0.50
+    b_col_x=0.0
 ):
     """
     Matriz de masas condensada para modelo con aislador en la base.
-    DOF 0 → base (recibe 1/2 de columnas PB hacia abajo)
-    DOF 1..n → masas reales de la superestructura
 
-    MISMA LÓGICA que el modelo fijo:
-    - Columnas → 50%-50% entre niveles (incluyendo base y=0)
-    - Vigas → longitud real sin solape: L_real = L - 0.5*b - 0.5*b
+    DOF 0   -> base
+    DOF 1..n -> masas reales de la superestructura
+
+    Criterio:
+    - Columnas: masa repartida 50%-50% entre niveles, incluyendo base y=0.
+    - Vigas: peso propio usando longitud libre sin solape con columnas.
+    - Carga adicional lineal: usando longitud eje a eje completa.
     """
 
     import numpy as np
     g = 9.8066500000
 
-    # niveles >0
     alturas = sorted({round(y, 6) for (x, y, _) in nodes if y > 0})
     n_pisos = len(alturas)
 
-    # +1 DOF (base)
     masas_por_piso = np.zeros(n_pisos + 1, dtype=float)
 
     node_by_id = {nid: (x, y, nid) for (x, y, nid) in nodes}
@@ -1076,19 +1082,17 @@ def calcular_matriz_masas_con_aislador(
             altura_inf = round(min(y1, y2), 6)
             altura_sup = round(max(y1, y2), 6)
 
-            # 1/2 a nivel inferior (si es base y=0 => DOF 0)
             if altura_inf == 0.0:
-                masas_por_piso[0] += (peso_elem / 2) / g
+                masas_por_piso[0] += (peso_elem / 2.0) / g
             elif altura_inf > 0 and altura_inf in y_to_idx:
-                masas_por_piso[y_to_idx[altura_inf] + 1] += (peso_elem / 2) / g
+                masas_por_piso[y_to_idx[altura_inf] + 1] += (peso_elem / 2.0) / g
 
-            # 1/2 a nivel superior (siempre >0 para columnas)
             if altura_sup > 0 and altura_sup in y_to_idx:
-                masas_por_piso[y_to_idx[altura_sup] + 1] += (peso_elem / 2) / g
+                masas_por_piso[y_to_idx[altura_sup] + 1] += (peso_elem / 2.0) / g
 
         elif tipo == "viga":
-            L = abs(float(x2 - x1))  # horizontal
-            L_real = max(L - 0.5*b_col_x - 0.5*b_col_x, 0.0)
+            L = abs(float(x2 - x1))  # longitud eje a eje
+            L_real = max(L - 0.5 * b_col_x - 0.5 * b_col_x, 0.0)
 
             peso_elem = peso_especifico * A * L_real
             altura_viga = round(y1, 6)
@@ -1098,11 +1102,8 @@ def calcular_matriz_masas_con_aislador(
                 masas_por_piso[idx] += (peso_elem / g)
 
                 if sobrecarga_muerta > 0.0:
-                    peso_sob = sobrecarga_muerta * L_real
+                    peso_sob = sobrecarga_muerta * L
                     masas_por_piso[idx] += (peso_sob / g)
-
-    # ✅ Base SIN truco numérico
-    masas_por_piso[0] = float(masas_por_piso[0])  # se queda lo que aporte 1/2 col PB
 
     return np.diag(masas_por_piso)
 
@@ -1305,9 +1306,6 @@ def filtrar_butterworth(datos, dt, f_low=0.075, f_high=25.0, orden=4):
     b, a = signal.butter(orden, [low, high], btype="band")
     return signal.filtfilt(b, a, datos)
 
-# =============================================================================
-# === DISEÑO DE AISLADOR LRB AUTOMATICO Y MANUAL ==============================
-# =============================================================================
 # =============================================================================
 # === DISEÑO DE AISLADOR LRB AUTOMATICO Y MANUAL ==============================
 # === (PARCHE: Keff como SECANTE REAL del bilineal) ===========================
@@ -1965,6 +1963,8 @@ def b2_get_params_from_param_estruct(param_estruct: dict) -> dict:
         "peso_especifico": float(params.get("peso_especifico", 2.4)),
         "sobrecarga_muerta": float(params.get("sobrecarga_muerta", 38.0)),
         "amortiguamiento": float(params.get("amortiguamiento", 0.05)),
+        "modo_avanzado": bool(params.get("modo_avanzado", False)),
+        "b_col_cm": params.get("b_col_cm", None),
     }
 
 def b2_params_key(p: dict) -> tuple:
@@ -1972,9 +1972,21 @@ def b2_params_key(p: dict) -> tuple:
     Replica tu _params_key().
     """
     return (
-        p["n_pisos"], p["n_vanos"], p["l_vano"], p["h_piso_1"], p["h_piso_restantes"],
-        p["E"], p["I_col"], p["A_col"], p["I_viga"], p["A_viga"],
-        p["peso_especifico"], p["sobrecarga_muerta"], p["amortiguamiento"]
+        p["n_pisos"],
+        p["n_vanos"],
+        p["l_vano"],
+        p["h_piso_1"],
+        p["h_piso_restantes"],
+        p["E"],
+        p["I_col"],
+        p["A_col"],
+        p["I_viga"],
+        p["A_viga"],
+        p["peso_especifico"],
+        p["sobrecarga_muerta"],
+        p["amortiguamiento"],
+        p.get("modo_avanzado", False),
+        p.get("b_col_cm", None),
     )
 
 def b2_generar_modelo(
@@ -2007,7 +2019,15 @@ def b2_generar_modelo(
     h_piso_1, h_piso_restantes = p["h_piso_1"], p["h_piso_restantes"]
     E, I_col, A_col = p["E"], p["I_col"], p["A_col"]
     I_viga, A_viga = p["I_viga"], p["A_viga"]
-    peso_especifico, sobrecarga_muerta = p["peso_especifico"], p["sobrecarga_muerta"]
+    peso_especifico = p["peso_especifico"]
+    sobrecarga_muerta = p["sobrecarga_muerta"]
+    modo_avanzado = p.get("modo_avanzado", False)
+    b_col_cm = p.get("b_col_cm", None)
+
+    if (not modo_avanzado) and (b_col_cm is not None):
+        b_col_x = float(b_col_cm) / 100.0
+    else:
+        b_col_x = 0.0
 
     # 1) Nodos
     nodes = []
@@ -2023,7 +2043,7 @@ def b2_generar_modelo(
 
     # 3) Propiedades
     propiedades = {
-        "col":  {"E": E, "I": I_col,  "A": A_col},
+        "col": {"E": E, "I": I_col, "A": A_col},
         "viga": {"E": E, "I": I_viga, "A": A_viga},
     }
 
@@ -2060,6 +2080,7 @@ def b2_generar_modelo(
             propiedades,
             peso_especifico=peso_especifico,
             sobrecarga_muerta=sobrecarga_muerta,
+            b_col_x=b_col_x,
         )
 
     # 7) Matriz de transformación
@@ -2172,7 +2193,6 @@ def b2_generar_modelo(
 
     ratio_k = k_modelo / k_aprox
 
-    # resumen
     model_summary = {
         "n_nodes": len(nodes),
         "n_elems": len(elements),
@@ -3049,4 +3069,3 @@ def make_excel_per_floor(t, u, v, a, sheet_names):
             df.to_excel(writer, sheet_name=sh, index=False)
     output.seek(0)
     return output.getvalue()
-
