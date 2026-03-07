@@ -1141,14 +1141,20 @@ class ElementReducidoLibre:
         return dofs_i + dofs_j
     
 # =============================================================================
-# === FUNCIÓN PARA GENERAR MAPA DE GDL (AHORA MISMA LÓGICA QUE FIJO) ==========
+# === FUNCIÓN PARA GENERAR MAPA DE GDL REDUCIDO LIBRE =========================
 # =============================================================================
 def generar_gdl_map_reducido_libre(nodes):
     """
-    MISMA lógica del fijo (ETABS-like):
-    - vx: 1 GDL por nivel (diafragma rígido), incluyendo base y=0 como DOF 0
-    - vy, theta: 1 GDL por nodo SOLO para y>0
-    - base y=0: empotrada en vy/theta, pero vx LIBRE (para el aislador)
+    Mapa de GDL para modelo aislado:
+
+    - vx: 1 GDL lateral por nivel (diafragma rígido), incluyendo base y=0
+    - vy: 1 GDL por nodo solo para y>0
+    - theta: 1 GDL por nodo para TODOS los niveles, incluyendo base
+
+    Criterio:
+    - En base, vx libre (DOF del sistema aislado)
+    - En base, vy fijo
+    - En base, theta libre y luego se condensa
     """
     niveles = sorted({round(float(y), 6) for (_, y, _) in nodes})
     if 0.0 in niveles:
@@ -1156,23 +1162,28 @@ def generar_gdl_map_reducido_libre(nodes):
     else:
         niveles = [0.0] + niveles
 
-    vx_por_nivel = {nivel: i for i, nivel in enumerate(niveles)}  # base=0
-    counter = len(niveles)  # desde aquí salen vy/theta por nodo
+    # vx compartido por nivel
+    vx_por_nivel = {nivel: i for i, nivel in enumerate(niveles)}
+    counter = len(niveles)
 
     gdl_map = {}
     for (x, y, nid) in nodes:
         yk = round(float(y), 6)
 
-        # vx compartido por nivel (incluye base)
-        gdl_map[(nid, 'vx')] = vx_por_nivel[yk]
+        # vx compartido por nivel
+        gdl_map[(nid, "vx")] = vx_por_nivel[yk]
 
         if yk == 0.0:
-            # base: empotrada en vy y theta
-            gdl_map[(nid, 'vy')]    = None
-            gdl_map[(nid, 'theta')] = None
+            # base: vy fijo, theta libre
+            gdl_map[(nid, "vy")] = None
+            gdl_map[(nid, "theta")] = counter
+            counter += 1
         else:
-            gdl_map[(nid, 'vy')]    = counter; counter += 1
-            gdl_map[(nid, 'theta')] = counter; counter += 1
+            # niveles superiores: vy y theta libres
+            gdl_map[(nid, "vy")] = counter
+            counter += 1
+            gdl_map[(nid, "theta")] = counter
+            counter += 1
 
     return gdl_map, counter
 
@@ -1308,26 +1319,24 @@ def filtrar_butterworth(datos, dt, f_low=0.075, f_high=25.0, orden=4):
 
 # =============================================================================
 # === DISEÑO DE AISLADOR LRB AUTOMATICO Y MANUAL ==============================
-# === (PARCHE: Keff como SECANTE REAL del bilineal) ===========================
+# === (Keff CONSISTENTE COMO SECANTE REAL DEL BILINEAL) =======================
 # =============================================================================
 def diseno_aislador_LRB(
     SD1, SDS, T_sin, Mc, nodos_restringidos,
     modo_automatico=True, modo_periodo_objetivo=False, T_objetivo=None,
     *,
-    Ku_over_Kd=10.0,   # relación típica Ku/Kd (bilineal). 10 = Ku >> Kd
+    Ku_over_Kd=10.0,   # relación típica Ku/Kd
     LB_factor=0.85     # factor de reducción “LB”
 ):
     """
     Diseño de aisladores LRB (2D) sin restricciones geométricas impuestas.
     Unidades internas: Tonf, Tonf/m, m, s.
-    SD1 y SDS se asumen en 'g' (como en ASCE/NEC), por eso se multiplica por g cuando corresponde.
+    SD1 y SDS se asumen en 'g'.
 
-    ✅ PARCHE IMPORTANTE:
-    - Keff ahora se calcula como rigidez SECANTE real del bilineal (F(D)/D),
-      consistente con “Effective stiffness from zero” (ETABS):
-          F(D) = Fy + Kp (D - dy)
-          Keff = F(D)/D
-      (antes: Keff = Kp + Fy/D, que sobreestima al no restar Kp*dy/D).
+    Criterio consistente:
+    - La rigidez equivalente usada en el diseño y en el período se toma como
+      secante real del bilineal desde el origen hasta D_M.
+    - Las propiedades devueltas corresponden a 1 aislador.
     """
 
     import math
@@ -1339,25 +1348,23 @@ def diseno_aislador_LRB(
     SD1 = float(SD1)
     SDS = float(SDS)
 
-    # En tu código original:
-    SM1 = 1.5 * SD1  # espectro “MCE-like” usado en tu ecuación de desplazamiento
+    SM1 = 1.5 * SD1
+    T_usar = float(np.atleast_1d(T_sin)[0])
 
-    T_usar = float(np.atleast_1d(T_sin)[0])  # T1 sin aislador
-
-    # ---------------- MASA / PESO (sistema FIJO) ----------------
+    # ---------------- MASA / PESO ----------------
     if Mc is None or np.ndim(Mc) != 2 or Mc.shape[0] != Mc.shape[1]:
         raise ValueError("Mc debe ser una matriz cuadrada de masas (sistema FIJO).")
 
-    M_super = float(np.sum(np.diag(Mc)))  # [Tonf·s²/m]
-    W_total = M_super * g                 # [Tonf]
+    M_super = float(np.sum(np.diag(Mc)))   # [Tonf·s²/m]
+    W_total = M_super * g                  # [Tonf]
 
     n_ais = max(int(len(nodos_restringidos)), 1)
     W_individual = W_total / n_ais
 
     # ---------------- PROPIEDADES MATERIALES ----------------
-    sigma_L = 10.0   # [MPa] plomo
-    G = 0.45         # [MPa] caucho
-    delta_L = 0.025  # [m] espesor de capa de goma (NO es dy)
+    sigma_L = 10.0   # [MPa]
+    G = 0.45         # [MPa]
+    delta_L = 0.025  # [m]
 
     sigma_L_tonf = sigma_L * 0.001 * 0.101972 * (1000.0**2)  # [Tonf/m²]
     G_tonf       = G       * 0.001 * 0.101972 * (1000.0**2)  # [Tonf/m²]
@@ -1382,13 +1389,12 @@ def diseno_aislador_LRB(
         return SDS if (T <= Ts) else (SM1 / T)
 
     # ------------------------------------------------------------
-    # ✅ Flags SIEMPRE definidos (para no romper modo automático)
+    # Flags seguros
     # ------------------------------------------------------------
     T_min_rec = None
     warning_periodo_bajo = False
     mensaje_warning = None
 
-    # Variables que devolveremos
     Q_d_total_LB = None
     K_D_total_LB = None
     k_M = None
@@ -1403,16 +1409,17 @@ def diseno_aislador_LRB(
     # ===================== MODO AUTOMÁTICO =====================
     if modo_automatico and not modo_periodo_objetivo:
         D_L = math.sqrt((0.05 * W_total * 4.0) / (n_ais * math.pi * sigma_L_tonf))
-
         D_B = 4.0 * D_L
-        t_r = D_L  # espesor total de caucho
+        t_r = D_L
 
         Sa_seed = Sa_of_T(T_usar)
         D_M = (g * Sa_seed) * (T_usar / (2.0 * math.pi))**2
         D_M = max(D_M, 1e-6)
 
-        tol, max_iter = 1e-6, 120
-        error, iteraciones = 1.0, 0
+        tol = 1e-6
+        max_iter = 120
+        error = 1.0
+        iteraciones = 0
 
         while error > tol and iteraciones < max_iter:
             K_D_total = n_ais * (G_tonf * math.pi * (D_B**2 - D_L**2)) / (4.0 * t_r)
@@ -1421,14 +1428,19 @@ def diseno_aislador_LRB(
             Q_d_total = n_ais * (math.pi * D_L**2) * sigma_L_tonf / 4.0
             Q_d_total_LB = LB_factor * Q_d_total
 
-            # k_M = Kd + Qd/D (lineal equivalente usado para T_M)
-            k_M = K_D_total_LB + (Q_d_total_LB / D_M)
-
-            T_M = 2.0 * math.pi * math.sqrt(W_total / (k_M * g))
-
             Kd_total = K_D_total_LB
             Ku_total = max(Ku_over_Kd, 1.01) * Kd_total
             dy_total = Q_d_total_LB / max(Ku_total - Kd_total, 1e-12)
+
+            # ✅ secante real del bilineal en D_M
+            if D_M <= dy_total:
+                F_M_total = Ku_total * D_M
+            else:
+                F_M_total = Q_d_total_LB + Kd_total * (D_M - dy_total)
+
+            k_M = F_M_total / max(D_M, 1e-12)
+
+            T_M = 2.0 * math.pi * math.sqrt(W_total / (k_M * g))
 
             betta_M = (2.0 * Q_d_total_LB * max(D_M - dy_total, 0.0)) / (math.pi * k_M * D_M**2)
             betta_M = max(betta_M, 0.0)
@@ -1437,9 +1449,10 @@ def diseno_aislador_LRB(
 
             Sa_Tm = Sa_of_T(T_M)
             D_M_new = (g * Sa_Tm) * (T_M / (2.0 * math.pi))**2 / B_M
+            D_M_new = max(D_M_new, 1e-6)
 
             error = abs(D_M_new - D_M)
-            D_M = float(max(D_M_new, 1e-6))
+            D_M = float(D_M_new)
             iteraciones += 1
 
         T_final = float(T_M)
@@ -1451,11 +1464,7 @@ def diseno_aislador_LRB(
 
         T_objetivo = float(T_objetivo)
 
-        # ------------------------------------------------------------
-        # ⚠️ Advertencias por período bajo de aislamiento
-        # ------------------------------------------------------------
-        T_min_rec = 2.0  # referencia técnica típica
-
+        T_min_rec = 2.0
         warning_periodo_bajo = False
         mensaje_warning = None
 
@@ -1467,7 +1476,6 @@ def diseno_aislador_LRB(
                 "sino un simple ablandamiento estructural. "
                 "Se recomienda usar T_objetivo ≥ 2.0 s."
             )
-
         elif T_objetivo < 2.0:
             warning_periodo_bajo = True
             mensaje_warning = (
@@ -1489,7 +1497,6 @@ def diseno_aislador_LRB(
             D_B = float(rel_DB) * D_L
 
             Tr_min = (LB_factor * n_ais * (G_tonf * math.pi * (D_B**2 - D_L**2))) / (4.0 * k_M)
-
             t_r = max(D_L, margen_tr * Tr_min)
 
             K_D_total = n_ais * (G_tonf * math.pi * (D_B**2 - D_L**2)) / (4.0 * t_r)
@@ -1514,12 +1521,15 @@ def diseno_aislador_LRB(
         Q_d_total = n_ais * (math.pi * D_L**2) * sigma_L_tonf / 4.0
         Q_d_total_LB = LB_factor * Q_d_total
 
-        # Para este modo, D_M sale de equilibrio k_M = Kd + Qd/D
-        D_M = Q_d_total_LB / max((k_M - K_D_total_LB), 1e-12)
-
         Kd_total = K_D_total_LB
         Ku_total = max(Ku_over_Kd, 1.01) * Kd_total
         dy_total = Q_d_total_LB / max(Ku_total - Kd_total, 1e-12)
+
+        # ✅ D_M consistente con secante real del bilineal
+        num = Q_d_total_LB - Kd_total * dy_total
+        den = max(k_M - Kd_total, 1e-12)
+        D_M = num / den
+        D_M = max(D_M, dy_total + 1e-9)
 
         betta_M = (2.0 * Q_d_total_LB * max(D_M - dy_total, 0.0)) / (math.pi * k_M * D_M**2)
         betta_M = max(betta_M, 0.0)
@@ -1531,31 +1541,23 @@ def diseno_aislador_LRB(
         raise ValueError("Activa exactamente uno de los modos: modo_automatico XOR modo_periodo_objetivo.")
 
     # ---------------- PROPIEDADES POR AISLADOR ----------------
-    k_post_1ais = K_D_total_LB / n_ais  # [Tonf/m]
-    yield_1ais  = Q_d_total_LB / n_ais  # [Tonf]
+    k_post_1ais = K_D_total_LB / n_ais
+    yield_1ais  = Q_d_total_LB / n_ais
 
-    k_inicial_1ais = max(Ku_over_Kd, 1.01) * k_post_1ais  # [Tonf/m]
+    k_inicial_1ais = max(Ku_over_Kd, 1.01) * k_post_1ais
+    delta_y = yield_1ais / max((k_inicial_1ais - k_post_1ais), 1e-12)
 
-    # dy (por aislador) consistente con el bilineal
-    delta_y = yield_1ais / max((k_inicial_1ais - k_post_1ais), 1e-12)  # [m]
-
-    # ✅ Keff SECANTE REAL desde origen al punto D_M del bilineal:
-    # F(D) = Fy + Kp(D - dy)  (si D > dy), caso contrario F = Ke*D
     D_use = float(max(D_M, 1e-12))
     if D_use <= delta_y:
-        # aún elástico
         F_D = k_inicial_1ais * D_use
     else:
         F_D = yield_1ais + k_post_1ais * (D_use - delta_y)
 
-    keff_1ais = float(F_D / D_use)  # [Tonf/m]
+    keff_1ais = float(F_D / D_use)
 
-    # amortiguamiento viscoso equivalente (como venías usando, pero con Keff corregida)
-    c_1ais = float(betta_M * 2.0 * math.sqrt((keff_1ais * W_individual) / g))  # [Tonf·s/m]
-
+    c_1ais = float(betta_M * 2.0 * math.sqrt((keff_1ais * W_individual) / g))
     ratio_postfluencia_1ais = float(k_post_1ais / k_inicial_1ais)
 
-    # ---------------- RESULTADOS ----------------
     return {
         "T_M": float(T_final),
         "beta_M": float(betta_M),
@@ -1580,7 +1582,6 @@ def diseno_aislador_LRB(
         "LB_factor": float(LB_factor),
         "Ku_over_Kd": float(Ku_over_Kd),
 
-        # flags seguros
         "T_min_rec": None if (T_min_rec is None) else float(T_min_rec),
         "warning_periodo_bajo": bool(warning_periodo_bajo),
         "mensaje_warning": mensaje_warning,
