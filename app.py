@@ -2767,6 +2767,10 @@ with colR:
         alpha_ais, beta_ais = rayleigh_from_w(wR_ais, zeta)
         C_ais = alpha_ais * M_ais_eff + beta_ais * K_ais_eff
 
+        # ✅ amortiguamiento viscoso equivalente del aislador
+        c_1ais = float(st.session_state["res_aislador"]["c_1ais"])
+        C_ais[0, 0] += c_1ais * n_aisladores
+
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("α", f"{alpha_ais:.3e}", "1/s")
         m2.metric("β", f"{beta_ais:.3e}", "s")
