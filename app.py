@@ -943,9 +943,9 @@ T["en"].update({
     "h_b3_dl_pick": "Exports 4 columns: time, acceleration, velocity, displacement.",
     "b3_dl_opt_orig": "Original",
     "b3_dl_opt_proc": "Filtered + baseline-corrected",
+    "b3_dl_opt_final": "Final used in analysis",
     "b3_nec_dl_btn": "Download NEC-24 Excel",
-    "b3_nec_dl_help": "Exports 3 columns: periodo, elastico, inelastico.",
-
+    "b3_nec_dl_help": "Exports 3 columns: period, elastic, inelastic.",
 })
 
 T["es"].update({
@@ -1033,9 +1033,9 @@ T["es"].update({
     "h_b3_dl_pick": "Exporta 4 columnas: tiempo, aceleracion, velocidad, desplazamiento.",
     "b3_dl_opt_orig": "Original",
     "b3_dl_opt_proc": "Filtrado + corregido (línea base)",
+    "b3_dl_opt_final": "Final usado en el análisis",
     "b3_nec_dl_btn": "Descargar NEC-24 Excel",
     "b3_nec_dl_help": "Exporta 3 columnas: periodo, elastico, inelastico.",
-
 })
 
 # -------------------------------------------------------------------------
@@ -1071,8 +1071,8 @@ geom_ok = bool(st.session_state.get("geom_ready", False))
 #   2) Hacer MÁS PEQUEÑO el panel "Response spectrum – NEC-24" (vertical)
 #   3) Slot compacto para botón de descarga NEC-24
 # -------------------------------------------------------------------------
-NEC24_PAD_PX = 15  # relleno para igualar alturas (ajusta si hace falta)
-NEC24_FIG_H  = 3.25 # 👈 altura del gráfico NEC-24 (antes 3.4). Baja más: 2.6 / 2.4
+NEC24_PAD_PX = 15
+NEC24_FIG_H  = 3.25
 
 st.markdown(f"""
 <style>
@@ -1087,9 +1087,7 @@ st.markdown(f"""
 .compact-download [data-testid="stDownloadButton"]{{ padding-top:0rem !important; padding-bottom:0rem !important; }}
 .compact-download button{{ padding-top:0.25rem !important; padding-bottom:0.25rem !important; }}
 
-/* -------------------------------------------------------
-   botón NEC-24 pequeño en el espacio vacío del panel
-------------------------------------------------------- */
+/* botón NEC-24 pequeño */
 .nec24-download-slot {{
   margin-top: 0.35rem;
 }}
@@ -1135,7 +1133,6 @@ with col_left:
                 R  = st.number_input(tr("b3_R"), 1.0, 10.0, 8.0, 0.1, key="nec_R", help=tr("h_b3_R"))
                 Ie = st.number_input(tr("b3_Ie"), 0.5, 2.0, 1.0, 0.1, key="nec_Ie", help=tr("h_b3_Ie"))
 
-                # ✅ generar NEC-24 para exportar Excel
                 T_spec_dl, Sa_elast_dl, Sa_inelas_dl, _, _, _, _, _ = nec24_espectro(
                     z=float(z),
                     zona=str(zona_sismica),
@@ -1146,7 +1143,6 @@ with col_left:
                 )
                 nec24_xlsx_bytes = build_nec24_excel_bytes(T_spec_dl, Sa_elast_dl, Sa_inelas_dl)
 
-                # ✅ botón pequeño en el espacio vacío
                 st.markdown('<div class="nec24-download-slot">', unsafe_allow_html=True)
                 st.download_button(
                     label=tr("b3_nec_dl_btn"),
@@ -1175,7 +1171,6 @@ with col_left:
             Sa_inelas = np.zeros_like(T_spec)
             SDS = SD1 = Fa = Fd = Fs = 0.0
 
-            # ✅ MÁS PEQUEÑO en vertical
             fig, ax = plt.subplots(figsize=(6.0, NEC24_FIG_H))
             fig.patch.set_facecolor(BG)
             ax.set_facecolor(BG)
@@ -1202,7 +1197,6 @@ with col_left:
             st.caption(tr("b3_sds_sd1").format(SDS=SDS, SD1=SD1))
             st.caption(tr("b3_coeffs").format(Fa=Fa, Fd=Fd, Fs=Fs))
 
-            # ✅ MÁS PEQUEÑO en vertical
             fig, ax = plt.subplots(figsize=(6.0, NEC24_FIG_H))
             fig.patch.set_facecolor(BG)
             ax.set_facecolor(BG)
@@ -1231,6 +1225,19 @@ with col_right:
         st.markdown(f"### 〰️ {tr('b3_rec_load')}")
 
         col_ctrl, col_graf = st.columns([1.2, 2.5], gap="large")
+
+        # variables por defecto para evitar referencias vacías
+        nombre = None
+        dt = None
+        t_ag = None
+        ag_orig = None
+        vel_orig = None
+        disp_orig = None
+        ag_proc = None
+        vel_proc = None
+        disp_proc = None
+        ag_base = None
+        proc_disponible = False
 
         with col_ctrl:
             modo_src = st.radio(
@@ -1275,9 +1282,9 @@ with col_right:
             else:
                 raw = uploaded.read()
                 texto = leer_archivo_bytes_a_texto(raw)
-                _fuente = detectar_fuente(texto)  # se detecta pero no se muestra
+                _fuente = detectar_fuente(texto)
 
-                # tu parser existente:
+                # parser existente del usuario
                 nombre, unidad, dt, ag = detectar_formato_y_extraer(texto)
                 ag = np.asarray(ag, dtype=float).ravel()
                 dt = float(dt)
@@ -1294,13 +1301,27 @@ with col_right:
 
             out = procesar_registro(ag_orig, dt, aplicar_proc=aplicar_proc)
 
-            t_ag = out["t"]
-            vel_orig = out["vel_orig"]
-            disp_orig = out["disp_orig"]
+            t_ag = np.asarray(out["t"], dtype=float).ravel()
+            vel_orig = np.asarray(out["vel_orig"], dtype=float).ravel()
+            disp_orig = np.asarray(out["disp_orig"], dtype=float).ravel()
             ag_proc = out["ag_proc"]
             vel_proc = out["vel_proc"]
             disp_proc = out["disp_proc"]
-            ag_base = out["ag_base"]
+            ag_base = np.asarray(out["ag_base"], dtype=float).ravel()
+
+            if ag_proc is not None:
+                ag_proc = np.asarray(ag_proc, dtype=float).ravel()
+            if vel_proc is not None:
+                vel_proc = np.asarray(vel_proc, dtype=float).ravel()
+            if disp_proc is not None:
+                disp_proc = np.asarray(disp_proc, dtype=float).ravel()
+
+            proc_disponible = bool(
+                aplicar_proc and
+                (ag_proc is not None) and
+                (vel_proc is not None) and
+                (disp_proc is not None)
+            )
 
             with col_ctrl:
                 st.markdown(f"**{tr('b3_event')}:** {nombre}")
@@ -1328,26 +1349,26 @@ with col_right:
                 axs[0].plot(
                     t_ag, ag_orig,
                     lw=(LW_ORIG_OVER if aplicar_proc else LW_ORIG_SOLO),
-                    color="#9DBEF7",
+                    color=COLOR_ORIG,
                     label=tr("b3_orig")
                 )
-                if aplicar_proc and (ag_proc is not None):
+                if proc_disponible:
                     axs[0].plot(t_ag, ag_proc, lw=LW_PROC, color=COLOR_PROC, label=tr("b3_proc_lab"))
                 axs[0].set_ylabel(tr("b3_acc"), color=COLOR_TEXT)
                 axs[0].set_title(tr("b3_reg_title").format(name=nombre), color=COLOR_TEXT)
 
-                axs[1].plot(t_ag, vel_orig, lw=(LW_ORIG_OVER if aplicar_proc else LW_ORIG_SOLO), color="#9DBEF7")
-                if aplicar_proc and (vel_proc is not None):
+                axs[1].plot(t_ag, vel_orig, lw=(LW_ORIG_OVER if aplicar_proc else LW_ORIG_SOLO), color=COLOR_ORIG)
+                if proc_disponible:
                     axs[1].plot(t_ag, vel_proc, lw=LW_PROC, color=COLOR_PROC)
                 axs[1].set_ylabel(tr("b3_vel"), color=COLOR_TEXT)
 
-                axs[2].plot(t_ag, disp_orig, lw=(LW_ORIG_OVER if aplicar_proc else LW_ORIG_SOLO), color="#9DBEF7")
-                if aplicar_proc and (disp_proc is not None):
+                axs[2].plot(t_ag, disp_orig, lw=(LW_ORIG_OVER if aplicar_proc else LW_ORIG_SOLO), color=COLOR_ORIG)
+                if proc_disponible:
                     axs[2].plot(t_ag, disp_proc, lw=LW_PROC, color=COLOR_PROC)
                 axs[2].set_ylabel(tr("b3_disp"), color=COLOR_TEXT)
                 axs[2].set_xlabel(tr("b3_time"), color=COLOR_TEXT)
 
-                if aplicar_proc and (ag_proc is not None):
+                if proc_disponible:
                     leg0 = axs[0].legend(framealpha=0.85)
                     leg0.get_frame().set_facecolor(BG)
                     leg0.get_frame().set_edgecolor(COLOR_GRID)
@@ -1356,64 +1377,24 @@ with col_right:
 
                 st.pyplot(fig, use_container_width=True)
 
-            with col_ctrl:
-                st.markdown('<div class="compact-download">', unsafe_allow_html=True)
-                st.caption(f"📥 **{tr('b3_dl_hdr')}**")
-
-                opts = [tr("b3_dl_opt_orig")]
-                proc_disponible = bool(aplicar_proc and (ag_proc is not None) and (vel_proc is not None) and (disp_proc is not None))
-                if proc_disponible:
-                    opts.append(tr("b3_dl_opt_proc"))
-
-                pick = st.selectbox(
-                    tr("b3_dl_pick"),
-                    options=opts,
-                    index=(1 if (proc_disponible and (tr("b3_dl_opt_proc") in opts)) else 0),
-                    key="b3_dl_pick_opt",
-                    help=tr("h_b3_dl_pick"),
-                    label_visibility="collapsed",
-                )
-
-                if (pick == tr("b3_dl_opt_proc")) and proc_disponible:
-                    a_exp = np.asarray(ag_proc, dtype=float).ravel()
-                    v_exp = np.asarray(vel_proc, dtype=float).ravel()
-                    u_exp = np.asarray(disp_proc, dtype=float).ravel()
-                    tag = "proc"
-                else:
-                    a_exp = np.asarray(ag_orig, dtype=float).ravel()
-                    v_exp = np.asarray(vel_orig, dtype=float).ravel()
-                    u_exp = np.asarray(disp_orig, dtype=float).ravel()
-                    tag = "orig"
-
-                df_xlsx = pd.DataFrame({
-                    "tiempo": np.asarray(t_ag, dtype=float).ravel(),
-                    "aceleracion": a_exp,
-                    "velocidad": v_exp,
-                    "desplazamiento": u_exp,
-                })
-
-                bio = io.BytesIO()
-                with pd.ExcelWriter(bio, engine="openpyxl") as writer:
-                    df_xlsx.to_excel(writer, index=False, sheet_name="registro")
-                bio.seek(0)
-
-                safe_name = "".join([c if (c.isalnum() or c in ("_", "-", ".")) else "_" for c in str(nombre)])
-                file_name = f"registro_{safe_name}_{tag}.xlsx"
-
-                st.download_button(
-                    label=tr("b3_dl_btn"),
-                    data=bio.getvalue(),
-                    file_name=file_name,
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    key="b3_dl_btn_xlsx",
-                    use_container_width=True,
-                )
-                st.markdown('</div>', unsafe_allow_html=True)
-
             st.session_state["rs_ready"] = True
             st.session_state["rs_nombre"] = str(nombre)
             st.session_state["rs_dt"] = float(dt)
+            st.session_state["rs_t"] = np.asarray(t_ag, dtype=float).ravel()
+
+            # original
+            st.session_state["rs_ag_orig"] = np.asarray(ag_orig, dtype=float).ravel()
+            st.session_state["rs_vel_orig"] = np.asarray(vel_orig, dtype=float).ravel()
+            st.session_state["rs_disp_orig"] = np.asarray(disp_orig, dtype=float).ravel()
+
+            # base seleccionada para espectro/análisis antes de escalar
             st.session_state["rs_ag_base"] = np.asarray(ag_base, dtype=float).ravel()
+
+            # procesado opcional
+            st.session_state["rs_ag_proc"] = np.asarray(ag_proc, dtype=float).ravel() if proc_disponible else None
+            st.session_state["rs_vel_proc"] = np.asarray(vel_proc, dtype=float).ravel() if proc_disponible else None
+            st.session_state["rs_disp_proc"] = np.asarray(disp_proc, dtype=float).ravel() if proc_disponible else None
+            st.session_state["rs_proc_on"] = bool(proc_disponible)
 
             st.session_state["rs_T_spec"] = np.asarray(T_spec, dtype=float).ravel()
             st.session_state["rs_Sa_elast"] = np.asarray(Sa_elast, dtype=float).ravel()
@@ -1578,14 +1559,91 @@ with st.container(border=True):
         st.session_state["scale_nec24_on"] = bool(escalar_nec)
 
         ag_final = ag_scaled if escalar_nec else st.session_state["rs_ag_base"]
-        st.session_state["ag_filt"] = np.asarray(ag_final, dtype=float)
-        st.session_state["dt"] = float(st.session_state["rs_dt"])
-        st.session_state["t_ag"] = np.linspace(
-            0.0,
-            st.session_state["dt"] * (len(ag_final) - 1),
-            len(ag_final)
-        )
+        t_final = np.linspace(0.0, float(st.session_state["rs_dt"]) * (len(ag_final) - 1), len(ag_final))
 
+        # historial final que realmente entra al análisis
+        out_final = procesar_registro(np.asarray(ag_final, dtype=float).ravel(), float(st.session_state["rs_dt"]), aplicar_proc=False)
+        vel_final = np.asarray(out_final["vel_orig"], dtype=float).ravel()
+        disp_final = np.asarray(out_final["disp_orig"], dtype=float).ravel()
+
+        st.session_state["ag_filt"] = np.asarray(ag_final, dtype=float).ravel()
+        st.session_state["dt"] = float(st.session_state["rs_dt"])
+        st.session_state["t_ag"] = np.asarray(t_final, dtype=float).ravel()
+
+        st.session_state["rs_ag_final"] = np.asarray(ag_final, dtype=float).ravel()
+        st.session_state["rs_vel_final"] = np.asarray(vel_final, dtype=float).ravel()
+        st.session_state["rs_disp_final"] = np.asarray(disp_final, dtype=float).ravel()
+
+# =============================================================================
+# DESCARGA FINAL DEL REGISTRO (3 OPCIONES)
+# =============================================================================
+if geom_ok and rs_ready and ("rs_t" in st.session_state):
+    with col_right:
+        with col_ctrl:
+            st.markdown('<div class="compact-download">', unsafe_allow_html=True)
+            st.caption(f"📥 **{tr('b3_dl_hdr')}**")
+
+            opts = [tr("b3_dl_opt_orig")]
+
+            if bool(st.session_state.get("rs_proc_on", False)):
+                opts.append(tr("b3_dl_opt_proc"))
+
+            opts.append(tr("b3_dl_opt_final"))
+
+            pick = st.selectbox(
+                tr("b3_dl_pick"),
+                options=opts,
+                index=(len(opts) - 1),
+                key="b3_dl_pick_opt",
+                help=tr("h_b3_dl_pick"),
+                label_visibility="collapsed",
+            )
+
+            t_exp = np.asarray(st.session_state["rs_t"], dtype=float).ravel()
+
+            if pick == tr("b3_dl_opt_orig"):
+                a_exp = np.asarray(st.session_state["rs_ag_orig"], dtype=float).ravel()
+                v_exp = np.asarray(st.session_state["rs_vel_orig"], dtype=float).ravel()
+                u_exp = np.asarray(st.session_state["rs_disp_orig"], dtype=float).ravel()
+                tag = "orig"
+
+            elif pick == tr("b3_dl_opt_proc") and bool(st.session_state.get("rs_proc_on", False)):
+                a_exp = np.asarray(st.session_state["rs_ag_proc"], dtype=float).ravel()
+                v_exp = np.asarray(st.session_state["rs_vel_proc"], dtype=float).ravel()
+                u_exp = np.asarray(st.session_state["rs_disp_proc"], dtype=float).ravel()
+                tag = "proc"
+
+            else:
+                a_exp = np.asarray(st.session_state["rs_ag_final"], dtype=float).ravel()
+                v_exp = np.asarray(st.session_state["rs_vel_final"], dtype=float).ravel()
+                u_exp = np.asarray(st.session_state["rs_disp_final"], dtype=float).ravel()
+                tag = "final"
+
+            df_xlsx = pd.DataFrame({
+                "tiempo": t_exp,
+                "aceleracion": a_exp,
+                "velocidad": v_exp,
+                "desplazamiento": u_exp,
+            })
+
+            bio = io.BytesIO()
+            with pd.ExcelWriter(bio, engine="openpyxl") as writer:
+                df_xlsx.to_excel(writer, index=False, sheet_name="registro")
+            bio.seek(0)
+
+            safe_name = "".join([c if (c.isalnum() or c in ("_", "-", ".")) else "_" for c in str(st.session_state.get("rs_nombre", "registro"))])
+            file_name = f"registro_{safe_name}_{tag}.xlsx"
+
+            st.download_button(
+                label=tr("b3_dl_btn"),
+                data=bio.getvalue(),
+                file_name=file_name,
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key="b3_dl_btn_xlsx",
+                use_container_width=True,
+            )
+            st.markdown('</div>', unsafe_allow_html=True)
+            
 # =============================================================================
 # == BLOQUE 4: DISEÑO DEL AISLADOR LRB (MODAL + RAYLEIGH + DISEÑO + GRÁFICO) ==
 # =============================================================================
