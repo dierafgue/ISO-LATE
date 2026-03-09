@@ -1643,7 +1643,7 @@ if geom_ok and rs_ready and ("rs_t" in st.session_state):
                 use_container_width=True,
             )
             st.markdown('</div>', unsafe_allow_html=True)
-            
+
 # =============================================================================
 # == BLOQUE 4: DISEÑO DEL AISLADOR LRB (MODAL + RAYLEIGH + DISEÑO + GRÁFICO) ==
 # =============================================================================
@@ -3436,33 +3436,50 @@ if metodo == tr("b8_method_rsa"):
     def _rsa_story_shear_super(Mmat, Vnorm, Tvec, n_pisos_ref):
         """
         Retorna V_srss SOLO SUPER (tamaño n_pisos_ref).
-        Si Mmat tiene aislador (n = n_pisos_ref+1), se excluye DOF0 en FUERZAS y se acumula solo pisos.
-        """
-        n = int(Mmat.shape[0])
-        r = np.ones((n, 1), float)
-        m = np.diag(Mmat).reshape(n, 1)
 
+        Usa fuerzas modales consistentes:
+            F_r = Gamma_r * (M * phi_r) * Sa_r
+
+        - FIJA: toma todos los DOF.
+        - AISLADA: calcula con el sistema completo, pero reporta SOLO
+        la superestructura (excluye el DOF 0 del nivel de aislación).
+        """
+        Mmat = np.asarray(Mmat, float)
+        Vnorm = np.asarray(Vnorm, float)
+        Tvec = np.asarray(Tvec, float).ravel()
+
+        n = int(Mmat.shape[0])
+        nmod = int(Vnorm.shape[1])
         has_iso = (n == (n_pisos_ref + 1))
 
         V_modes = []
-        nmod = int(Vnorm.shape[1])
 
         for rr in range(nmod):
             Tr = float(Tvec[rr]) if rr < len(Tvec) else np.nan
             if (not np.isfinite(Tr)) or Tr <= 0:
                 continue
 
-            Sa_r = float(np.interp(Tr, T_spec, Sa_use)) * g  # m/s²
-            phi  = Vnorm[:, rr].reshape(n, 1)
+            Sa_r = float(np.interp(Tr, T_spec, Sa_use)) * g
+            phi = np.asarray(Vnorm[:, rr], float).reshape(n, 1)
 
-            Gamma = float((phi.T @ Mmat @ r).item())
-            a_r   = Gamma * phi * Sa_r
-            F_r   = (m * a_r).ravel()  # (n,)
+            r = np.ones((n, 1), float)
+
+            num = float((phi.T @ Mmat @ r).item())
+            den = float((phi.T @ Mmat @ phi).item())
+
+            if (not np.isfinite(den)) or abs(den) < 1e-14:
+                continue
+
+            Gamma = num / den
+
+            # ✅ Fuerzas modales consistentes con M completa
+            F_full = (Gamma * (Mmat @ phi) * Sa_r).ravel()
 
             if has_iso:
-                F_use = F_r[0:n_pisos_ref]
+                # excluir DOF 0 del nivel de aislación
+                F_use = F_full[1:1+n_pisos_ref]
             else:
-                F_use = F_r
+                F_use = F_full[:n_pisos_ref]
 
             if len(F_use) != n_pisos_ref:
                 return None
@@ -3470,16 +3487,74 @@ if metodo == tr("b8_method_rsa"):
             V_r = np.zeros((n_pisos_ref,), float)
             for k in range(n_pisos_ref):
                 V_r[k] = np.sum(F_use[k:])
+
             V_modes.append(V_r)
 
         if len(V_modes) == 0:
             return None
 
-        V_modes = np.vstack(V_modes)  # (nmod_valid, n_pisos)
-        return np.sqrt(np.sum(V_modes**2, axis=0))  # (n_pisos,)
+        V_modes = np.vstack(V_modes)
+        return np.sqrt(np.sum(V_modes**2, axis=0))
+    
+    def _rsa_story_shear_iso_relative_super(Mmat, Vnorm, Tvec, n_pisos_ref):
+        """
+        AISLADA:
+        Story shear de la superestructura usando forma modal RELATIVA
+        respecto al nivel de aislamiento, pero manteniendo Gamma del
+        sistema completo (modos masa-normalizados).
+
+        Esto elimina la traslación casi rígida del primer modo en los pisos.
+        """
+        Mmat = np.asarray(Mmat, float)
+        Vnorm = np.asarray(Vnorm, float)
+        Tvec = np.asarray(Tvec, float).ravel()
+
+        n = int(Mmat.shape[0])
+        nmod = int(Vnorm.shape[1])
+
+        if n != n_pisos_ref + 1:
+            return None
+
+        V_modes = []
+
+        for rr in range(nmod):
+            Tr = float(Tvec[rr]) if rr < len(Tvec) else np.nan
+            if (not np.isfinite(Tr)) or Tr <= 0:
+                continue
+
+            Sa_r = float(np.interp(Tr, T_spec, Sa_use)) * g
+            phi  = np.asarray(Vnorm[:, rr], float).reshape(n, 1)
+
+            # ✅ Gamma del sistema completo
+            r = np.ones((n, 1), float)
+            Gamma = float((phi.T @ Mmat @ r).item())
+
+            # ✅ superestructura relativa al nivel aislado
+            phi_base = float(phi[0, 0])
+            phi_sup_rel = phi[1:1+n_pisos_ref, :] - phi_base
+
+            m_sup = np.diag(Mmat)[1:1+n_pisos_ref].reshape(n_pisos_ref, 1)
+
+            # fuerzas modales de la superestructura
+            F_r = (m_sup * (Gamma * phi_sup_rel * Sa_r)).ravel()
+
+            if len(F_r) != n_pisos_ref:
+                return None
+
+            V_r = np.zeros((n_pisos_ref,), float)
+            for k in range(n_pisos_ref):
+                V_r[k] = np.sum(F_r[k:])
+
+            V_modes.append(V_r)
+
+        if len(V_modes) == 0:
+            return None
+
+        V_modes = np.vstack(V_modes)
+        return np.sqrt(np.sum(V_modes**2, axis=0))
 
     V_fix_srss = _rsa_story_shear_super(M_fix, Vn_fix, T_fix, n_pisos)
-    V_ais_srss = _rsa_story_shear_super(M_ais, Vn_ais, T_ais, n_pisos)
+    V_ais_srss = _rsa_story_shear_iso_relative_super(M_ais, Vn_ais, T_ais, n_pisos)
 
     if V_fix_srss is None:
         st.error("❌ RSA FIJA: no se pudieron armar modos válidos o dimensiones no calzan.")
@@ -3617,16 +3692,27 @@ else:
         st.stop()
     V_fix_all = _story_from_forces(F_fix)            # (n_pisos, nt)
 
-    # -------- AISLADA (EXCLUIR AISLADOR EN FUERZAS, LUEGO ACUMULAR) --------
+        # -------- AISLADA (SUPER relativa al nivel de aislamiento) --------
     t_ais, ag_ais = _match_ag(ag, a_ais.shape[1])
-    F_ais_all = _floor_forces(M_ais, a_ais, ag_ais)  # (n_ais, nt)
 
-    if F_ais_all.shape[0] == n_pisos + 1:
-        # ✅ ETABS-like: incluye DOF0 (masa del nivel Base)
-        V_full = _story_from_forces(F_ais_all)       # (n_pisos+1, nt)
-        V_ais_all = V_full[0:n_pisos, :]             # Story1..StoryN
-    elif F_ais_all.shape[0] == n_pisos:
-        V_ais_all = _story_from_forces(F_ais_all)    # ya es (n_pisos, nt)
+    if a_ais.shape[0] == n_pisos + 1:
+        # DOF 0 = nivel de aislamiento
+        # a_ais viene relativa al suelo; para superestructura relativa a la base:
+        # a_sup_rel_base = (a_sup_abs - a_base_abs) = (a_sup_rel+ag) - (a_base_rel+ag)
+        #                = a_sup_rel - a_base_rel
+        a_base_rel = a_ais[0:1, :]                         # (1, nt)
+        a_sup_rel_base = a_ais[1:1+n_pisos, :] - a_base_rel  # (n_pisos, nt)
+
+        m_sup = np.diag(np.asarray(M_ais, float))[1:1+n_pisos].reshape(n_pisos, 1)
+        F_ais_sup = m_sup * a_sup_rel_base                 # (n_pisos, nt) en tonf
+        V_ais_all = _story_from_forces(F_ais_sup)         # (n_pisos, nt)
+
+    elif a_ais.shape[0] == n_pisos:
+        # si ya no existe DOF base, usar directamente la superestructura
+        m_sup = np.diag(np.asarray(M_ais, float)).reshape(n_pisos, 1)
+        F_ais_sup = m_sup * a_ais                         # asumiendo ya relativa al nivel base
+        V_ais_all = _story_from_forces(F_ais_sup)
+
     else:
         st.error("❌ THA AISLADA: dimensiones no calzan con n_pisos ni n_pisos+1.")
         st.stop()
@@ -3997,7 +4083,7 @@ if metodo == tr("b9_method_rsa"):
         st.stop()
 
     g = 9.8066500000
-
+    
     def _srss_u_fixed(Mmat, Vnorm, Tvec, wvec):
         n = Mmat.shape[0]
         r = np.ones((n, 1), float)
@@ -4037,6 +4123,7 @@ if metodo == tr("b9_method_rsa"):
 
     def _srss_u_isolated_abs_levels(Mmat, Vnorm, Tvec, wvec, n_pisos_target):
         n = Mmat.shape[0]
+
         r = np.ones((n, 1), float)
 
         U_modes = []
