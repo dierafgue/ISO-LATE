@@ -2392,7 +2392,7 @@ def procesar_registro(ag_mps2: np.ndarray, dt: float, aplicar_proc: bool):
         low = 0.10 / nyq
         high = 25.0 / nyq
         b, a = signal.butter(4, [low, high], btype="band")
-        ag_filt = signal.lfilter(b, a, ag_bc)
+        ag_filt = filtfilt(b, a, ag_bc)
 
         vel_raw = cumtrapz(ag_filt, t, initial=0.0)
         coef_v = np.polyfit(t, vel_raw, 1)
