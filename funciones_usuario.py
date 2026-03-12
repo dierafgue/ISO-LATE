@@ -2691,7 +2691,8 @@ def plot_modes_grid(Vn, niveles, T, title_suptitle, include_base_minus1=False, n
     ✅ Textos internos bilingües usando tr().
     """
     Vn = np.asarray(Vn, dtype=float)
-    T  = np.asarray(T,  dtype=float).ravel()
+    T  = np.asarray(T, dtype=float).ravel()
+    niveles = np.asarray(niveles, dtype=float).ravel()
 
     # Normalizar por modo (para que siempre quepa)
     den = np.max(np.abs(Vn), axis=0)
@@ -2711,17 +2712,15 @@ def plot_modes_grid(Vn, niveles, T, title_suptitle, include_base_minus1=False, n
         ax.axis("off")
         return fig
 
-    ncols = int(max(1, min(int(ncols), n_modos)))   # ✅ ajusta si hay <6
+    ncols = int(max(1, min(int(ncols), n_modos)))
     nrows = int(np.ceil(n_modos / ncols))
 
-    # tamaño base por celda
     fig_w = 1.75 * ncols
-    fig_h = 3.9  * nrows
+    fig_h = 3.9 * nrows
 
     fig, axs = plt.subplots(nrows, ncols, figsize=(fig_w, fig_h), sharey=True)
     fig.patch.set_facecolor(BG)
 
-    # axs a lista plana
     axs_list = np.array(axs).ravel().tolist() if isinstance(axs, np.ndarray) else [axs]
     for ax in axs_list:
         ax.set_facecolor(BG)
@@ -2733,11 +2732,19 @@ def plot_modes_grid(Vn, niveles, T, title_suptitle, include_base_minus1=False, n
         ax = axs_list[i]
 
         if include_base_minus1:
-            modo = np.concatenate([[0.0], Vplot[:, i]])  # agrega un punto para -1
+            # caso con punto extra abajo
+            modo = np.concatenate([[0.0], Vplot[:, i]])
             y = niveles
         else:
-            modo = np.insert(Vplot[:, i], 0, 0.0)        # base 0
+            # caso normal: SIN agregar punto extra
+            modo = Vplot[:, i]
             y = niveles
+
+        if len(modo) != len(y):
+            raise ValueError(
+                f"plot_modes_grid: longitudes incompatibles. "
+                f"len(modo)={len(modo)} vs len(y)={len(y)}"
+            )
 
         ax.plot(modo,  y, "-o", color=COLOR_MODO, lw=1.05, ms=2.5)
         ax.plot(-modo, y, "--o", color=COLOR_INV,  lw=0.90, ms=2.2, alpha=0.95)
@@ -2756,14 +2763,12 @@ def plot_modes_grid(Vn, niveles, T, title_suptitle, include_base_minus1=False, n
         ax.set_xticks([-1, 0, 1])
         ax.set_xticklabels(["-1", "0", "1"], color=COLOR_TEXT, fontsize=8)
 
-    # ocultar ejes vacíos
     for j in range(n_modos, len(axs_list)):
         axs_list[j].axis("off")
 
-    # ylabel solo primera columna
     ylbl = tr("b5_height_lbl")
     for r in range(nrows):
-        axs_list[r*ncols].set_ylabel(ylbl, color=COLOR_TEXT)
+        axs_list[r * ncols].set_ylabel(ylbl, color=COLOR_TEXT)
 
     fig.suptitle(title_suptitle, color=COLOR_TEXT, fontweight="bold", y=0.995)
     fig.tight_layout(rect=[0, 0.01, 1, 0.965])
