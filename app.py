@@ -2437,7 +2437,7 @@ st.subheader(tr("b5_modal_hdr"))
 st.caption(tr("h_b5_modal"))
 
 niveles_fix = np.insert(pisos_y, 0, 0.0)
-niveles_ais = np.concatenate([[-1.0], [0.0], pisos_y])
+niveles_ais = np.insert(pisos_y, 0, 0.0)
 
 w_fix, T_fix, f_fix, Vn_fix = modal_props(np.asarray(K_fix, float), np.asarray(M_fix, float))
 w_ais, T_ais, f_ais, Vn_ais = modal_props(K_cond_ais, M_cond_ais)
@@ -2454,7 +2454,7 @@ n_modos_fix = int(Vn_fix.shape[1])
 n_modos_ais = int(Vn_ais.shape[1])
 
 fig_fix_modes = plot_modes_grid(Vn_fix, niveles_fix, T_fix, tr("b5_modes_fix"), include_base_minus1=False, ncols=6)
-fig_ais_modes = plot_modes_grid(Vn_ais, niveles_ais, T_ais, tr("b5_modes_iso"), include_base_minus1=True, ncols=6)
+fig_ais_modes = plot_modes_grid(Vn_ais, niveles_ais, T_ais, tr("b5_modes_iso"), include_base_minus1=False, ncols=6)
 
 fig_fix_modes, fig_ais_modes = _force_same_height_modes(fig_fix_modes, fig_ais_modes, nA=n_modos_fix, nB=n_modos_ais, ncols=6)
 
