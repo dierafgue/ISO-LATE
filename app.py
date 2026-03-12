@@ -932,12 +932,7 @@ T["en"].update({
     "b3_need_rec_scale": "Upload or select a record to enable scaling.",
 
     "b3_scale_on": "Scale to NEC-24",
-    "b3_scale_help": "Enables matching of the record to the NEC-24 target spectrum.",
-
-    "b3_target": "Target",
-    "b3_target_help": "Select the target spectrum for scaling.",
-    "b3_target_el": "Elastic",
-    "b3_target_in": "Inelastic",
+    "b3_scale_help": "Scales the record to match the NEC-24 elastic target spectrum at the reference period.",
 
     "b3_xi": "Damping (ξ)",
     "b3_xi_help": "Fraction of critical damping (e.g., 0.05 = 5%).",
@@ -1027,12 +1022,7 @@ T["es"].update({
     "b3_need_rec_scale": "📁 Cargue o seleccione un registro para habilitar el escalamiento.",
 
     "b3_scale_on": "Escalar a NEC-24",
-    "b3_scale_help": "Activa el ajuste del registro sísmico al espectro objetivo NEC-24.",
-
-    "b3_target": "Objetivo",
-    "b3_target_help": "Selecciona el espectro objetivo para el escalamiento.",
-    "b3_target_el": "Elástico",
-    "b3_target_in": "Inelástico",
+    "b3_scale_help": "Escala el registro sísmico para ajustarlo al espectro elástico objetivo NEC-24 en el período de referencia.",
 
     "b3_xi": "Amortiguamiento (ξ)",
     "b3_xi_help": "Fracción de amortiguamiento crítico (ej.: 0.05 = 5%).",
@@ -1493,15 +1483,6 @@ with st.container(border=True):
                     help=tr("b3_scale_help")
                 )
 
-                objetivo = st.selectbox(
-                    tr("b3_target"),
-                    [tr("b3_target_el"), tr("b3_target_in")],
-                    index=0,
-                    key="obj_rs",
-                    disabled=(not geom_ok) or (not rs_ok) or (not escalar_nec),
-                    help=tr("b3_target_help")
-                )
-
                 Tref = float(st.session_state.get("T1", st.session_state.get("Tais", 1.0)))
                 Tref = max(0.05, min(10.0, Tref))
 
@@ -1521,7 +1502,7 @@ with st.container(border=True):
                 dt      = float(st.session_state["rs_dt"])
                 ag_base = np.asarray(st.session_state["rs_ag_base"], dtype=float).ravel()
 
-                Sa_obj_base = Sa_elast_nec if (objetivo == tr("b3_target_el")) else Sa_inel_nec
+                Sa_obj_base = Sa_elast_nec
 
                 T_rs = make_T_rs_piecewise(0.05, 5.0)
                 Sa_reg = compute_Sa_piecewise(ag_base, dt, T_rs, xi=float(xi))
@@ -3436,7 +3417,7 @@ if metodo == tr("b8_method_rsa"):
     tipo_sa = st.selectbox(
         tr("b8_sa_type"),
         [tr("b8_sa_in"), tr("b8_sa_el")],
-        index=0,
+        index=1,
         key="sa_use_shear_rsa",
         help=tr("h_b8_sa_type"),
     )
@@ -4088,7 +4069,7 @@ if metodo == tr("b9_method_rsa"):
     tipo_sa = st.selectbox(
         tr("b9_sa_type"),
         [tr("b9_sa_in"), tr("b9_sa_el")],
-        index=0,
+        index=1,
         key="sa_use_disp_rsa",
         help=tr("h_b9_sa_type"),
     )
