@@ -2473,13 +2473,27 @@ def response_spectrum_newmark(ag_mps2: np.ndarray, dt: float, T: np.ndarray, xi:
     return Sa_g
 
 
-def lsq_scale_factor(Sa_reg: np.ndarray, Sa_target: np.ndarray):
+def lsq_scale_factor(Sa_reg: np.ndarray, Sa_target: np.ndarray, T_rs: np.ndarray, Tref: float):
     Sa_reg = np.asarray(Sa_reg, dtype=float).ravel()
     Sa_target = np.asarray(Sa_target, dtype=float).ravel()
-    den = float(np.dot(Sa_reg, Sa_reg))
-    if den <= 1e-16:
+    T_rs = np.asarray(T_rs, dtype=float).ravel()
+    Tref = float(Tref)
+
+    # Sa del registro en Tref
+    Sa_r = float(np.interp(Tref, T_rs, Sa_reg))
+
+    # Sa objetivo en Tref
+    Sa_t = float(np.interp(Tref, T_rs, Sa_target))
+
+    if (not np.isfinite(Sa_r)) or abs(Sa_r) <= 1e-16:
         return 1.0
-    return float(np.dot(Sa_target, Sa_reg) / den)
+
+    SF = Sa_t / Sa_r
+
+    if (not np.isfinite(SF)) or (SF <= 0):
+        return 1.0
+
+    return float(SF)
 
 
 def make_T_rs_piecewise(Tmin: float = 0.05, Tmax: float = 5.0):
