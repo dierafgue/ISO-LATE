@@ -2436,21 +2436,15 @@ with colM2:
 st.subheader(tr("b5_modal_hdr"))
 st.caption(tr("h_b5_modal"))
 
+# ✅ Ambos gráficos arrancan en y = 0.0
 niveles_fix = np.insert(pisos_y, 0, 0.0)
 niveles_ais = np.insert(pisos_y, 0, 0.0)
 
-fig_ais_modes = plot_modes_grid(
-    Vn_ais,
-    niveles_ais,
-    T_ais,
-    tr("b5_modes_iso"),
-    include_base_minus1=False,
-    ncols=6
-)
-
+# ✅ Resolver modal primero
 w_fix, T_fix, f_fix, Vn_fix = modal_props(np.asarray(K_fix, float), np.asarray(M_fix, float))
 w_ais, T_ais, f_ais, Vn_ais = modal_props(K_cond_ais, M_cond_ais)
 
+# ✅ Guardar en session_state
 st.session_state["w_sin"] = w_fix
 st.session_state["T_sin"] = T_fix
 st.session_state["v_norm_sin"] = Vn_fix
@@ -2462,13 +2456,45 @@ st.session_state["v_norm_ais"] = Vn_ais
 n_modos_fix = int(Vn_fix.shape[1])
 n_modos_ais = int(Vn_ais.shape[1])
 
-fig_fix_modes = plot_modes_grid(Vn_fix, niveles_fix, T_fix, tr("b5_modes_fix"), include_base_minus1=False, ncols=6)
-fig_ais_modes = plot_modes_grid(Vn_ais, niveles_ais, T_ais, tr("b5_modes_iso"), include_base_minus1=False, ncols=6)
+# ✅ Graficar después de tener Vn_fix y Vn_ais
+fig_fix_modes = plot_modes_grid(
+    Vn_fix,
+    niveles_fix,
+    T_fix,
+    tr("b5_modes_fix"),
+    include_base_minus1=False,
+    ncols=6
+)
 
-fig_fix_modes, fig_ais_modes = _force_same_height_modes(fig_fix_modes, fig_ais_modes, nA=n_modos_fix, nB=n_modos_ais, ncols=6)
+fig_ais_modes = plot_modes_grid(
+    Vn_ais,
+    niveles_ais,
+    T_ais,
+    tr("b5_modes_iso"),
+    include_base_minus1=False,
+    ncols=6
+)
 
-fig_fix_scheme = plot_modelo_condensado_fijo(np.asarray(K_fix, float), np.asarray(M_fix, float), niveles_fix, pisos_y)
-fig_ais_scheme = plot_modelo_condensado_aislado(K_cond_ais, M_cond_ais, pisos_y)
+fig_fix_modes, fig_ais_modes = _force_same_height_modes(
+    fig_fix_modes,
+    fig_ais_modes,
+    nA=n_modos_fix,
+    nB=n_modos_ais,
+    ncols=6
+)
+
+fig_fix_scheme = plot_modelo_condensado_fijo(
+    np.asarray(K_fix, float),
+    np.asarray(M_fix, float),
+    niveles_fix,
+    pisos_y
+)
+
+fig_ais_scheme = plot_modelo_condensado_aislado(
+    K_cond_ais,
+    M_cond_ais,
+    pisos_y
+)
 
 colL, colR = st.columns([1, 1], gap="large")
 
