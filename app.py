@@ -572,12 +572,14 @@ T["en"].update({
     "b2_warn_pinv": "Kss is singular; pseudo-inverse (pinv) was used.",
     "b2_err_no_floors": "There are no floors (y>0).",
     "b2_check_note": (
-    "Approximate comparison between the condensed-model stiffness (k_model) "
-    "and a simplified column-based estimate (k_aprox = n_col · 12EI/h³). "
-    "Values close to 1 indicate general consistency. "
-    "The first story may show larger differences due to global frame interaction "
-    "and the static condensation process."
-),
+    "Approximate comparison between the stiffness obtained from the condensed model "
+    "(k_model) and a simplified column-based estimate "
+    "(k_aprox = n_col · 12EI/h³). "
+    "Values close to 1 indicate good agreement. "
+    "Intermediate stories usually show the best correlation, while the first and "
+    "top stories may present larger differences due to global frame interaction "
+    "and boundary effects."
+    ),
 })
 
 T["es"].update({
@@ -620,13 +622,14 @@ T["es"].update({
     "b2_warn_pinv": "Kss singular; se usó pseudo-inversa (pinv).",
     "b2_err_no_floors": "No hay pisos (y>0).",
     "b2_check_note": (
-    "Comparación aproximada entre la rigidez obtenida del modelo condensado (k_modelo) "
-    "y una estimación simplificada basada únicamente en columnas "
+    "Comparación aproximada entre la rigidez obtenida del modelo condensado "
+    "(k_modelo) y una estimación simplificada basada únicamente en columnas "
     "(k_aprox = n_col · 12EI/h³). "
-    "Valores cercanos a 1 indican consistencia general. "
-    "El primer piso puede presentar diferencias mayores debido a la interacción "
-    "global del pórtico y al proceso de condensación estática."
-),
+    "Valores cercanos a 1 indican buena concordancia. "
+    "Los pisos intermedios suelen mostrar el mejor ajuste, mientras que el primer "
+    "y último piso pueden presentar mayores diferencias debido a la interacción "
+    "global del pórtico y a los efectos de borde del sistema estructural."
+    ),
 })
 
 # -------------------------------------------------------------------------
