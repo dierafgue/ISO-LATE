@@ -536,7 +536,7 @@ T["en"].update({
     "b2_title": "Geometric and structural model definition",
     "b2_desc": (
         "Generates the frame geometry, assembles global K and computes "
-        "M_cond, T and K_cond (rigid diaphragm + static condensation to 1 lateral DOF per floor)."
+        "M_cond and K_cond (rigid diaphragm + static condensation to 1 lateral DOF per floor)."
     ),
 
     "b2_ctrl": "Model control",
@@ -577,7 +577,7 @@ T["es"].update({
     "b2_title": "Definición geométrica y estructural del modelo",
     "b2_desc": (
         "Genera la geometría del pórtico, ensambla K global y calcula "
-        "M_cond, T y K_cond (diafragma rígido + condensación estática a 1 GDL lateral por piso)."
+        "M_cond y K_cond (diafragma rígido + condensación estática a 1 GDL lateral por piso)."
     ),
 
     "b2_ctrl": "Control del modelo",
@@ -738,7 +738,6 @@ with col_left:
         K_global           = st.session_state["K_global"]
 
         M_cond  = st.session_state.get("M_cond")
-        T_trans = st.session_state.get("T_trans")
         K_cond  = st.session_state.get("K_cond")
 
         with st.expander(tr("b2_Kglob"), expanded=False):
@@ -751,11 +750,6 @@ with col_left:
                 st.dataframe(np.round(M_cond, 5), use_container_width=True)
         else:
             st.warning(tr("b2_not_ready_M"))
-
-        if T_trans is not None:
-            with st.expander(tr("b2_T"), expanded=False):
-                st.write(f"Dimensión: {T_trans.shape}")
-                st.dataframe(T_trans.astype(int), use_container_width=True)
 
         if K_cond is not None:
             with st.expander(tr("b2_Kcond"), expanded=False):
