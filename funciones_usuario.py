@@ -2389,8 +2389,16 @@ def procesar_registro(ag_mps2: np.ndarray, dt: float, aplicar_proc: bool):
 
         fs = 1.0 / dt
         nyq = fs / 2.0
+        
         low = 0.10 / nyq
-        high = 25.0 / nyq
+        high = min(25.0 / nyq, 0.999)
+
+        if low <= 0 or low >= high:
+            ag_filt = ag_bc.copy()
+        else:
+            b, a = signal.butter(4, [low, high], btype="band")
+            ag_filt = signal.lfilter(b, a, ag_bc)
+        
         b, a = signal.butter(4, [low, high], btype="band")
         ag_filt = signal.lfilter(b, a, ag_bc)
 
