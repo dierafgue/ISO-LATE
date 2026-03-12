@@ -2439,6 +2439,15 @@ st.caption(tr("h_b5_modal"))
 niveles_fix = np.insert(pisos_y, 0, 0.0)
 niveles_ais = np.insert(pisos_y, 0, 0.0)
 
+fig_ais_modes = plot_modes_grid(
+    Vn_ais,
+    niveles_ais,
+    T_ais,
+    tr("b5_modes_iso"),
+    include_base_minus1=False,
+    ncols=6
+)
+
 w_fix, T_fix, f_fix, Vn_fix = modal_props(np.asarray(K_fix, float), np.asarray(M_fix, float))
 w_ais, T_ais, f_ais, Vn_ais = modal_props(K_cond_ais, M_cond_ais)
 
