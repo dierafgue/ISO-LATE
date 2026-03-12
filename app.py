@@ -559,7 +559,7 @@ T["en"].update({
     "b2_not_ready_M": "M_cond is not ready.",
     "b2_not_ready_K": "K_cond is not ready.",
 
-    "b2_check": "Quick check",
+    "b2_check": "Approximate lateral stiffness check",
     "b2_floor": "Story",
     "b2_k_model": "k_model",
     "b2_k_aprox": "k_aprox",
@@ -571,6 +571,13 @@ T["en"].update({
     "b2_err": "Error while generating the model",
     "b2_warn_pinv": "Kss is singular; pseudo-inverse (pinv) was used.",
     "b2_err_no_floors": "There are no floors (y>0).",
+    "b2_check_note": (
+    "Approximate comparison between the condensed-model stiffness (k_model) "
+    "and a simplified column-based estimate (k_aprox = n_col · 12EI/h³). "
+    "Values close to 1 indicate general consistency. "
+    "The first story may show larger differences due to global frame interaction "
+    "and the static condensation process."
+),
 })
 
 T["es"].update({
@@ -600,7 +607,7 @@ T["es"].update({
     "b2_not_ready_M": "M_cond no está listo.",
     "b2_not_ready_K": "K_cond no está listo.",
 
-    "b2_check": "Chequeo rápido",
+    "b2_check": "Verificación aproximada de rigidez lateral por piso",
     "b2_floor": "Piso",
     "b2_k_model": "k_modelo",
     "b2_k_aprox": "k_aprox",
@@ -612,6 +619,14 @@ T["es"].update({
     "b2_err": "Error al generar el modelo",
     "b2_warn_pinv": "Kss singular; se usó pseudo-inversa (pinv).",
     "b2_err_no_floors": "No hay pisos (y>0).",
+    "b2_check_note": (
+    "Comparación aproximada entre la rigidez obtenida del modelo condensado (k_modelo) "
+    "y una estimación simplificada basada únicamente en columnas "
+    "(k_aprox = n_col · 12EI/h³). "
+    "Valores cercanos a 1 indican consistencia general. "
+    "El primer piso puede presentar diferencias mayores debido a la interacción "
+    "global del pórtico y al proceso de condensación estática."
+),
 })
 
 # -------------------------------------------------------------------------
@@ -763,13 +778,18 @@ with col_left:
         ratio_k  = st.session_state.get("ratio_k")
 
         if (k_modelo is not None) and (k_aprox is not None) and (ratio_k is not None):
+
             with st.expander(tr("b2_check"), expanded=False):
+        
+                st.caption(tr("b2_check_note"))
+        
                 df_check = pd.DataFrame({
                     tr("b2_floor"): np.arange(1, len(k_modelo) + 1),
                     tr("b2_k_model"): np.round(k_modelo, 6),
                     tr("b2_k_aprox"): np.round(k_aprox, 6),
                     tr("b2_ratio"): np.round(ratio_k, 3),
                 })
+        
                 st.dataframe(df_check, use_container_width=True)
 
 # -------------------------------------------------------------------------
