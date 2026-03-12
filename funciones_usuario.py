@@ -2689,17 +2689,20 @@ def plot_modes_grid(Vn, niveles, T, title_suptitle, include_base_minus1=False, n
     ✅ Siempre máximo 6 por fila.
     ✅ Si n_modos < 6, ncols se reduce a n_modos (sin blancos).
     ✅ Textos internos bilingües usando tr().
+    ✅ Soporta niveles con o sin un punto extra en la base.
     """
     Vn = np.asarray(Vn, dtype=float)
     T  = np.asarray(T, dtype=float).ravel()
     niveles = np.asarray(niveles, dtype=float).ravel()
 
-    # Normalizar por modo (para que siempre quepa)
+    # Normalizar por modo
     den = np.max(np.abs(Vn), axis=0)
     den = np.where(den == 0, 1.0, den)
     Vplot = Vn / den
 
+    n_gdl = int(Vplot.shape[0])
     n_modos = int(Vplot.shape[1])
+
     if n_modos <= 0:
         fig, ax = plt.subplots(figsize=(6.5, 3.0))
         fig.patch.set_facecolor(BG)
@@ -2731,19 +2734,21 @@ def plot_modes_grid(Vn, niveles, T, title_suptitle, include_base_minus1=False, n
     for i in range(n_modos):
         ax = axs_list[i]
 
-        if include_base_minus1:
-            # caso con punto extra abajo
-            modo = np.concatenate([[0.0], Vplot[:, i]])
+        # ---------------------------------------------------------
+        # Ajuste robusto de longitudes:
+        # - si niveles tiene un punto extra (base), agregar 0 al modo
+        # - si niveles tiene misma longitud, usar modo tal cual
+        # ---------------------------------------------------------
+        if len(niveles) == n_gdl + 1:
+            modo = np.r_[0.0, Vplot[:, i]]
             y = niveles
-        else:
-            # caso normal: SIN agregar punto extra
+        elif len(niveles) == n_gdl:
             modo = Vplot[:, i]
             y = niveles
-
-        if len(modo) != len(y):
+        else:
             raise ValueError(
-                f"plot_modes_grid: longitudes incompatibles. "
-                f"len(modo)={len(modo)} vs len(y)={len(y)}"
+                f"plot_modes_grid: dimensiones incompatibles. "
+                f"Vn tiene {n_gdl} filas y niveles tiene {len(niveles)} valores."
             )
 
         ax.plot(modo,  y, "-o", color=COLOR_MODO, lw=1.05, ms=2.5)
