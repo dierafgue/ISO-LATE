@@ -965,9 +965,9 @@ T["en"].update({
     "b3_nec_dl_help": "Exports 3 columns: period, elastic, inelastic.",
     
     "b3_region": "Region of Ecuador",
-    "b3_region_costa": "Costa",
-    "b3_region_sierra": "Sierra and Oriente",
-    "h_b3_region": "Defines exponent r for the descending branch of the NEC-24 spectrum.",
+    "b3_region_costa": "Coast",
+    "b3_region_sierra": "Highlands and Amazon",
+    "h_b3_region": "Defines exponent r for the NEC-24 descending branch.",
 })
 
 T["es"].update({
@@ -1225,12 +1225,13 @@ with col_left:
 
             st.caption(tr("b3_sds_sd1").format(SDS=SDS, SD1=SD1))
 
-            ccap1, ccap2 = st.columns([1.0, 1.25], gap="medium")
-            with ccap1:
+            colA, colB = st.columns([1.3,1])
+            
+            with colA:
                 st.caption(tr("b3_coeffs").format(Fa=Fa, Fd=Fd, Fs=Fs))
-            with ccap2:
+            
+            with colB:
                 nec24_xlsx_bytes = build_nec24_excel_bytes(T_spec, Sa_elast, Sa_inelas)
-                st.markdown('<div class="nec24-download-slot">', unsafe_allow_html=True)
                 st.download_button(
                     label=tr("b3_nec_dl_btn"),
                     data=nec24_xlsx_bytes,
@@ -1240,7 +1241,6 @@ with col_left:
                     help=tr("b3_nec_dl_help"),
                     use_container_width=True,
                 )
-                st.markdown('</div>', unsafe_allow_html=True)
 
             fig, ax = plt.subplots(figsize=(6.0, NEC24_FIG_H))
             fig.patch.set_facecolor(BG)
