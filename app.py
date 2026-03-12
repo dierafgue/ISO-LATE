@@ -1483,7 +1483,15 @@ with st.container(border=True):
                     help=tr("b3_scale_help")
                 )
 
-                Tref = float(st.session_state.get("T1", st.session_state.get("Tais", 1.0)))
+                # ✅ Período de referencia para el escalamiento:
+                #    usar SIEMPRE el modo 1 de la estructura fija
+                T_fix_vec = np.asarray(st.session_state.get("T_sin", []), dtype=float).ravel()
+                
+                if len(T_fix_vec) > 0 and np.isfinite(T_fix_vec[0]) and T_fix_vec[0] > 0:
+                    Tref = float(T_fix_vec[0])
+                else:
+                    Tref = 1.0
+                
                 Tref = max(0.05, min(10.0, Tref))
 
                 xi = st.number_input(
@@ -1512,7 +1520,11 @@ with st.container(border=True):
                 if np.count_nonzero(mask) < 5:
                     mask = (T_rs >= max(0.05, 0.10 * float(Tref))) & (T_rs <= 2.0 * float(Tref))
 
-                SF = lsq_scale_factor(Sa_reg, Sa_obj, T_rs, Tref) if escalar_nec else 1.0
+                SF = lsq_scale_factor(Sa_reg[mask], Sa_obj[mask]) if escalar_nec else 1.0
+                
+                if (not np.isfinite(SF)) or (SF <= 0):
+                    SF = 1.0
+
                 Sa_reg_scaled = Sa_reg * SF
                 ag_scaled = ag_base * SF
 
