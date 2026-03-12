@@ -1531,7 +1531,7 @@ with st.container(border=True):
                 if np.count_nonzero(mask) < 5:
                     mask = (T_rs >= max(0.05, 0.10 * float(Tref))) & (T_rs <= 2.0 * float(Tref))
 
-                SF = lsq_scale_factor(Sa_reg[mask], Sa_obj[mask]) if escalar_nec else 1.0
+                SF = lsq_scale_factor(Sa_reg, Sa_obj, T_rs, Tref) if escalar_nec else 1.0
                 Sa_reg_scaled = Sa_reg * SF
                 ag_scaled = ag_base * SF
 
