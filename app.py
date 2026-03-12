@@ -963,6 +963,11 @@ T["en"].update({
     "b3_dl_opt_final": "Final used in analysis",
     "b3_nec_dl_btn": "Download NEC-24 Excel",
     "b3_nec_dl_help": "Exports 3 columns: period, elastic, inelastic.",
+    
+    "b3_region": "Region of Ecuador",
+    "b3_region_costa": "Costa",
+    "b3_region_sierra": "Sierra and Oriente",
+    "h_b3_region": "Defines exponent r for the descending branch of the NEC-24 spectrum.",
 })
 
 T["es"].update({
@@ -1053,6 +1058,11 @@ T["es"].update({
     "b3_dl_opt_final": "Final usado en el análisis",
     "b3_nec_dl_btn": "Descargar NEC-24 Excel",
     "b3_nec_dl_help": "Exporta 3 columnas: periodo, elastico, inelastico.",
+    
+    "b3_region": "Región del Ecuador",
+    "b3_region_costa": "Costa",
+    "b3_region_sierra": "Sierra y oriente",
+    "h_b3_region": "Define el exponente r para la rama descendente del espectro NEC-24.",
 })
 
 # -------------------------------------------------------------------------
@@ -1138,6 +1148,8 @@ with col_left:
         if not geom_ok:
             st.info(tr("b3_need_model_nec"))
             z, zona_sismica, tipo_suelo, R, Ie = 0.47, "IV", "C", 8.0, 1.0
+            region_ecuador = tr("b3_region_sierra")
+            r_nec = 1.0
         else:
             c1, c2 = st.columns(2)
 
@@ -1150,30 +1162,24 @@ with col_left:
                 R  = st.number_input(tr("b3_R"), 1.0, 10.0, 8.0, 0.1, key="nec_R", help=tr("h_b3_R"))
                 Ie = st.number_input(tr("b3_Ie"), 0.5, 2.0, 1.0, 0.1, key="nec_Ie", help=tr("h_b3_Ie"))
 
-                T_spec_dl, Sa_elast_dl, Sa_inelas_dl, _, _, _, _, _ = nec24_espectro(
-                    z=float(z),
-                    zona=str(zona_sismica),
-                    suelo=str(tipo_suelo),
-                    R=float(R),
-                    T_final=5.0,
-                    delta_t=0.01
+                region_ecuador = st.selectbox(
+                    tr("b3_region"),
+                    [tr("b3_region_costa"), tr("b3_region_sierra")],
+                    index=1,
+                    key="nec_region",
+                    help=tr("h_b3_region")
                 )
-                nec24_xlsx_bytes = build_nec24_excel_bytes(T_spec_dl, Sa_elast_dl, Sa_inelas_dl)
 
-                st.markdown('<div class="nec24-download-slot">', unsafe_allow_html=True)
-                st.download_button(
-                    label=tr("b3_nec_dl_btn"),
-                    data=nec24_xlsx_bytes,
-                    file_name="NEC24_spectrum.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    key="b3_nec24_dl_btn",
-                    help=tr("b3_nec_dl_help"),
-                    use_container_width=True,
-                )
-                st.markdown('</div>', unsafe_allow_html=True)
+                r_nec = 1.2 if region_ecuador == tr("b3_region_costa") else 1.0
 
             st.session_state["nec24_params"] = {
-                "z": float(z), "zona": str(zona_sismica), "suelo": str(tipo_suelo), "R": float(R), "Ie": float(Ie)
+                "z": float(z),
+                "zona": str(zona_sismica),
+                "suelo": str(tipo_suelo),
+                "R": float(R),
+                "Ie": float(Ie),
+                "region": str(region_ecuador),
+                "r": float(r_nec),
             }
 
     st.write("")
@@ -1204,15 +1210,37 @@ with col_left:
 
         else:
             T_spec, Sa_elast, Sa_inelas, SDS, SD1, Fa, Fd, Fs = nec24_espectro(
-                z=float(z), zona=str(zona_sismica), suelo=str(tipo_suelo), R=float(R),
-                T_final=5.0, delta_t=0.01
+                z=float(z),
+                zona=str(zona_sismica),
+                suelo=str(tipo_suelo),
+                R=float(R),
+                r=float(r_nec),
+                T_final=5.0,
+                delta_t=0.01
             )
 
             st.session_state["SDS"] = float(SDS)
             st.session_state["SD1"] = float(SD1)
+            st.session_state["r_nec"] = float(r_nec)
 
             st.caption(tr("b3_sds_sd1").format(SDS=SDS, SD1=SD1))
-            st.caption(tr("b3_coeffs").format(Fa=Fa, Fd=Fd, Fs=Fs))
+
+            ccap1, ccap2 = st.columns([1.0, 1.25], gap="medium")
+            with ccap1:
+                st.caption(tr("b3_coeffs").format(Fa=Fa, Fd=Fd, Fs=Fs))
+            with ccap2:
+                nec24_xlsx_bytes = build_nec24_excel_bytes(T_spec, Sa_elast, Sa_inelas)
+                st.markdown('<div class="nec24-download-slot">', unsafe_allow_html=True)
+                st.download_button(
+                    label=tr("b3_nec_dl_btn"),
+                    data=nec24_xlsx_bytes,
+                    file_name="NEC24_spectrum.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    key="b3_nec24_dl_btn",
+                    help=tr("b3_nec_dl_help"),
+                    use_container_width=True,
+                )
+                st.markdown('</div>', unsafe_allow_html=True)
 
             fig, ax = plt.subplots(figsize=(6.0, NEC24_FIG_H))
             fig.patch.set_facecolor(BG)
@@ -1233,7 +1261,7 @@ with col_left:
             st.pyplot(fig, use_container_width=True)
 
             st.markdown('<div class="nec24-equalizer"></div>', unsafe_allow_html=True)
-
+            
 # =============================================================================
 # DERECHA: Registro
 # =============================================================================
