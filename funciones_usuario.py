@@ -2255,8 +2255,7 @@ ZONAS_DICT = {"I": 0, "II": 1, "III": 2, "IV": 3, "V": 4}
 # g estándar (consistente en todo el proyecto)
 G_STD = 9.8066500000
 
-
-def nec24_espectro(z: float, zona: str, suelo: str, R: float,
+def nec24_espectro(z: float, zona: str, suelo: str, R: float, r: float = 1.0,
                    T_final: float = 5.0, delta_t: float = 0.01):
     """
     Devuelve:
@@ -2274,7 +2273,6 @@ def nec24_espectro(z: float, zona: str, suelo: str, R: float,
     Fd = float(TABLA_FD[suelo][idx_zona])
     Fs = float(TABLA_FS[suelo][idx_zona])
 
-    r = 1.2
     T0 = 0.1 * Fs * Fd / Fa
     Tc = 0.45 * Fs * Fd / Fa
     TL = 2.4 * Fd
@@ -2305,7 +2303,7 @@ def nec24_espectro(z: float, zona: str, suelo: str, R: float,
 
     SDS = 2.4 * z * Fa
 
-    # SD1 = Sa(T=1s) según tu lógica anterior
+    # SD1 = Sa(T=1s)
     T_SD1 = 1.0
     if T_SD1 < T0:
         SD1 = z * Fa * (1 + 1.4 * (T_SD1 / T0))
@@ -2317,7 +2315,6 @@ def nec24_espectro(z: float, zona: str, suelo: str, R: float,
         SD1 = 2.4 * z * Fa * (Tc / TL) ** r * (TL / T_SD1) ** 2
 
     return T, Sa_elast, Sa_inelas, SDS, SD1, Fa, Fd, Fs
-
 
 def detectar_fuente(texto: str) -> str:
     t = (texto or "").lower()
