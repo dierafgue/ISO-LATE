@@ -2200,12 +2200,19 @@ T["en"].update({
     "b5_need_iso": "First design the isolator (res_aislador).",
 
     "b5_mats_hdr": "Condensed matrices",
-    "b5_fix_mats": "Fixed-base model matrices (K_cond, M_cond)",
-    "b5_iso_mats": "Isolated-base model matrices (K_cond_ais, M_cond_ais)",
+    "b5_fix_mats": "Fixed-base model matrices",
+    "b5_iso_mats": "Isolated-base model matrices",
+
+    "b5_fix_Kg": "Fixed global stiffness",
     "b5_fix_K": "Fixed condensed stiffness",
     "b5_fix_M": "Fixed condensed mass",
+
+    "b5_iso_Kg": "Isolated global stiffness",
     "b5_iso_K": "Isolated condensed stiffness",
     "b5_iso_M": "Isolated condensed mass",
+
+    "b5_no_fix_Kg": "Fixed global stiffness matrix was not found in session_state.",
+    "b5_no_iso_Kg": "Isolated global stiffness matrix was not generated.",
 
     "b5_modal_hdr": "Modal analysis",
     "b5_modes_fix": "Mode shapes – FIXED structure",
@@ -2226,7 +2233,7 @@ T["en"].update({
     "b5_err_ais": "Error while generating ISOLATED matrices: {e}",
     "b5_done": "Modal analysis ready.",
 
-    "h_b5_mats": "Matrices shown are the condensed (1 lateral DOF per floor) versions used for modal analysis.",
+    "h_b5_mats": "Here you can see the global stiffness matrix and the condensed matrices (1 lateral DOF per floor) used for modal analysis.",
     "h_b5_modal": "Mode shapes are normalized for plotting; periods come from the eigenvalue solution.",
 
     "b5_no_modes": "No modes to plot",
@@ -2245,12 +2252,19 @@ T["es"].update({
     "b5_need_iso": "⚙️ Primero diseña el aislador (res_aislador).",
 
     "b5_mats_hdr": "📘 Matrices condensadas",
-    "b5_fix_mats": "🧱 Matrices del modelo FIJO (K_cond, M_cond)",
-    "b5_iso_mats": "🟩 Matrices del modelo AISLADO (K_cond_ais, M_cond_ais)",
+    "b5_fix_mats": "🧱 Matrices del modelo FIJO",
+    "b5_iso_mats": "🟩 Matrices del modelo AISLADO",
+
+    "b5_fix_Kg": "Rigidez global FIJA",
     "b5_fix_K": "Rigidez condensada FIJA",
     "b5_fix_M": "Masa condensada FIJA",
+
+    "b5_iso_Kg": "Rigidez global AISLADA",
     "b5_iso_K": "Rigidez condensada AISLADA",
     "b5_iso_M": "Masa condensada AISLADA",
+
+    "b5_no_fix_Kg": "No se encontró la matriz de rigidez global FIJA en session_state.",
+    "b5_no_iso_Kg": "No se generó la matriz de rigidez global AISLADA.",
 
     "b5_modal_hdr": "📊 Análisis modal",
     "b5_modes_fix": "Modos de Vibración – Estructura FIJA",
@@ -2271,7 +2285,7 @@ T["es"].update({
     "b5_err_ais": "❌ Error al generar matrices AISLADAS: {e}",
     "b5_done": "✅ Análisis modal listo.",
 
-    "h_b5_mats": "Aquí se muestran matrices condensadas (1 GDL lateral por piso) usadas para el modal.",
+    "h_b5_mats": "Aquí puedes ver la matriz de rigidez global y las matrices condensadas (1 GDL lateral por piso) usadas para el análisis modal.",
     "h_b5_modal": "Las formas modales se normalizan para los gráficos; los períodos se obtienen de la solución por autovalores.",
 
     "b5_no_modes": "Sin modos para graficar",
@@ -2307,6 +2321,9 @@ if "res_aislador" not in st.session_state:
 
 K_fix = st.session_state["K_cond"]
 M_fix = st.session_state["M_cond"]
+
+# ✅ intenta leer K global fija si existe
+K_global_fix = st.session_state.get("K_global", None)
 
 nodes              = st.session_state["nodes"]
 element_node_pairs = st.session_state["element_node_pairs"]
@@ -2401,6 +2418,7 @@ try:
         b_col_x=b_col_x_b5,
     )
 
+    st.session_state["K_global_libre"] = np.array(K_global_libre, copy=True)
     st.session_state["K_cond_ais"] = np.array(K_cond_ais, copy=True)
     st.session_state["M_cond_ais"] = np.array(M_cond_ais, copy=True)
 
@@ -2418,17 +2436,71 @@ colM1, colM2 = st.columns([1, 1], gap="large")
 
 with colM1:
     with st.expander(tr("b5_fix_mats"), expanded=False):
-        st.markdown(f"**{tr('b5_fix_K')}** (dim = {np.asarray(K_fix).shape[0]}×{np.asarray(K_fix).shape[1]}):")
-        st.dataframe(pd.DataFrame(np.round(np.asarray(K_fix, float), 3)), use_container_width=True)
-        st.markdown(f"**{tr('b5_fix_M')}** (dim = {np.asarray(M_fix).shape[0]}×{np.asarray(M_fix).shape[1]}):")
-        st.dataframe(pd.DataFrame(np.round(np.asarray(M_fix, float), 5)), use_container_width=True)
+
+        if K_global_fix is not None:
+            K_global_fix_arr = np.asarray(K_global_fix, float)
+            st.markdown(
+                f"**{tr('b5_fix_Kg')}** "
+                f"(dim = {K_global_fix_arr.shape[0]}×{K_global_fix_arr.shape[1]}):"
+            )
+            st.dataframe(
+                pd.DataFrame(np.round(K_global_fix_arr, 3)),
+                use_container_width=True
+            )
+        else:
+            st.info(tr("b5_no_fix_Kg"))
+
+        st.markdown(
+            f"**{tr('b5_fix_K')}** "
+            f"(dim = {np.asarray(K_fix).shape[0]}×{np.asarray(K_fix).shape[1]}):"
+        )
+        st.dataframe(
+            pd.DataFrame(np.round(np.asarray(K_fix, float), 3)),
+            use_container_width=True
+        )
+
+        st.markdown(
+            f"**{tr('b5_fix_M')}** "
+            f"(dim = {np.asarray(M_fix).shape[0]}×{np.asarray(M_fix).shape[1]}):"
+        )
+        st.dataframe(
+            pd.DataFrame(np.round(np.asarray(M_fix, float), 5)),
+            use_container_width=True
+        )
 
 with colM2:
     with st.expander(tr("b5_iso_mats"), expanded=False):
-        st.markdown(f"**{tr('b5_iso_K')}** (dim = {K_cond_ais.shape[0]}×{K_cond_ais.shape[1]}):")
-        st.dataframe(pd.DataFrame(np.round(K_cond_ais, 3)), use_container_width=True)
-        st.markdown(f"**{tr('b5_iso_M')}** (dim = {M_cond_ais.shape[0]}×{M_cond_ais.shape[1]}):")
-        st.dataframe(pd.DataFrame(np.round(M_cond_ais, 5)), use_container_width=True)
+
+        if "K_global_libre" in st.session_state:
+            K_global_ais_arr = np.asarray(st.session_state["K_global_libre"], float)
+            st.markdown(
+                f"**{tr('b5_iso_Kg')}** "
+                f"(dim = {K_global_ais_arr.shape[0]}×{K_global_ais_arr.shape[1]}):"
+            )
+            st.dataframe(
+                pd.DataFrame(np.round(K_global_ais_arr, 3)),
+                use_container_width=True
+            )
+        else:
+            st.info(tr("b5_no_iso_Kg"))
+
+        st.markdown(
+            f"**{tr('b5_iso_K')}** "
+            f"(dim = {K_cond_ais.shape[0]}×{K_cond_ais.shape[1]}):"
+        )
+        st.dataframe(
+            pd.DataFrame(np.round(K_cond_ais, 3)),
+            use_container_width=True
+        )
+
+        st.markdown(
+            f"**{tr('b5_iso_M')}** "
+            f"(dim = {M_cond_ais.shape[0]}×{M_cond_ais.shape[1]}):"
+        )
+        st.dataframe(
+            pd.DataFrame(np.round(M_cond_ais, 5)),
+            use_container_width=True
+        )
 
 # -----------------------------------------------------------------
 # 5C) ANÁLISIS MODAL (SIMÉTRICO)
