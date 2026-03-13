@@ -140,7 +140,7 @@ else:
     firma = "Pontificia Universidad Católica del Ecuador — Elaborado por Diego R. Guerrero C."
 
 st.markdown(
-    f"<p style='text-align:center; font-size:11px; color:#7a7a7a; margin-top:-8px; margin-bottom:4px;'>{firma}</p>",
+    f"<p style='text-align:left; font-size:11px; color:#7a7a7a; margin-top:-8px; margin-bottom:4px;'>{firma}</p>",
     unsafe_allow_html=True
 )
 
