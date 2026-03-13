@@ -1730,16 +1730,16 @@ T["en"].update({
 
     # ✅ Box
     "b4_box_hdr": "=== INDIVIDUAL LRB ISOLATOR PROPERTIES ===",
-    "b4_box_keff": "🧱 Effective stiffness 𝐊ₑ𝑓𝑓",
-    "b4_box_ceq":  "💧 Viscous damping 𝐂ₑ𝑞",
-    "b4_box_ke":   "📈 Initial elastic stiffness 𝐊ₑ",
-    "b4_box_kp":   "📉 Post-yield stiffness 𝐊ₚ",
-    "b4_box_fy":   "⚙️ Yield force 𝐅ᵧ",
-    "b4_box_r":    "📐 Stiffness ratio 𝐫 = 𝐊ₚ/𝐊ₑ",
+    "b4_box_keff": "Effective stiffness 𝐊ₑ𝑓𝑓",
+    "b4_box_ceq":  "Viscous damping 𝐂ₑ𝑞",
+    "b4_box_ke":   "Initial elastic stiffness 𝐊ₑ",
+    "b4_box_kp":   "Post-yield stiffness 𝐊ₚ",
+    "b4_box_fy":   "Yield force 𝐅ᵧ",
+    "b4_box_r":    "Stiffness ratio 𝐫 = 𝐊ₚ/𝐊ₑ",
 
     # ✅ EXTRA: Totales para ETABS
-    "b4_box_n":     "🧩 Number of isolators 𝐍",
-    "b4_box_keffN": "🧱 Total effective stiffness 𝐍·𝐊ₑ𝑓𝑓",
+    "b4_box_n":     "Number of isolators 𝐍",
+    "b4_box_keffN": "Total effective stiffness 𝐍·𝐊ₑ𝑓𝑓",
 
     # ✅ Hysteresis texts
     "b4_hyst_title": "Bilinear hysteretic cycle – LRB isolator",
@@ -1801,16 +1801,16 @@ T["es"].update({
 
     # ✅ Box
     "b4_box_hdr": "=== PROPIEDADES DEL AISLADOR LRB INDIVIDUAL ===",
-    "b4_box_keff": "🧱 Rigidez efectiva 𝐊ₑ𝑓𝑓",
-    "b4_box_ceq":  "💧 Amortiguamiento viscoso 𝐂ₑ𝑞",
-    "b4_box_ke":   "📈 Rigidez inicial elástica 𝐊ₑ",
-    "b4_box_kp":   "📉 Rigidez postfluencia 𝐊ₚ",
-    "b4_box_fy":   "⚙️ Fuerza de fluencia 𝐅ᵧ",
-    "b4_box_r":    "📐 Relación de rigideces 𝐫 = 𝐊ₚ/𝐊ₑ",
+    "b4_box_keff": "Rigidez efectiva 𝐊ₑ𝑓𝑓",
+    "b4_box_ceq":  "Amortiguamiento viscoso 𝐂ₑ𝑞",
+    "b4_box_ke":   "Rigidez inicial elástica 𝐊ₑ",
+    "b4_box_kp":   "Rigidez postfluencia 𝐊ₚ",
+    "b4_box_fy":   "Fuerza de fluencia 𝐅ᵧ",
+    "b4_box_r":    "Relación de rigideces 𝐫 = 𝐊ₚ/𝐊ₑ",
 
     # ✅ EXTRA: Totales para ETABS
-    "b4_box_n":     "🧩 Número de aisladores 𝐍",
-    "b4_box_keffN": "🧱 Rigidez efectiva total 𝐍·𝐊ₑ𝑓𝑓",
+    "b4_box_n":     "Número de aisladores 𝐍",
+    "b4_box_keffN": "Rigidez efectiva total 𝐍·𝐊ₑ𝑓𝑓",
 
     # ✅ Hysteresis texts
     "b4_hyst_title": "Ciclo histerético bilineal – Aislador LRB",
