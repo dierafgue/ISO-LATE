@@ -131,6 +131,22 @@ def tr(key: str) -> str:
 # =============================================================================
 st.title("💻 ISO-LATE")
 
+# -----------------------------------------------------------------------------
+# Firma académica pequeña y sutil
+# -----------------------------------------------------------------------------
+if st.session_state.lang == "en":
+    firma = "Pontificia Universidad Católica del Ecuador — Developed by Diego R. Guerrero C."
+else:
+    firma = "Pontificia Universidad Católica del Ecuador — Elaborado por Diego R. Guerrero C."
+
+st.markdown(
+    f"<p style='text-align:center; font-size:11px; color:#7a7a7a; margin-top:-8px; margin-bottom:4px;'>{firma}</p>",
+    unsafe_allow_html=True
+)
+
+# -----------------------------------------------------------------------------
+# Selector de idioma
+# -----------------------------------------------------------------------------
 lang = st.radio(
     label="",
     options=["EN", "ES"],
