@@ -90,8 +90,8 @@ def _get_css() -> str:
 
     div[role="radiogroup"] {
         gap: 0.30rem !important;
-        margin-top: -0.30rem !important;
-        margin-bottom: -0.55rem !important;
+        margin-top: -0.20rem !important;
+        margin-bottom: -0.50rem !important;
         justify-content: flex-start !important;
     }
     
@@ -137,24 +137,15 @@ def _get_css() -> str:
         padding: 0;
     }
     
-    .hero-logo-wrap {
+    .hero-lang {
         display: flex;
         justify-content: flex-start;
         align-items: center;
-        margin: -0.10rem 0 -0.55rem 0;
+        width: 100%;
+        margin: -1.00rem 0 -0.45rem 0;
         padding: 0;
     }
-
-    .hero-logo-img {
-        width: 120px;
-        height: auto;
-        display: block;
-        margin: 0;
-        padding: 0;
-        border-radius: 0 !important;
-        object-fit: contain;
-    }
-    
+ 
     .hero-lang {
         display: flex;
         justify-content: flex-start;
@@ -167,7 +158,7 @@ def _get_css() -> str:
     .hero-divider {
         height: 1px;
         background: #e3e9f1;
-        margin: -0.20rem 0 0.15rem 0;
+        margin: -0.25rem 0 0.20rem 0;
     }
 
     /* =========================
@@ -418,14 +409,9 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.markdown(
-    """
-    <div class="hero-logo-wrap">
-        <img src="./assets/logo.png" class="hero-logo-img">
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+st.markdown('<div class="hero-logo-wrap">', unsafe_allow_html=True)
+st.image("assets/logo.png", width=105)
+st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="hero-lang">', unsafe_allow_html=True)
 lang = st.radio(
