@@ -414,7 +414,7 @@ st.markdown('<div class="hero-stack">', unsafe_allow_html=True)
 
 # Logo principal
 st.markdown('<div class="hero-logo-wrap">', unsafe_allow_html=True)
-st.image("assets/logo.png", width=150)
+st.image("assets/logo.png", width=200)
 st.markdown('</div>', unsafe_allow_html=True)
 
 # Selector de idioma
