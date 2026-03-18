@@ -392,50 +392,57 @@ mail_icon_svg = """
 """
 
 with col1:
-    about_html = f"""
-<div class="iso-card iso-flex">
-    <h3>{tr("intro_title")}</h3>
-    <div class="iso-muted">
-        {tr("intro_text")}
-    </div>
-</div>
-"""
-    st.markdown(about_html, unsafe_allow_html=True)
+    st.markdown('<div class="iso-card iso-flex">', unsafe_allow_html=True)
+    st.markdown(f"<h3>{tr('intro_title')}</h3>", unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="iso-muted">{tr("intro_text")}</div>',
+        unsafe_allow_html=True
+    )
+    st.markdown('</div>', unsafe_allow_html=True)
 
 with col2:
-    author_html = f"""
-<div class="iso-card iso-flex">
-    <h3>{tr("info_title")}</h3>
+    st.markdown('<div class="iso-card iso-flex">', unsafe_allow_html=True)
+    st.markdown(f"<h3>{tr('info_title')}</h3>", unsafe_allow_html=True)
 
-    <div class="iso-author-grid">
-        <div class="iso-author-left">
-            <div class="iso-info-box">
-                <div class="iso-row"><b>{tr("author")}:</b> Diego Rafael Guerrero Carrillo</div>
-                <div class="iso-row"><b>{tr("degree")}:</b> {tr("degree_value")}</div>
-                <div class="iso-row"><b>{tr("university")}:</b> Pontificia Universidad Católica del Ecuador</div>
-                <div class="iso-row"><b>{tr("program")}:</b> {tr("program_value")}</div>
-            </div>
-        </div>
+    subcol1, subcol2 = st.columns([1.45, 0.95], gap="medium")
 
-        <div class="iso-author-right">
-            <div class="iso-contact-title">{tr("contact_title")}</div>
-
-            <div class="iso-contact-wrap">
-                <a href="https://github.com/dierafgue" target="_blank" class="iso-badge">
-                    {github_icon_svg}
-                    <span>Follow</span>
-                </a>
-
-                <a href="mailto:DRAFAELGUE@HOTMAIL.COM" class="iso-email">
-                    {mail_icon_svg}
-                    <span>Mail</span>
-                </a>
-            </div>
-        </div>
-    </div>
+    with subcol1:
+        st.markdown(
+            f"""
+<div class="iso-info-box">
+    <div class="iso-row"><b>{tr("author")}:</b> Diego Rafael Guerrero Carrillo</div>
+    <div class="iso-row"><b>{tr("degree")}:</b> {tr("degree_value")}</div>
+    <div class="iso-row"><b>{tr("university")}:</b> Pontificia Universidad Católica del Ecuador</div>
+    <div class="iso-row"><b>{tr("program")}:</b> {tr("program_value")}</div>
 </div>
-"""
-    st.markdown(author_html, unsafe_allow_html=True)
+""",
+            unsafe_allow_html=True
+        )
+
+    with subcol2:
+        st.markdown(
+            f'<div class="iso-contact-title">{tr("contact_title")}</div>',
+            unsafe_allow_html=True
+        )
+
+        st.markdown(
+            f"""
+<div class="iso-contact-wrap">
+    <a href="https://github.com/dierafgue" target="_blank" class="iso-badge">
+        {github_icon_svg}
+        <span>Follow</span>
+    </a>
+
+    <a href="mailto:DRAFAELGUE@HOTMAIL.COM" class="iso-email">
+        {mail_icon_svg}
+        <span>Mail</span>
+    </a>
+</div>
+""",
+            unsafe_allow_html=True
+        )
+
+    st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("---")
 
