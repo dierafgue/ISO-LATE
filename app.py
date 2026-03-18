@@ -90,8 +90,8 @@ def _get_css() -> str:
 
     div[role="radiogroup"] {
         gap: 0.35rem !important;
-        margin-top: -0.10rem !important;
-        margin-bottom: -0.15rem !important;
+        margin-top: -0.15rem !important;
+        margin-bottom: -0.30rem !important;
         justify-content: flex-start !important;
     }
     
@@ -102,6 +102,12 @@ def _get_css() -> str:
 
     hr {
         margin: 0.30rem 0 0.55rem 0 !important;
+    }
+
+    /* 🔥 QUITAR ESPACIO DEL LOGO (CLAVE) */
+    img {
+        display: block;
+        margin-bottom: -10px !important;
     }
 
     /* =========================
@@ -150,7 +156,7 @@ def _get_css() -> str:
         justify-content: flex-start;
         align-items: center;
         width: 100%;
-        margin: -0.45rem 0 0 0;
+        margin: -0.55rem 0 0 0;
         padding: 0;
     }
     
