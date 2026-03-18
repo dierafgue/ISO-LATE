@@ -276,26 +276,19 @@ with col2:
         f"""
 <div class="iso-card">
 <h3>👤 {tr("info_title")}</h3>
+
 <div class="iso-info-box">
-<b>{tr("author")}:</b><br>
-Diego Rafael Guerrero Carrillo<br><br>
 
-<b>{tr("degree")}:</b><br>
-{tr("degree_value")}<br><br>
+<div class="iso-row"><b>{tr("author")}:</b> Diego Rafael Guerrero Carrillo</div>
+<div class="iso-row"><b>{tr("degree")}:</b> {tr("degree_value")}</div>
+<div class="iso-row"><b>{tr("university")}:</b> Pontificia Universidad Católica del Ecuador</div>
+<div class="iso-row"><b>{tr("field")}:</b> {tr("field_value")}</div>
 
-<b>{tr("university")}:</b><br>
-Pontificia Universidad Católica del Ecuador<br><br>
+<hr style="margin:0.5rem 0 0.6rem 0;">
 
-<b>{tr("field")}:</b><br>
-{tr("field_value")}<br><br>
+<div class="iso-row"><b>{tr("project")}:</b> ISO-LATE</div>
+<div class="iso-row"><b>{tr("type")}:</b> {tr("type_value")}</div>
 
-<hr style="margin:0.65rem 0 0.75rem 0;">
-
-<b>{tr("project")}:</b><br>
-ISO-LATE<br><br>
-
-<b>{tr("type")}:</b><br>
-{tr("type_value")}
 </div>
 </div>
 """,
