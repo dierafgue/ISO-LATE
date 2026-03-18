@@ -21,7 +21,7 @@ st.set_page_config(
 # =============================================================================
 @st.cache_data(show_spinner=False)
 def _get_css() -> str:
-    return """
+        return """
     <style>
     /* =========================
        OCULTAR HEADER STREAMLIT (causa del "corte")
@@ -30,8 +30,7 @@ def _get_css() -> str:
         height: 0px !important;
         visibility: hidden !important;
     }
-    /* quita espacio/reserva del header */
-    div[data-testid="stToolbar"]{ 
+    div[data-testid="stToolbar"]{
         height: 0px !important;
         visibility: hidden !important;
     }
@@ -49,7 +48,6 @@ def _get_css() -> str:
         font-family: 'Inter', sans-serif;
     }
 
-    /* ✅ padding top seguro para que nunca se tape el H1 */
     .block-container {
         padding-top: 1.35rem !important;
         padding-bottom: 0rem !important;
@@ -76,15 +74,19 @@ def _get_css() -> str:
         font-weight: 500;
         padding: 0.5rem 1.2rem;
     }
-    .stButton > button:hover { background-color: #3e5a78; }
+    .stButton > button:hover {
+        background-color: #3e5a78;
+    }
 
     /* =========================
        INPUTS
     ========================= */
-    input, textarea, select { border-radius: 6px !important; }
+    input, textarea, select {
+        border-radius: 6px !important;
+    }
 
     /* =========================
-       HEADER (compacto, sin hack raro)
+       HEADER
     ========================= */
     h1{
         margin: 0 0 0.10rem 0 !important;
@@ -106,7 +108,54 @@ def _get_css() -> str:
     }
 
     /* Línea horizontal más pequeña */
-    hr { margin: 0.30rem 0 0.55rem 0 !important; }
+    hr {
+        margin: 0.30rem 0 0.55rem 0 !important;
+    }
+
+    /* =========================
+       TARJETAS DE INTRODUCCIÓN
+    ========================= */
+    .iso-card {
+        background: #ffffff;
+        border: 1px solid #e6ebf2;
+        border-radius: 14px;
+        padding: 1.05rem 1.15rem;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.04);
+        margin-top: 0.20rem;
+        margin-bottom: 0.70rem;
+    }
+
+    .iso-card h3 {
+        margin-top: 0rem !important;
+        margin-bottom: 0.65rem !important;
+        color: #243447;
+        font-size: 1.12rem !important;
+    }
+
+    .iso-muted {
+        color: #5f6b7a;
+        font-size: 0.96rem;
+        line-height: 1.70;
+    }
+
+    .iso-info-item {
+        margin-bottom: 0.42rem;
+        line-height: 1.55;
+        font-size: 0.96rem;
+    }
+
+    .iso-label {
+        font-weight: 700;
+        color: #243447;
+    }
+
+    .iso-small-signature {
+        text-align: left;
+        font-size: 11px;
+        color: #7a7a7a;
+        margin-top: -8px;
+        margin-bottom: 4px;
+    }
     </style>
     """
 
@@ -119,28 +168,70 @@ if "lang" not in st.session_state:
     st.session_state.lang = "en"
 
 T = {
-    "en": {"language": "Language", "english": "English", "spanish": "Spanish"},
-    "es": {"language": "Idioma",   "english": "Inglés",  "spanish": "Español"},
+    "en": {
+        "language": "Language",
+        "english": "English",
+        "spanish": "Spanish",
+
+        "signature": "Pontificia Universidad Católica del Ecuador — Developed by Diego R. Guerrero C.",
+        "intro_title": "About ISO-LATE",
+        "intro_text": (
+            "ISO-LATE is an interactive structural engineering application designed to "
+            "simulate, analyze, and compare the seismic response of 2D frame structures "
+            "with fixed base and base isolation systems (LRB). The platform integrates "
+            "modal analysis, response spectrum analysis (RSA), time history analysis "
+            "(THA – Newmark method), and NEC-24 seismic spectrum tools, allowing users "
+            "to evaluate periods, displacements, drifts, and forces in a clear and visual way."
+        ),
+        "info_title": "Project information",
+        "author": "Author",
+        "degree": "Degree",
+        "university": "University",
+        "field": "Field",
+        "project": "Project",
+        "type": "Type",
+        "degree_value": "MDI. Civil Engineer",
+        "field_value": "Structural / Seismic Engineering",
+        "type_value": "Interactive Engineering Tool",
+    },
+    "es": {
+        "language": "Idioma",
+        "english": "Inglés",
+        "spanish": "Español",
+
+        "signature": "Pontificia Universidad Católica del Ecuador — Elaborado por Diego R. Guerrero C.",
+        "intro_title": "Acerca de ISO-LATE",
+        "intro_text": (
+            "ISO-LATE es una aplicación interactiva de ingeniería estructural diseñada para "
+            "simular, analizar y comparar la respuesta sísmica de pórticos 2D con base fija "
+            "y sistemas con aislamiento sísmico en la base (LRB). La plataforma integra "
+            "análisis modal, análisis espectral (RSA), análisis tiempo historia "
+            "(THA – método de Newmark) y herramientas del espectro sísmico NEC-24, "
+            "permitiendo evaluar períodos, desplazamientos, derivas y fuerzas de manera clara y visual."
+        ),
+        "info_title": "Información del proyecto",
+        "author": "Autor",
+        "degree": "Formación",
+        "university": "Universidad",
+        "field": "Área",
+        "project": "Proyecto",
+        "type": "Tipo",
+        "degree_value": "MDI. Ingeniero Civil",
+        "field_value": "Ingeniería Estructural / Sísmica",
+        "type_value": "Herramienta Interactiva de Ingeniería",
+    },
 }
 
 def tr(key: str) -> str:
     return T.get(st.session_state.lang, T["en"]).get(key, key)
 
 # =============================================================================
-# ✅ HEADER + SELECTOR (pegado al título y compacto) ==========================
+# ✅ HEADER + SELECTOR + PRESENTACIÓN INICIAL ================================
 # =============================================================================
 st.title("💻 ISO-LATE")
 
-# -----------------------------------------------------------------------------
-# Firma académica pequeña y sutil
-# -----------------------------------------------------------------------------
-if st.session_state.lang == "en":
-    firma = "Pontificia Universidad Católica del Ecuador — Developed by Diego R. Guerrero C."
-else:
-    firma = "Pontificia Universidad Católica del Ecuador — Elaborado por Diego R. Guerrero C."
-
 st.markdown(
-    f"<p style='text-align:left; font-size:11px; color:#7a7a7a; margin-top:-8px; margin-bottom:4px;'>{firma}</p>",
+    f"<p class='iso-small-signature'>{tr('signature')}</p>",
     unsafe_allow_html=True
 )
 
@@ -159,6 +250,68 @@ new_lang = "en" if lang == "EN" else "es"
 if new_lang != st.session_state.lang:
     st.session_state.lang = new_lang
     st.rerun()
+
+st.markdown("---")
+
+# -----------------------------------------------------------------------------
+# Bloque inicial tipo presentación
+# -----------------------------------------------------------------------------
+col1, col2 = st.columns([2.2, 1.1], gap="large")
+
+with col1:
+    st.markdown(
+        f"""
+        <div class="iso-card">
+            <h3>📘 {tr("intro_title")}</h3>
+            <div class="iso-muted">
+                {tr("intro_text")}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+with col2:
+    st.markdown(
+        f"""
+        <div class="iso-card">
+            <h3>👤 {tr("info_title")}</h3>
+
+            <div class="iso-info-item">
+                <span class="iso-label">{tr("author")}:</span><br>
+                Diego Rafael Guerrero Carrillo
+            </div>
+
+            <div class="iso-info-item">
+                <span class="iso-label">{tr("degree")}:</span><br>
+                {tr("degree_value")}
+            </div>
+
+            <div class="iso-info-item">
+                <span class="iso-label">{tr("university")}:</span><br>
+                Pontificia Universidad Católica del Ecuador
+            </div>
+
+            <div class="iso-info-item">
+                <span class="iso-label">{tr("field")}:</span><br>
+                {tr("field_value")}
+            </div>
+
+            <hr style="margin:0.65rem 0 0.75rem 0;">
+
+            <div class="iso-info-item">
+                <span class="iso-label">{tr("project")}:</span><br>
+                ISO-LATE
+            </div>
+
+            <div class="iso-info-item">
+                <span class="iso-label">{tr("type")}:</span><br>
+                {tr("type_value")}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 st.markdown("---")
 
