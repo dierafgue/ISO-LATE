@@ -49,7 +49,7 @@ def _get_css() -> str:
     }
 
     .block-container {
-        padding-top: 0.80rem !important;
+        padding-top: 0.55rem !important;
         padding-bottom: 0rem !important;
         padding-left: 2.20rem !important;
         padding-right: 2.20rem !important;
@@ -90,7 +90,7 @@ def _get_css() -> str:
 
     div[role="radiogroup"] {
         gap: 0.40rem !important;
-        margin-top: 0.10rem !important;
+        margin-top: 0.00rem !important;
         margin-bottom: 0.00rem !important;
     }
 
@@ -107,26 +107,27 @@ def _get_css() -> str:
        HERO / HEADER SUPERIOR
     ========================= */
     .hero-card {
-        background: #ffffff;
-        border: 1px solid #e6ebf2;
-        border-radius: 16px;
-        padding: 1.05rem 1.30rem 0.85rem 1.30rem;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.04);
-        margin-bottom: 0.80rem;
+        background: transparent;
+        border: none;
+        border-radius: 0;
+        padding: 0.10rem 0 0.35rem 0;
+        box-shadow: none;
+        margin-bottom: 0.35rem;
     }
 
-    .hero-row {
-        display: flex;
-        justify-content: space-between;
+    .hero-grid {
+        display: grid;
+        grid-template-columns: 1.45fr 0.55fr;
         align-items: center;
         gap: 1rem;
-        margin-bottom: 0.40rem;
     }
 
     .hero-left {
         display: flex;
-        align-items: center;
-        min-height: 72px;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 82px;
     }
 
     .hero-title {
@@ -135,21 +136,25 @@ def _get_css() -> str:
         color: #2d3142;
         letter-spacing: -0.02em;
         line-height: 1.0;
-        margin: 0;
+        margin: 0 0 0.35rem 0;
         padding: 0;
+    }
+
+    .hero-lang {
+        margin-top: 0.05rem;
     }
 
     .hero-logo-wrap {
         display: flex;
         justify-content: flex-end;
         align-items: center;
-        min-height: 72px;
+        min-height: 82px;
     }
 
     .hero-divider {
         height: 1px;
-        background: #e8edf3;
-        margin: 0.55rem 0 0rem 0;
+        background: #dfe5ec;
+        margin: 0.60rem 0 0.95rem 0;
     }
 
     /* =========================
@@ -303,9 +308,9 @@ def _get_css() -> str:
             padding-right: 1rem !important;
         }
 
-        .hero-row {
-            flex-direction: column;
-            align-items: flex-start;
+        .hero-grid {
+            grid-template-columns: 1fr;
+            gap: 0.60rem;
         }
 
         .hero-left,
@@ -315,6 +320,10 @@ def _get_css() -> str:
 
         .hero-title {
             font-size: 2.45rem;
+        }
+
+        .hero-logo-wrap {
+            justify-content: flex-start;
         }
 
         .iso-author-grid {
@@ -403,38 +412,37 @@ def tr(key: str) -> str:
 # ✅ HEADER SUPERIOR ==========================================================
 # =============================================================================
 st.markdown('<div class="hero-card">', unsafe_allow_html=True)
+st.markdown('<div class="hero-grid">', unsafe_allow_html=True)
 
-col_header1, col_header2 = st.columns([1.55, 0.65], gap="large")
+col_header1, col_header2 = st.columns([1.45, 0.55], gap="large")
 
 with col_header1:
-    st.markdown(
-        """
-        <div class="hero-left">
-            <div class="hero-title">ISO-LATE</div>
-        </div>
-        """,
-        unsafe_allow_html=True
+    st.markdown('<div class="hero-left">', unsafe_allow_html=True)
+    st.markdown('<div class="hero-title">ISO-LATE</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="hero-lang">', unsafe_allow_html=True)
+    lang = st.radio(
+        label="",
+        options=["EN", "ES"],
+        index=0 if st.session_state.lang == "en" else 1,
+        horizontal=True,
+        label_visibility="collapsed",
+        key="main_lang_selector"
     )
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 with col_header2:
     st.markdown('<div class="hero-logo-wrap">', unsafe_allow_html=True)
-    st.image("assets/logo.png", width=95)
+    st.image("assets/logo.png", width=88)
     st.markdown('</div>', unsafe_allow_html=True)
-
-lang = st.radio(
-    label="",
-    options=["EN", "ES"],
-    index=0 if st.session_state.lang == "en" else 1,
-    horizontal=True,
-    label_visibility="collapsed",
-    key="main_lang_selector"
-)
 
 new_lang = "en" if lang == "EN" else "es"
 if new_lang != st.session_state.lang:
     st.session_state.lang = new_lang
     st.rerun()
 
+st.markdown('</div>', unsafe_allow_html=True)
 st.markdown('<div class="hero-divider"></div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
