@@ -49,10 +49,10 @@ def _get_css() -> str:
     }
 
     .block-container {
-        padding-top: 0.65rem !important;
+        padding-top: 0.80rem !important;
         padding-bottom: 0rem !important;
-        padding-left: 0.85rem !important;
-        padding-right: 0.85rem !important;
+        padding-left: 2.20rem !important;
+        padding-right: 2.20rem !important;
         max-width: 100% !important;
     }
 
@@ -83,19 +83,19 @@ def _get_css() -> str:
     }
 
     h1 {
-        margin: 0 0 0.10rem 0 !important;
+        margin: 0 !important;
         padding: 0 !important;
-        line-height: 1.15 !important;
+        line-height: 1.10 !important;
     }
 
     div[role="radiogroup"] {
-        gap: 0.25rem !important;
-        margin-top: 0.05rem !important;
-        margin-bottom: 0.10rem !important;
+        gap: 0.40rem !important;
+        margin-top: 0.10rem !important;
+        margin-bottom: 0.00rem !important;
     }
 
     div[role="radiogroup"] label {
-        font-size: 0.82rem !important;
+        font-size: 0.88rem !important;
         padding: 0rem 0.10rem !important;
     }
 
@@ -106,14 +106,31 @@ def _get_css() -> str:
     /* =========================
        HERO / HEADER SUPERIOR
     ========================= */
+    .hero-card {
+        background: #ffffff;
+        border: 1px solid #e6ebf2;
+        border-radius: 16px;
+        padding: 1.05rem 1.30rem 0.85rem 1.30rem;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.04);
+        margin-bottom: 0.80rem;
+    }
+
+    .hero-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.40rem;
+    }
+
     .hero-left {
         display: flex;
         align-items: center;
-        min-height: 82px;
+        min-height: 72px;
     }
 
     .hero-title {
-        font-size: 3.15rem;
+        font-size: 3.00rem;
         font-weight: 800;
         color: #2d3142;
         letter-spacing: -0.02em;
@@ -124,15 +141,15 @@ def _get_css() -> str:
 
     .hero-logo-wrap {
         display: flex;
-        justify-content: center;
+        justify-content: flex-end;
         align-items: center;
-        min-height: 82px;
+        min-height: 72px;
     }
 
     .hero-divider {
         height: 1px;
-        background: #dfe5ec;
-        margin: 0.45rem 0 0.90rem 0;
+        background: #e8edf3;
+        margin: 0.55rem 0 0rem 0;
     }
 
     /* =========================
@@ -176,14 +193,6 @@ def _get_css() -> str:
         font-size: 0.96rem;
         line-height: 1.75;
         text-align: justify;
-    }
-
-    .iso-small-signature {
-        text-align: left;
-        font-size: 11px;
-        color: #7a7a7a;
-        margin-top: -8px;
-        margin-bottom: 4px;
     }
 
     /* =========================
@@ -289,13 +298,23 @@ def _get_css() -> str:
     }
 
     @media (max-width: 980px) {
+        .block-container {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+        }
+
+        .hero-row {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
         .hero-left,
         .hero-logo-wrap {
             min-height: auto;
         }
 
         .hero-title {
-            font-size: 2.55rem;
+            font-size: 2.45rem;
         }
 
         .iso-author-grid {
@@ -381,9 +400,11 @@ def tr(key: str) -> str:
     return T.get(st.session_state.lang, T["en"]).get(key, key)
 
 # =============================================================================
-# ✅ HEADER LIMPIO (SIN SUBTÍTULO) ============================================
+# ✅ HEADER SUPERIOR ==========================================================
 # =============================================================================
-col_header1, col_header2 = st.columns([1.6, 0.8], gap="large")
+st.markdown('<div class="hero-card">', unsafe_allow_html=True)
+
+col_header1, col_header2 = st.columns([1.55, 0.65], gap="large")
 
 with col_header1:
     st.markdown(
@@ -397,7 +418,7 @@ with col_header1:
 
 with col_header2:
     st.markdown('<div class="hero-logo-wrap">', unsafe_allow_html=True)
-    st.image("assets/logo.png", width=115)
+    st.image("assets/logo.png", width=95)
     st.markdown('</div>', unsafe_allow_html=True)
 
 lang = st.radio(
@@ -415,6 +436,7 @@ if new_lang != st.session_state.lang:
     st.rerun()
 
 st.markdown('<div class="hero-divider"></div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
 # =============================================================================
 # === BLOQUE INICIAL =========================================================
