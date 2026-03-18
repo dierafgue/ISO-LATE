@@ -90,8 +90,8 @@ def _get_css() -> str:
 
     div[role="radiogroup"] {
         gap: 0.30rem !important;
-        margin-top: -0.20rem !important;
-        margin-bottom: -0.40rem !important;
+        margin-top: -0.30rem !important;
+        margin-bottom: -0.55rem !important;
         justify-content: flex-start !important;
     }
     
@@ -160,14 +160,14 @@ def _get_css() -> str:
         justify-content: flex-start;
         align-items: center;
         width: 100%;
-        margin: -0.85rem 0 -0.20rem 0;
+        margin: -0.95rem 0 -0.40rem 0;
         padding: 0;
     }
     
     .hero-divider {
         height: 1px;
         background: #e3e9f1;
-        margin: 0.02rem 0 0.35rem 0;
+        margin: -0.20rem 0 0.15rem 0;
     }
 
     /* =========================
@@ -421,7 +421,7 @@ st.markdown(
 st.markdown(
     """
     <div class="hero-logo-wrap">
-        <img src="assets/logo.png" class="hero-logo-img">
+        st.image("assets/logo.png", width=120)
     </div>
     """,
     unsafe_allow_html=True
