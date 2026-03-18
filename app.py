@@ -418,14 +418,9 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.markdown(
-    """
-    <div class="hero-logo-wrap">
-        st.image("assets/logo.png", width=120)
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+st.markdown('<div class="hero-logo-wrap">', unsafe_allow_html=True)
+st.image("assets/logo.png", width=75)
+st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="hero-lang">', unsafe_allow_html=True)
 lang = st.radio(
