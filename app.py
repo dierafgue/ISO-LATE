@@ -21,7 +21,7 @@ st.set_page_config(
 # =============================================================================
 @st.cache_data(show_spinner=False)
 def _get_css() -> str:
-        return """
+    return """
     <style>
     /* =========================
        OCULTAR HEADER STREAMLIT
@@ -111,7 +111,7 @@ def _get_css() -> str:
         box-shadow: 0 3px 10px rgba(0,0,0,0.04);
         margin-top: 0.20rem;
         margin-bottom: 0.70rem;
-        height: 100%;
+        min-height: 255px;
     }
 
     .iso-card h3 {
@@ -128,21 +128,6 @@ def _get_css() -> str:
         text-align: justify;
     }
 
-    .iso-info-box {
-        color: #243447;
-        font-size: 0.96rem;
-        line-height: 1.55;
-    }
-
-    .iso-info-box b {
-        color: #243447;
-    }
-
-    .iso-row {
-        margin-bottom: 0.45rem;
-        line-height: 1.40;
-    }
-
     .iso-small-signature {
         text-align: left;
         font-size: 11px;
@@ -151,26 +136,12 @@ def _get_css() -> str:
         margin-bottom: 4px;
     }
 
-    [data-testid="column"] {
-        display: flex;
-    }
-
-    [data-testid="column"] > div {
-        width: 100%;
-    }
-
-    .iso-flex {
-        display: flex;
-        flex-direction: column;
-        min-height: 100%;
-    }
-
     /* =========================
-       TARJETA DERECHA EN 2 COLUMNAS
+       TARJETA DERECHA
     ========================= */
     .iso-author-grid {
         display: grid;
-        grid-template-columns: 1.35fr 0.95fr;
+        grid-template-columns: 1.45fr 0.95fr;
         gap: 1rem;
         align-items: start;
     }
@@ -183,6 +154,21 @@ def _get_css() -> str:
         min-width: 0;
         border-left: 1px solid #e6ebf2;
         padding-left: 1rem;
+    }
+
+    .iso-info-box {
+        color: #243447;
+        font-size: 0.96rem;
+        line-height: 1.55;
+    }
+
+    .iso-info-row {
+        margin-bottom: 0.48rem;
+    }
+
+    .iso-info-label {
+        font-weight: 700;
+        color: #243447;
     }
 
     .iso-contact-title {
@@ -202,52 +188,42 @@ def _get_css() -> str:
     /* =========================
        BADGES
     ========================= */
-    .iso-badge {
+    .iso-badge, .iso-email {
         display: inline-flex;
         align-items: center;
         gap: 0.42rem;
         padding: 0.34rem 0.68rem;
-        border: 1px solid #d0d7de;
         border-radius: 7px;
-        background: #f6f8fa;
-        color: #24292f !important;
-        text-decoration: none !important;
         font-weight: 600;
         font-size: 0.88rem;
         line-height: 1.2;
         transition: 0.18s ease;
         white-space: nowrap;
+        text-decoration: none !important;
+    }
+
+    .iso-badge {
+        border: 1px solid #d0d7de;
+        background: #f6f8fa;
+        color: #24292f !important;
     }
 
     .iso-badge:hover {
         background: #eef2f6;
         border-color: #bfc8d1;
-        text-decoration: none !important;
         color: #24292f !important;
     }
 
     .iso-email {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.42rem;
-        padding: 0.34rem 0.68rem;
         border: 1px solid #d0d7de;
-        border-radius: 7px;
         background: #ffffff;
         color: #30475e !important;
-        text-decoration: none !important;
-        font-weight: 600;
-        font-size: 0.88rem;
-        line-height: 1.2;
-        transition: 0.18s ease;
-        white-space: nowrap;
     }
 
     .iso-email:hover {
         background: #f8fafc;
         border-color: #bfc8d1;
         color: #243447 !important;
-        text-decoration: none !important;
     }
 
     .iso-github-icon,
@@ -308,7 +284,7 @@ T = {
         "program_value": "Master’s Degree in Earthquake-Resistant Structural Design",
         "contact_title": "Find me on:",
         "github_badge": "Follow",
-        "email_label": "Email",
+        "mail_badge": "Mail",
     },
     "es": {
         "language": "Idioma",
@@ -333,7 +309,7 @@ T = {
         "program_value": "Maestría en Diseño de Estructuras Sismorresistentes",
         "contact_title": "Encuéntrame en:",
         "github_badge": "Seguir",
-        "email_label": "Correo",
+        "mail_badge": "Mail",
     },
 }
 
@@ -391,58 +367,41 @@ mail_icon_svg = """
 </svg>
 """
 
+about_html = (
+    f'<div class="iso-card">'
+    f'<h3>{tr("intro_title")}</h3>'
+    f'<div class="iso-muted">{tr("intro_text")}</div>'
+    f'</div>'
+)
+
+author_html = (
+    f'<div class="iso-card">'
+    f'<h3>{tr("info_title")}</h3>'
+    f'<div class="iso-author-grid">'
+        f'<div class="iso-author-left">'
+            f'<div class="iso-info-box">'
+                f'<div class="iso-info-row"><span class="iso-info-label">{tr("author")}:</span> Diego Rafael Guerrero Carrillo</div>'
+                f'<div class="iso-info-row"><span class="iso-info-label">{tr("degree")}:</span> {tr("degree_value")}</div>'
+                f'<div class="iso-info-row"><span class="iso-info-label">{tr("university")}:</span> Pontificia Universidad Católica del Ecuador</div>'
+                f'<div class="iso-info-row"><span class="iso-info-label">{tr("program")}:</span> {tr("program_value")}</div>'
+            f'</div>'
+        f'</div>'
+        f'<div class="iso-author-right">'
+            f'<div class="iso-contact-title">{tr("contact_title")}</div>'
+            f'<div class="iso-contact-wrap">'
+                f'<a href="https://github.com/dierafgue" target="_blank" class="iso-badge">{github_icon_svg}<span>{tr("github_badge")}</span></a>'
+                f'<a href="mailto:DRAFAELGUE@HOTMAIL.COM" class="iso-email">{mail_icon_svg}<span>{tr("mail_badge")}</span></a>'
+            f'</div>'
+        f'</div>'
+    f'</div>'
+    f'</div>'
+)
+
 with col1:
-    st.markdown('<div class="iso-card iso-flex">', unsafe_allow_html=True)
-    st.markdown(f"<h3>{tr('intro_title')}</h3>", unsafe_allow_html=True)
-    st.markdown(
-        f'<div class="iso-muted">{tr("intro_text")}</div>',
-        unsafe_allow_html=True
-    )
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown(about_html, unsafe_allow_html=True)
 
 with col2:
-    st.markdown('<div class="iso-card iso-flex">', unsafe_allow_html=True)
-    st.markdown(f"<h3>{tr('info_title')}</h3>", unsafe_allow_html=True)
-
-    subcol1, subcol2 = st.columns([1.45, 0.95], gap="medium")
-
-    with subcol1:
-        st.markdown(
-            f"""
-<div class="iso-info-box">
-    <div class="iso-row"><b>{tr("author")}:</b> Diego Rafael Guerrero Carrillo</div>
-    <div class="iso-row"><b>{tr("degree")}:</b> {tr("degree_value")}</div>
-    <div class="iso-row"><b>{tr("university")}:</b> Pontificia Universidad Católica del Ecuador</div>
-    <div class="iso-row"><b>{tr("program")}:</b> {tr("program_value")}</div>
-</div>
-""",
-            unsafe_allow_html=True
-        )
-
-    with subcol2:
-        st.markdown(
-            f'<div class="iso-contact-title">{tr("contact_title")}</div>',
-            unsafe_allow_html=True
-        )
-
-        st.markdown(
-            f"""
-<div class="iso-contact-wrap">
-    <a href="https://github.com/dierafgue" target="_blank" class="iso-badge">
-        {github_icon_svg}
-        <span>Follow</span>
-    </a>
-
-    <a href="mailto:DRAFAELGUE@HOTMAIL.COM" class="iso-email">
-        {mail_icon_svg}
-        <span>Mail</span>
-    </a>
-</div>
-""",
-            unsafe_allow_html=True
-        )
-
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown(author_html, unsafe_allow_html=True)
 
 st.markdown("---")
 
