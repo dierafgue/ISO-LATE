@@ -21,21 +21,22 @@ st.set_page_config(
 # =============================================================================
 @st.cache_data(show_spinner=False)
 def _get_css() -> str:
-        return """
+    return """
     <style>
     /* =========================
-       OCULTAR HEADER STREAMLIT (causa del "corte")
+       OCULTAR HEADER STREAMLIT
     ========================= */
     header[data-testid="stHeader"]{
         height: 0px !important;
         visibility: hidden !important;
     }
+
     div[data-testid="stToolbar"]{
         height: 0px !important;
         visibility: hidden !important;
     }
 
-    /* (Opcional) oculta menú y footer */
+    /* ocultar menú y footer */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
 
@@ -56,7 +57,9 @@ def _get_css() -> str:
     /* =========================
        OCULTAR SIDEBAR COMPLETO
     ========================= */
-    [data-testid="stSidebar"] { display: none; }
+    [data-testid="stSidebar"] {
+        display: none;
+    }
 
     section[data-testid="stMain"] {
         margin-left: 0 !important;
@@ -74,6 +77,7 @@ def _get_css() -> str:
         font-weight: 500;
         padding: 0.5rem 1.2rem;
     }
+
     .stButton > button:hover {
         background-color: #3e5a78;
     }
@@ -88,7 +92,7 @@ def _get_css() -> str:
     /* =========================
        HEADER
     ========================= */
-    h1{
+    h1 {
         margin: 0 0 0.10rem 0 !important;
         padding: 0 !important;
         line-height: 1.15 !important;
@@ -97,17 +101,20 @@ def _get_css() -> str:
     /* =========================
        SELECTOR DE IDIOMA COMPACTO
     ========================= */
-    div[role="radiogroup"]{
+    div[role="radiogroup"] {
         gap: 0.25rem !important;
         margin-top: 0.05rem !important;
         margin-bottom: 0.10rem !important;
     }
-    div[role="radiogroup"] label{
+
+    div[role="radiogroup"] label {
         font-size: 0.82rem !important;
         padding: 0rem 0.10rem !important;
     }
 
-    /* Línea horizontal más pequeña */
+    /* =========================
+       LÍNEA HORIZONTAL
+    ========================= */
     hr {
         margin: 0.30rem 0 0.55rem 0 !important;
     }
@@ -183,14 +190,14 @@ T = {
             "(THA – Newmark method), and NEC-24 seismic spectrum tools, allowing users "
             "to evaluate periods, displacements, drifts, and forces in a clear and visual way."
         ),
-        "info_title": "Project information",
+        "info_title": "Author information",
         "author": "Author",
         "degree": "Degree",
         "university": "University",
         "field": "Field",
         "project": "Project",
         "type": "Type",
-        "degree_value": "MDI. Civil Engineer",
+        "degree_value": "Civil Engineer – MDI",
         "field_value": "Structural / Seismic Engineering",
         "type_value": "Interactive Engineering Tool",
     },
@@ -209,14 +216,14 @@ T = {
             "(THA – método de Newmark) y herramientas del espectro sísmico NEC-24, "
             "permitiendo evaluar períodos, desplazamientos, derivas y fuerzas de manera clara y visual."
         ),
-        "info_title": "Información del proyecto",
+        "info_title": "Información del autor",
         "author": "Autor",
         "degree": "Formación",
         "university": "Universidad",
         "field": "Área",
         "project": "Proyecto",
         "type": "Tipo",
-        "degree_value": "MDI. Ingeniero Civil",
+        "degree_value": "Ingeniero Civil – MDI",
         "field_value": "Ingeniería Estructural / Sísmica",
         "type_value": "Herramienta Interactiva de Ingeniería",
     },
@@ -259,59 +266,55 @@ st.markdown("---")
 col1, col2 = st.columns([2.2, 1.1], gap="large")
 
 with col1:
-    st.markdown(
-        f"""
-        <div class="iso-card">
-            <h3>📘 {tr("intro_title")}</h3>
-            <div class="iso-muted">
-                {tr("intro_text")}
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    html_left = f"""
+<div class="iso-card">
+    <h3>📘 {tr("intro_title")}</h3>
+    <div class="iso-muted">
+        {tr("intro_text")}
+    </div>
+</div>
+"""
+    st.markdown(html_left, unsafe_allow_html=True)
 
 with col2:
-    st.markdown(
-        f"""
-        <div class="iso-card">
-            <h3>👤 {tr("info_title")}</h3>
+    html_right = f"""
+<div class="iso-card">
+    <h3>👤 {tr("info_title")}</h3>
 
-            <div class="iso-info-item">
-                <span class="iso-label">{tr("author")}:</span><br>
-                Diego Rafael Guerrero Carrillo
-            </div>
+    <div class="iso-info-item">
+        <span class="iso-label">{tr("author")}:</span><br>
+        Diego Rafael Guerrero Carrillo
+    </div>
 
-            <div class="iso-info-item">
-                <span class="iso-label">{tr("degree")}:</span><br>
-                {tr("degree_value")}
-            </div>
+    <div class="iso-info-item">
+        <span class="iso-label">{tr("degree")}:</span><br>
+        {tr("degree_value")}
+    </div>
 
-            <div class="iso-info-item">
-                <span class="iso-label">{tr("university")}:</span><br>
-                Pontificia Universidad Católica del Ecuador
-            </div>
+    <div class="iso-info-item">
+        <span class="iso-label">{tr("university")}:</span><br>
+        Pontificia Universidad Católica del Ecuador
+    </div>
 
-            <div class="iso-info-item">
-                <span class="iso-label">{tr("field")}:</span><br>
-                {tr("field_value")}
-            </div>
+    <div class="iso-info-item">
+        <span class="iso-label">{tr("field")}:</span><br>
+        {tr("field_value")}
+    </div>
 
-            <hr style="margin:0.65rem 0 0.75rem 0;">
+    <hr style="margin:0.65rem 0 0.75rem 0;">
 
-            <div class="iso-info-item">
-                <span class="iso-label">{tr("project")}:</span><br>
-                ISO-LATE
-            </div>
+    <div class="iso-info-item">
+        <span class="iso-label">{tr("project")}:</span><br>
+        ISO-LATE
+    </div>
 
-            <div class="iso-info-item">
-                <span class="iso-label">{tr("type")}:</span><br>
-                {tr("type_value")}
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    <div class="iso-info-item">
+        <span class="iso-label">{tr("type")}:</span><br>
+        {tr("type_value")}
+    </div>
+</div>
+"""
+    st.markdown(html_right, unsafe_allow_html=True)
 
 st.markdown("---")
 
