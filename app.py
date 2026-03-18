@@ -91,7 +91,7 @@ def _get_css() -> str:
     div[role="radiogroup"] {
         gap: 0.35rem !important;
         margin-top: 0rem !important;
-        margin-bottom: 0rem !important;
+        margin-bottom: -0.10rem !important;
         justify-content: flex-start !important;
     }
     
@@ -113,16 +113,18 @@ def _get_css() -> str:
         border-radius: 0;
         padding: 0;
         box-shadow: none;
-        margin-bottom: 0.35rem;
+        margin: 0 0 0.10rem 0;
     }
     
     .hero-stack {
         display: flex;
         flex-direction: column;
-        align-items: flex-start;   /* 👈 alinea a la izquierda */
+        align-items: flex-start;
         justify-content: flex-start;
         gap: 0;
         text-align: left;
+        margin: 0;
+        padding: 0;
     }
     
     .hero-title {
@@ -131,31 +133,31 @@ def _get_css() -> str:
         color: #2d3142;
         letter-spacing: -0.03em;
         line-height: 1.0;
-        margin: 0;
+        margin: 0 0 0.10rem 0;
         padding: 0;
     }
     
     .hero-logo-wrap {
         display: flex;
-        justify-content: flex-start;   /* 👈 logo alineado a la izquierda */
+        justify-content: flex-start;
         align-items: center;
-        margin: 0.05rem 0 0.05rem 0;
+        margin: 0;
         padding: 0;
     }
     
     .hero-lang {
         display: flex;
-        justify-content: flex-start;   /* 👈 idioma alineado a la izquierda */
+        justify-content: flex-start;
         align-items: center;
         width: 100%;
-        margin: 0;
+        margin: -0.20rem 0 0 0;
         padding: 0;
     }
     
     .hero-divider {
         height: 1px;
         background: #e3e9f1;
-        margin: 0.35rem 0 0.80rem 0;
+        margin: 0.10rem 0 0.70rem 0;
     }
 
     /* =========================
@@ -407,7 +409,7 @@ st.markdown(
 )
 
 st.markdown('<div class="hero-logo-wrap">', unsafe_allow_html=True)
-st.image("assets/logo.png", width=95)
+st.image("assets/logo.png", width=82)
 st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="hero-lang">', unsafe_allow_html=True)
@@ -426,7 +428,6 @@ if new_lang != st.session_state.lang:
     st.session_state.lang = new_lang
     st.rerun()
 
-st.markdown('</div>', unsafe_allow_html=True)
 st.markdown('<div class="hero-divider"></div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
