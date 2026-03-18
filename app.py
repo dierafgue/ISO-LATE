@@ -23,9 +23,6 @@ st.set_page_config(
 def _get_css() -> str:
     return """
     <style>
-    /* =========================
-       OCULTAR HEADER STREAMLIT
-    ========================= */
     header[data-testid="stHeader"]{
         height: 0px !important;
         visibility: hidden !important;
@@ -39,9 +36,6 @@ def _get_css() -> str:
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
 
-    /* =========================
-       ESTILO GLOBAL
-    ========================= */
     body {
         background-color: #f6f8fb;
         color: #222831;
@@ -53,9 +47,6 @@ def _get_css() -> str:
         padding-bottom: 0rem !important;
     }
 
-    /* =========================
-       OCULTAR SIDEBAR COMPLETO
-    ========================= */
     [data-testid="stSidebar"] {
         display: none;
     }
@@ -65,9 +56,6 @@ def _get_css() -> str:
         width: 100% !important;
     }
 
-    /* =========================
-       BOTONES STREAMLIT
-    ========================= */
     .stButton > button {
         border-radius: 8px;
         background-color: #30475e;
@@ -81,25 +69,16 @@ def _get_css() -> str:
         background-color: #3e5a78;
     }
 
-    /* =========================
-       INPUTS
-    ========================= */
     input, textarea, select {
         border-radius: 6px !important;
     }
 
-    /* =========================
-       HEADER
-    ========================= */
     h1 {
         margin: 0 0 0.10rem 0 !important;
         padding: 0 !important;
         line-height: 1.15 !important;
     }
 
-    /* =========================
-       SELECTOR DE IDIOMA COMPACTO
-    ========================= */
     div[role="radiogroup"] {
         gap: 0.25rem !important;
         margin-top: 0.05rem !important;
@@ -111,16 +90,10 @@ def _get_css() -> str:
         padding: 0rem 0.10rem !important;
     }
 
-    /* =========================
-       LÍNEA HORIZONTAL
-    ========================= */
     hr {
         margin: 0.30rem 0 0.55rem 0 !important;
     }
 
-    /* =========================
-       TARJETAS DE INTRODUCCIÓN
-    ========================= */
     .iso-card {
         background: #ffffff;
         border: 1px solid #e6ebf2;
@@ -236,9 +209,6 @@ def _get_css() -> str:
         flex-shrink: 0;
     }
 
-    /* =========================
-       IGUALAR ALTURAS TARJETAS
-    ========================= */
     [data-testid="column"] {
         display: flex;
     }
@@ -358,64 +328,61 @@ col1, col2 = st.columns([1.8, 1.2], gap="large")
 
 github_icon_svg = """
 <svg class="iso-github-icon" viewBox="0 0 16 16" aria-hidden="true">
-    <path d="M8 0C3.58 0 0 3.58 0 8a8 8 0 0 0 5.47 7.59c.4.07.55-.17.55-.38
-    0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13
-    -.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66
-    .07-.52.28-.87.5-1.07-1.78-.2-3.64-.89-3.64-3.95
-    0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82
-    .64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82
-    .44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15
-    0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48
-    0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.001 8.001 0 0 0 16 8
-    c0-4.42-3.58-8-8-8Z"></path>
+<path d="M8 0C3.58 0 0 3.58 0 8a8 8 0 0 0 5.47 7.59c.4.07.55-.17.55-.38
+0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13
+-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66
+.07-.52.28-.87.5-1.07-1.78-.2-3.64-.89-3.64-3.95
+0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82
+.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82
+.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15
+0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48
+0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.001 8.001 0 0 0 16 8
+c0-4.42-3.58-8-8-8Z"></path>
 </svg>
 """
 
 with col1:
-    st.markdown(
-        f"""
+    about_html = f"""
 <div class="iso-card iso-flex">
-    <div>
-        <h3>{tr("intro_title")}</h3>
-        <div class="iso-muted">
-            {tr("intro_text")}
-        </div>
-    </div>
+<h3>{tr("intro_title")}</h3>
+<div class="iso-muted">
+{tr("intro_text")}
 </div>
-""",
-        unsafe_allow_html=True
-    )
+</div>
+"""
+    st.markdown(about_html, unsafe_allow_html=True)
 
 with col2:
-    st.markdown(
-        f"""
+    author_top_html = f"""
 <div class="iso-card iso-flex">
-    <div>
-        <h3>{tr("info_title")}</h3>
-        <div class="iso-info-box">
-            <div class="iso-row"><b>{tr("author")}:</b> Diego Rafael Guerrero Carrillo</div>
-            <div class="iso-row"><b>{tr("degree")}:</b> {tr("degree_value")}</div>
-            <div class="iso-row"><b>{tr("university")}:</b> Pontificia Universidad Católica del Ecuador</div>
-            <div class="iso-row"><b>{tr("program")}:</b> {tr("program_value")}</div>
-        </div>
-    </div>
-
-    <div class="iso-contact">
-        <div class="iso-social-title"><b>{tr("contact_title")}</b></div>
-        <div class="iso-social-wrap">
-            <a href="https://github.com/dierafgue" target="_blank" class="iso-badge">
-                {github_icon_svg}
-                {tr("github_badge")}
-            </a>
-            <a href="mailto:DRAFAELGUE@HOTMAIL.COM" class="iso-email">
-                {tr("email_label")}: DRAFAELGUE@HOTMAIL.COM
-            </a>
-        </div>
-    </div>
+<div>
+<h3>{tr("info_title")}</h3>
+<div class="iso-info-box">
+<div class="iso-row"><b>{tr("author")}:</b> Diego Rafael Guerrero Carrillo</div>
+<div class="iso-row"><b>{tr("degree")}:</b> {tr("degree_value")}</div>
+<div class="iso-row"><b>{tr("university")}:</b> Pontificia Universidad Católica del Ecuador</div>
+<div class="iso-row"><b>{tr("program")}:</b> {tr("program_value")}</div>
 </div>
-""",
-        unsafe_allow_html=True
-    )
+</div>
+"""
+
+    author_contact_html = f"""
+<div class="iso-contact">
+<div class="iso-social-title"><b>{tr("contact_title")}</b></div>
+<div class="iso-social-wrap">
+<a href="https://github.com/dierafgue" target="_blank" class="iso-badge">
+{github_icon_svg}
+<span>{tr("github_badge")}</span>
+</a>
+<a href="mailto:DRAFAELGUE@HOTMAIL.COM" class="iso-email">
+{tr("email_label")}: DRAFAELGUE@HOTMAIL.COM
+</a>
+</div>
+</div>
+</div>
+"""
+
+    st.markdown(author_top_html + author_contact_html, unsafe_allow_html=True)
 
 st.markdown("---")
 
