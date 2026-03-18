@@ -404,11 +404,6 @@ def tr(key: str) -> str:
 st.markdown('<div class="hero-card">', unsafe_allow_html=True)
 st.markdown('<div class="hero-stack">', unsafe_allow_html=True)
 
-st.markdown(
-    '<div class="hero-title">ISO-LATE</div>',
-    unsafe_allow_html=True
-)
-
 st.markdown('<div class="hero-logo-wrap">', unsafe_allow_html=True)
 st.image("assets/logo.png", width=105)
 st.markdown('</div>', unsafe_allow_html=True)
