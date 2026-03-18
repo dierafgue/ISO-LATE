@@ -66,7 +66,7 @@ def _get_css() -> str:
     }
 
     /* =========================
-       BOTONES
+       BOTONES STREAMLIT
     ========================= */
     .stButton > button {
         border-radius: 8px;
@@ -148,11 +148,16 @@ def _get_css() -> str:
     .iso-info-box {
         color: #243447;
         font-size: 0.96rem;
-        line-height: 1.75;
+        line-height: 1.55;
     }
 
     .iso-info-box b {
         color: #243447;
+    }
+
+    .iso-row {
+        margin-bottom: 0.38rem;
+        line-height: 1.40;
     }
 
     .iso-small-signature {
@@ -164,16 +169,38 @@ def _get_css() -> str:
     }
 
     .iso-social-title {
-    margin-bottom: 0.45rem;
-    color: #243447;
-    font-size: 0.98rem;
+        margin-bottom: 0.45rem;
+        color: #243447;
+        font-size: 0.98rem;
     }
-    
+
     .iso-social-wrap {
         display: flex;
         align-items: center;
         gap: 0.5rem;
         flex-wrap: wrap;
+    }
+
+    .iso-github-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.48rem 0.90rem;
+        border: 1px solid #d0d7de;
+        border-radius: 8px;
+        background: #f6f8fa;
+        color: #24292f !important;
+        text-decoration: none !important;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: 0.2s ease;
+    }
+
+    .iso-github-btn:hover {
+        background: #eef2f6;
+        border-color: #bfc8d1;
+        text-decoration: none !important;
+        color: #24292f !important;
     }
     </style>
     """
@@ -206,9 +233,10 @@ T = {
         "degree": "Degree",
         "university": "University",
         "program": "Program",
+        "find_me": "Find me on:",
+        "github_follow": "Follow on GitHub",
         "degree_value": "Civil Engineer – MDI",
         "program_value": "Master’s Degree in Earthquake-Resistant Structural Design",
-        "type_value": "Interactive Engineering Tool",
     },
     "es": {
         "language": "Idioma",
@@ -229,9 +257,10 @@ T = {
         "degree": "Formación",
         "university": "Universidad",
         "program": "Programa",
+        "find_me": "Encuéntrame en:",
+        "github_follow": "Seguir en GitHub",
         "degree_value": "Ingeniero Civil – MDI",
         "program_value": "Maestría en Diseño de Estructuras Sismorresistentes",
-        "type_value": "Herramienta Interactiva de Ingeniería",
     },
 }
 
@@ -272,30 +301,25 @@ with col1:
     st.markdown(
         f"""
 <div class="iso-card">
-<h3>📘 {tr("intro_title")}</h3>
-<div class="iso-muted">
-{tr("intro_text")}
-</div>
+    <h3>📘 {tr("intro_title")}</h3>
+    <div class="iso-muted">
+        {tr("intro_text")}
+    </div>
 </div>
 """,
         unsafe_allow_html=True
     )
-        st.markdown(
-        """
-<div class="iso-card">
-<div class="iso-social-title"><b>Find me on:</b></div>
-<div class="iso-social-wrap">
-    <a class="github-button"
-       href="https://github.com/dierafgue"
-       data-size="large"
-       data-show-count="true"
-       aria-label="Follow @TU_USUARIO on GitHub">
-       Follow @TU_USUARIO
-    </a>
-</div>
-</div>
 
-<script async defer src="https://buttons.github.io/buttons.js"></script>
+    st.markdown(
+        f"""
+<div class="iso-card">
+    <div class="iso-social-title"><b>{tr("find_me")}</b></div>
+    <div class="iso-social-wrap">
+        <a href="https://github.com/dierafgue" target="_blank" class="iso-github-btn">
+            <span>🐙</span> {tr("github_follow")}
+        </a>
+    </div>
+</div>
 """,
         unsafe_allow_html=True
     )
@@ -304,15 +328,13 @@ with col2:
     st.markdown(
         f"""
 <div class="iso-card">
-<h3>👤 {tr("info_title")}</h3>
-<div class="iso-info-box">
-
-<div class="iso-row"><b>{tr("author")}:</b> Diego Rafael Guerrero Carrillo</div>
-<div class="iso-row"><b>{tr("degree")}:</b> {tr("degree_value")}</div>
-<div class="iso-row"><b>{tr("university")}:</b> Pontificia Universidad Católica del Ecuador</div>
-<div class="iso-row"><b>{tr("program")}:</b> {tr("program_value")}</div>
-
-</div>
+    <h3>👤 {tr("info_title")}</h3>
+    <div class="iso-info-box">
+        <div class="iso-row"><b>{tr("author")}:</b> Diego Rafael Guerrero Carrillo</div>
+        <div class="iso-row"><b>{tr("degree")}:</b> {tr("degree_value")}</div>
+        <div class="iso-row"><b>{tr("university")}:</b> Pontificia Universidad Católica del Ecuador</div>
+        <div class="iso-row"><b>{tr("program")}:</b> {tr("program_value")}</div>
+    </div>
 </div>
 """,
         unsafe_allow_html=True
