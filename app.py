@@ -142,6 +142,7 @@ def _get_css() -> str:
         color: #5f6b7a;
         font-size: 0.96rem;
         line-height: 1.70;
+        text-align: justify;
     }
 
     .iso-info-box {
@@ -160,6 +161,19 @@ def _get_css() -> str:
         color: #7a7a7a;
         margin-top: -8px;
         margin-bottom: 4px;
+    }
+
+    .iso-social-title {
+    margin-bottom: 0.45rem;
+    color: #243447;
+    font-size: 0.98rem;
+    }
+    
+    .iso-social-wrap {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
     }
     </style>
     """
@@ -191,11 +205,9 @@ T = {
         "author": "Author",
         "degree": "Degree",
         "university": "University",
-        "field": "Field",
-        "project": "Project",
-        "type": "Type",
+        "program": "Program",
         "degree_value": "Civil Engineer – MDI",
-        "field_value": "Structural / Seismic Engineering",
+        "program_value": "Master’s Degree in Earthquake-Resistant Structural Design",
         "type_value": "Interactive Engineering Tool",
     },
     "es": {
@@ -216,11 +228,9 @@ T = {
         "author": "Autor",
         "degree": "Formación",
         "university": "Universidad",
-        "field": "Área",
-        "project": "Proyecto",
-        "type": "Tipo",
+        "program": "Programa",
         "degree_value": "Ingeniero Civil – MDI",
-        "field_value": "Ingeniería Estructural / Sísmica",
+        "program_value": "Maestría en Diseño de Estructuras Sismorresistentes",
         "type_value": "Herramienta Interactiva de Ingeniería",
     },
 }
@@ -270,24 +280,37 @@ with col1:
 """,
         unsafe_allow_html=True
     )
+        st.markdown(
+        """
+<div class="iso-card">
+<div class="iso-social-title"><b>Find me on:</b></div>
+<div class="iso-social-wrap">
+    <a class="github-button"
+       href="https://github.com/dierafgue"
+       data-size="large"
+       data-show-count="true"
+       aria-label="Follow @TU_USUARIO on GitHub">
+       Follow @TU_USUARIO
+    </a>
+</div>
+</div>
+
+<script async defer src="https://buttons.github.io/buttons.js"></script>
+""",
+        unsafe_allow_html=True
+    )
 
 with col2:
     st.markdown(
         f"""
 <div class="iso-card">
 <h3>👤 {tr("info_title")}</h3>
-
 <div class="iso-info-box">
 
 <div class="iso-row"><b>{tr("author")}:</b> Diego Rafael Guerrero Carrillo</div>
 <div class="iso-row"><b>{tr("degree")}:</b> {tr("degree_value")}</div>
 <div class="iso-row"><b>{tr("university")}:</b> Pontificia Universidad Católica del Ecuador</div>
-<div class="iso-row"><b>{tr("field")}:</b> {tr("field_value")}</div>
-
-<hr style="margin:0.5rem 0 0.6rem 0;">
-
-<div class="iso-row"><b>{tr("project")}:</b> ISO-LATE</div>
-<div class="iso-row"><b>{tr("type")}:</b> {tr("type_value")}</div>
+<div class="iso-row"><b>{tr("program")}:</b> {tr("program_value")}</div>
 
 </div>
 </div>
