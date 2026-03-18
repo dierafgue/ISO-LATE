@@ -108,6 +108,7 @@ def _get_css() -> str:
     ========================= */
     [data-testid="column"] {
         display: flex;
+        align-items: stretch;
     }
 
     [data-testid="column"] > div {
@@ -126,8 +127,9 @@ def _get_css() -> str:
         box-shadow: 0 3px 10px rgba(0,0,0,0.04);
         margin-top: 0.18rem;
         margin-bottom: 0.70rem;
-        min-height: 210px;   /* 👈 iguala visualmente ambas tarjetas */
         height: 100%;
+        display: flex;
+        flex-direction: column;
     }
 
     .iso-card h3 {
@@ -157,7 +159,7 @@ def _get_css() -> str:
     ========================= */
     .iso-author-grid {
         display: grid;
-        grid-template-columns: 1.55fr 0.78fr; /* 👈 find me más a la izquierda */
+        grid-template-columns: 1.55fr 0.78fr;
         gap: 0.90rem;
         align-items: start;
         height: 100%;
@@ -171,7 +173,7 @@ def _get_css() -> str:
     .iso-author-right {
         min-width: 0;
         border-left: 1px solid #e6ebf2;
-        padding-left: 0.90rem; /* 👈 menos espacio, más a la izquierda */
+        padding-left: 0.90rem;
     }
 
     .iso-info-box {
@@ -269,7 +271,7 @@ def _get_css() -> str:
         }
 
         .iso-card {
-            min-height: auto;
+            height: auto;
         }
     }
     </style>
