@@ -150,7 +150,7 @@ def _get_css() -> str:
         justify-content: flex-start;
         align-items: center;
         width: 100%;
-        margin: -1.15rem 0 -0.55rem 0;
+        margin: -0.35rem 0 -0.40rem 0;
         padding: 0;
     }
 
@@ -412,10 +412,11 @@ def tr(key: str) -> str:
 st.markdown('<div class="hero-card">', unsafe_allow_html=True)
 st.markdown('<div class="hero-stack">', unsafe_allow_html=True)
 
-# Logo principal
-st.markdown('<div class="hero-logo-wrap">', unsafe_allow_html=True)
-st.image("assets/logo.png", width=220)
-st.markdown('</div>', unsafe_allow_html=True)
+# Título
+st.markdown(
+    '<div class="hero-title">ISO-LATE</div>',
+    unsafe_allow_html=True
+)
 
 # Selector de idioma
 st.markdown('<div class="hero-lang">', unsafe_allow_html=True)
