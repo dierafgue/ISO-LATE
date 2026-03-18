@@ -89,25 +89,19 @@ def _get_css() -> str:
     }
 
     div[role="radiogroup"] {
-        gap: 0.35rem !important;
-        margin-top: -0.15rem !important;
-        margin-bottom: -0.30rem !important;
+        gap: 0.30rem !important;
+        margin-top: -0.20rem !important;
+        margin-bottom: -0.40rem !important;
         justify-content: flex-start !important;
     }
     
     div[role="radiogroup"] label {
         font-size: 0.88rem !important;
-        padding: 0rem 0.08rem !important;
+        padding: 0rem 0.06rem !important;
     }
 
     hr {
         margin: 0.30rem 0 0.55rem 0 !important;
-    }
-
-    /* 🔥 QUITAR ESPACIO DEL LOGO (CLAVE) */
-    img {
-        display: block;
-        margin-bottom: -10px !important;
     }
 
     /* =========================
@@ -119,7 +113,7 @@ def _get_css() -> str:
         border-radius: 0;
         padding: 0;
         box-shadow: none;
-        margin: 0 0 0.10rem 0;
+        margin: 0 0 0.02rem 0;
     }
     
     .hero-stack {
@@ -139,7 +133,7 @@ def _get_css() -> str:
         color: #2d3142;
         letter-spacing: -0.03em;
         line-height: 1.0;
-        margin: 0 0 0.10rem 0;
+        margin: 0 0 0.02rem 0;
         padding: 0;
     }
     
@@ -147,8 +141,18 @@ def _get_css() -> str:
         display: flex;
         justify-content: flex-start;
         align-items: center;
+        margin: -0.10rem 0 -0.55rem 0;
+        padding: 0;
+    }
+
+    .hero-logo-img {
+        display: block;
+        width: 88px;
+        height: auto;
         margin: 0;
         padding: 0;
+        border-radius: 0 !important;
+        object-fit: contain;
     }
     
     .hero-lang {
@@ -156,14 +160,14 @@ def _get_css() -> str:
         justify-content: flex-start;
         align-items: center;
         width: 100%;
-        margin: -0.55rem 0 0 0;
+        margin: -0.85rem 0 -0.20rem 0;
         padding: 0;
     }
     
     .hero-divider {
         height: 1px;
         background: #e3e9f1;
-        margin: 0.10rem 0 0.70rem 0;
+        margin: 0.02rem 0 0.35rem 0;
     }
 
     /* =========================
@@ -414,9 +418,14 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.markdown('<div class="hero-logo-wrap">', unsafe_allow_html=True)
-st.image("assets/logo.png", width=130)
-st.markdown('</div>', unsafe_allow_html=True)
+st.markdown(
+    """
+    <div class="hero-logo-wrap">
+        <img src="assets/logo.png" class="hero-logo-img">
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 st.markdown('<div class="hero-lang">', unsafe_allow_html=True)
 lang = st.radio(
