@@ -409,7 +409,7 @@ st.markdown(
 )
 
 st.markdown('<div class="hero-logo-wrap">', unsafe_allow_html=True)
-st.image("assets/logo.png", width=90)
+st.image("assets/logo.png", width=130)
 st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="hero-lang">', unsafe_allow_html=True)
