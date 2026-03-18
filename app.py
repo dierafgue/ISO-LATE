@@ -146,9 +146,9 @@ def _get_css() -> str:
     }
 
     .hero-logo-img {
-        display: block;
-        width: 88px;
+        width: 120px;
         height: auto;
+        display: block;
         margin: 0;
         padding: 0;
         border-radius: 0 !important;
@@ -418,9 +418,14 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.markdown('<div class="hero-logo-wrap">', unsafe_allow_html=True)
-st.image("assets/logo.png", width=75)
-st.markdown('</div>', unsafe_allow_html=True)
+st.markdown(
+    """
+    <div class="hero-logo-wrap">
+        <img src="assets/logo.png" class="hero-logo-img">
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 st.markdown('<div class="hero-lang">', unsafe_allow_html=True)
 lang = st.radio(
