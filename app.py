@@ -421,7 +421,7 @@ st.markdown(
 st.markdown(
     """
     <div class="hero-logo-wrap">
-        <img src="assets/logo.png" class="hero-logo-img">
+        <img src="./assets/logo.png" class="hero-logo-img">
     </div>
     """,
     unsafe_allow_html=True
