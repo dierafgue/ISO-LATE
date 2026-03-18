@@ -1,5 +1,5 @@
 # =============================================================================
-# 📘 APP STREAMLIT – ISO-LATE - DESARROLLADO POR DIEGO GUERRERO MDI.
+# APP STREAMLIT – ISO-LATE - DESARROLLADO POR DIEGO GUERRERO MDI.
 # =============================================================================
 import streamlit as st
 import numpy as np
@@ -129,6 +129,7 @@ def _get_css() -> str:
         box-shadow: 0 3px 10px rgba(0,0,0,0.04);
         margin-top: 0.20rem;
         margin-bottom: 0.70rem;
+        height: 100%;
     }
 
     .iso-card h3 {
@@ -173,19 +174,19 @@ def _get_css() -> str:
         color: #243447;
         font-size: 0.98rem;
     }
-    
+
     .iso-social-wrap {
         display: flex;
         align-items: center;
         gap: 0.55rem;
         flex-wrap: wrap;
     }
-    
+
     .iso-badge {
         display: inline-flex;
         align-items: center;
         gap: 0.38rem;
-        padding: 0.22rem 0.58rem;
+        padding: 0.24rem 0.58rem;
         border: 1px solid #d0d7de;
         border-radius: 6px;
         background: #f6f8fa;
@@ -196,18 +197,18 @@ def _get_css() -> str:
         line-height: 1.2;
         transition: 0.18s ease;
     }
-    
+
     .iso-badge:hover {
         background: #eef2f6;
         border-color: #bfc8d1;
         text-decoration: none !important;
         color: #24292f !important;
     }
-    
+
     .iso-email {
         display: inline-flex;
         align-items: center;
-        padding: 0.22rem 0.58rem;
+        padding: 0.24rem 0.58rem;
         border: 1px solid #d0d7de;
         border-radius: 6px;
         background: #ffffff;
@@ -218,7 +219,7 @@ def _get_css() -> str:
         line-height: 1.2;
         transition: 0.18s ease;
     }
-    
+
     .iso-email:hover {
         background: #f8fafc;
         border-color: #bfc8d1;
@@ -226,25 +227,36 @@ def _get_css() -> str:
         text-decoration: none !important;
     }
 
+    .iso-github-icon {
+        width: 14px;
+        height: 14px;
+        display: inline-block;
+        vertical-align: middle;
+        fill: currentColor;
+        flex-shrink: 0;
+    }
+
     /* =========================
        IGUALAR ALTURAS TARJETAS
     ========================= */
+    [data-testid="column"] {
+        display: flex;
+    }
+
+    [data-testid="column"] > div {
+        width: 100%;
+    }
+
     .iso-flex {
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        height: 100%;
+        min-height: 100%;
     }
-    
-    /* fuerza a que ambas columnas se estiren igual */
-    [data-testid="column"] > div {
-        height: 100%;
-    }
-    
-    /* bloque contacto abajo */
+
     .iso-contact {
-        margin-top: 0.6rem;
-        padding-top: 0.6rem;
+        margin-top: 0.75rem;
+        padding-top: 0.70rem;
         border-top: 1px solid #e6ebf2;
     }
     </style>
@@ -317,7 +329,7 @@ def tr(key: str) -> str:
 # =============================================================================
 # ✅ HEADER + SELECTOR + PRESENTACIÓN INICIAL ================================
 # =============================================================================
-st.title("💻 ISO-LATE")
+st.title("ISO-LATE")
 
 st.markdown(
     f"<p class='iso-small-signature'>{tr('signature')}</p>",
@@ -344,26 +356,42 @@ st.markdown("---")
 # =============================================================================
 col1, col2 = st.columns([1.8, 1.2], gap="large")
 
+github_icon_svg = """
+<svg class="iso-github-icon" viewBox="0 0 16 16" aria-hidden="true">
+    <path d="M8 0C3.58 0 0 3.58 0 8a8 8 0 0 0 5.47 7.59c.4.07.55-.17.55-.38
+    0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13
+    -.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66
+    .07-.52.28-.87.5-1.07-1.78-.2-3.64-.89-3.64-3.95
+    0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82
+    .64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82
+    .44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15
+    0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48
+    0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.001 8.001 0 0 0 16 8
+    c0-4.42-3.58-8-8-8Z"></path>
+</svg>
+"""
+
 with col1:
     st.markdown(
         f"""
-<div class="iso-card">
-    <h3>📘 {tr("intro_title")}</h3>
-    <div class="iso-muted">
-        {tr("intro_text")}
+<div class="iso-card iso-flex">
+    <div>
+        <h3>{tr("intro_title")}</h3>
+        <div class="iso-muted">
+            {tr("intro_text")}
+        </div>
     </div>
 </div>
 """,
         unsafe_allow_html=True
     )
+
 with col2:
     st.markdown(
         f"""
 <div class="iso-card iso-flex">
-
     <div>
-        <h3>👤 {tr("info_title")}</h3>
-
+        <h3>{tr("info_title")}</h3>
         <div class="iso-info-box">
             <div class="iso-row"><b>{tr("author")}:</b> Diego Rafael Guerrero Carrillo</div>
             <div class="iso-row"><b>{tr("degree")}:</b> {tr("degree_value")}</div>
@@ -374,33 +402,15 @@ with col2:
 
     <div class="iso-contact">
         <div class="iso-social-title"><b>{tr("contact_title")}</b></div>
-
         <div class="iso-social-wrap">
             <a href="https://github.com/dierafgue" target="_blank" class="iso-badge">
-                🐙 {tr("github_badge")}
+                {github_icon_svg}
+                {tr("github_badge")}
             </a>
-
             <a href="mailto:DRAFAELGUE@HOTMAIL.COM" class="iso-email">
                 {tr("email_label")}: DRAFAELGUE@HOTMAIL.COM
             </a>
         </div>
-    </div>
-
-</div>
-""",
-        unsafe_allow_html=True
-    )
-    
-with col2:
-    st.markdown(
-        f"""
-<div class="iso-card">
-    <h3>👤 {tr("info_title")}</h3>
-    <div class="iso-info-box">
-        <div class="iso-row"><b>{tr("author")}:</b> Diego Rafael Guerrero Carrillo</div>
-        <div class="iso-row"><b>{tr("degree")}:</b> {tr("degree_value")}</div>
-        <div class="iso-row"><b>{tr("university")}:</b> Pontificia Universidad Católica del Ecuador</div>
-        <div class="iso-row"><b>{tr("program")}:</b> {tr("program_value")}</div>
     </div>
 </div>
 """,
