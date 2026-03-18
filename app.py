@@ -49,7 +49,7 @@ def _get_css() -> str:
     }
 
     .block-container {
-        padding-top: 1.20rem !important;
+        padding-top: 0.65rem !important;
         padding-bottom: 0rem !important;
         padding-left: 0.85rem !important;
         padding-right: 0.85rem !important;
@@ -101,6 +101,38 @@ def _get_css() -> str:
 
     hr {
         margin: 0.30rem 0 0.55rem 0 !important;
+    }
+
+    /* =========================
+       HERO / HEADER SUPERIOR
+    ========================= */
+    .hero-left {
+        display: flex;
+        align-items: center;
+        min-height: 82px;
+    }
+
+    .hero-title {
+        font-size: 3.15rem;
+        font-weight: 800;
+        color: #2d3142;
+        letter-spacing: -0.02em;
+        line-height: 1.0;
+        margin: 0;
+        padding: 0;
+    }
+
+    .hero-logo-wrap {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 82px;
+    }
+
+    .hero-divider {
+        height: 1px;
+        background: #dfe5ec;
+        margin: 0.45rem 0 0.90rem 0;
     }
 
     /* =========================
@@ -257,6 +289,15 @@ def _get_css() -> str:
     }
 
     @media (max-width: 980px) {
+        .hero-left,
+        .hero-logo-wrap {
+            min-height: auto;
+        }
+
+        .hero-title {
+            font-size: 2.55rem;
+        }
+
         .iso-author-grid {
             grid-template-columns: 1fr;
             gap: 0.85rem;
@@ -340,23 +381,23 @@ def tr(key: str) -> str:
     return T.get(st.session_state.lang, T["en"]).get(key, key)
 
 # =============================================================================
-# ✅ HEADER + SELECTOR ========================================================
+# ✅ HEADER LIMPIO (SIN SUBTÍTULO) ============================================
 # =============================================================================
-col_header1, col_header2 = st.columns([1.6, 1])
+col_header1, col_header2 = st.columns([1.6, 0.8], gap="large")
 
 with col_header1:
     st.markdown(
         """
-        <div style="display:flex; align-items:center; height:100%;">
-            <h1 style="margin:0; padding:0;">ISO-LATE</h1>
+        <div class="hero-left">
+            <div class="hero-title">ISO-LATE</div>
         </div>
         """,
         unsafe_allow_html=True
     )
 
 with col_header2:
-    st.markdown('<div style="text-align:right;">', unsafe_allow_html=True)
-    st.image("assets/logo.png", width=120)
+    st.markdown('<div class="hero-logo-wrap">', unsafe_allow_html=True)
+    st.image("assets/logo.png", width=115)
     st.markdown('</div>', unsafe_allow_html=True)
 
 lang = st.radio(
@@ -373,7 +414,7 @@ if new_lang != st.session_state.lang:
     st.session_state.lang = new_lang
     st.rerun()
 
-st.markdown("---")
+st.markdown('<div class="hero-divider"></div>', unsafe_allow_html=True)
 
 # =============================================================================
 # === BLOQUE INICIAL =========================================================
