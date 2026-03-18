@@ -225,6 +225,28 @@ def _get_css() -> str:
         color: #243447 !important;
         text-decoration: none !important;
     }
+
+    /* =========================
+       IGUALAR ALTURAS TARJETAS
+    ========================= */
+    .iso-flex {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 100%;
+    }
+    
+    /* fuerza a que ambas columnas se estiren igual */
+    [data-testid="column"] > div {
+        height: 100%;
+    }
+    
+    /* bloque contacto abajo */
+    .iso-contact {
+        margin-top: 0.6rem;
+        padding-top: 0.6rem;
+        border-top: 1px solid #e6ebf2;
+    }
     </style>
     """
 
@@ -320,7 +342,7 @@ st.markdown("---")
 # =============================================================================
 # === BLOQUE INICIAL =========================================================
 # =============================================================================
-col1, col2 = st.columns([2.2, 1.1], gap="large")
+col1, col2 = st.columns([1.8, 1.2], gap="large")
 
 with col1:
     st.markdown(
@@ -334,22 +356,40 @@ with col1:
 """,
         unsafe_allow_html=True
     )
-st.markdown(
-    f"""
-<div class="iso-card">
-    <div class="iso-social-title"><b>{tr("contact_title")}</b></div>
-    <div class="iso-social-wrap">
-        <a href="https://github.com/dierafgue" target="_blank" class="iso-badge">
-            <span>🐙</span> {tr("github_badge")}
-        </a>
-        <a href="mailto:DRAFAELGUE@HOTMAIL.COM" class="iso-email">
-            {tr("email_label")}: DRAFAELGUE@HOTMAIL.COM
-        </a>
+with col2:
+    st.markdown(
+        f"""
+<div class="iso-card iso-flex">
+
+    <div>
+        <h3>👤 {tr("info_title")}</h3>
+
+        <div class="iso-info-box">
+            <div class="iso-row"><b>{tr("author")}:</b> Diego Rafael Guerrero Carrillo</div>
+            <div class="iso-row"><b>{tr("degree")}:</b> {tr("degree_value")}</div>
+            <div class="iso-row"><b>{tr("university")}:</b> Pontificia Universidad Católica del Ecuador</div>
+            <div class="iso-row"><b>{tr("program")}:</b> {tr("program_value")}</div>
+        </div>
     </div>
+
+    <div class="iso-contact">
+        <div class="iso-social-title"><b>{tr("contact_title")}</b></div>
+
+        <div class="iso-social-wrap">
+            <a href="https://github.com/dierafgue" target="_blank" class="iso-badge">
+                🐙 {tr("github_badge")}
+            </a>
+
+            <a href="mailto:DRAFAELGUE@HOTMAIL.COM" class="iso-email">
+                {tr("email_label")}: DRAFAELGUE@HOTMAIL.COM
+            </a>
+        </div>
+    </div>
+
 </div>
 """,
-    unsafe_allow_html=True
-)
+        unsafe_allow_html=True
+    )
     
 with col2:
     st.markdown(
