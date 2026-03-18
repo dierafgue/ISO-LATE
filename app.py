@@ -36,7 +36,6 @@ def _get_css() -> str:
         visibility: hidden !important;
     }
 
-    /* ocultar menú y footer */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
 
@@ -145,14 +144,13 @@ def _get_css() -> str:
         line-height: 1.70;
     }
 
-    .iso-info-item {
-        margin-bottom: 0.42rem;
-        line-height: 1.55;
+    .iso-info-box {
+        color: #243447;
         font-size: 0.96rem;
+        line-height: 1.75;
     }
 
-    .iso-label {
-        font-weight: 700;
+    .iso-info-box b {
         color: #243447;
     }
 
@@ -179,7 +177,6 @@ T = {
         "language": "Language",
         "english": "English",
         "spanish": "Spanish",
-
         "signature": "Pontificia Universidad Católica del Ecuador — Developed by Diego R. Guerrero C.",
         "intro_title": "About ISO-LATE",
         "intro_text": (
@@ -205,7 +202,6 @@ T = {
         "language": "Idioma",
         "english": "Inglés",
         "spanish": "Español",
-
         "signature": "Pontificia Universidad Católica del Ecuador — Elaborado por Diego R. Guerrero C.",
         "intro_title": "Acerca de ISO-LATE",
         "intro_text": (
@@ -242,9 +238,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# -----------------------------------------------------------------------------
-# Selector de idioma
-# -----------------------------------------------------------------------------
 lang = st.radio(
     label="",
     options=["EN", "ES"],
@@ -260,61 +253,54 @@ if new_lang != st.session_state.lang:
 
 st.markdown("---")
 
-# -----------------------------------------------------------------------------
-# Bloque inicial tipo presentación
-# -----------------------------------------------------------------------------
+# =============================================================================
+# === BLOQUE INICIAL =========================================================
+# =============================================================================
 col1, col2 = st.columns([2.2, 1.1], gap="large")
 
 with col1:
-    html_left = f"""
+    st.markdown(
+        f"""
 <div class="iso-card">
-    <h3>📘 {tr("intro_title")}</h3>
-    <div class="iso-muted">
-        {tr("intro_text")}
-    </div>
+<h3>📘 {tr("intro_title")}</h3>
+<div class="iso-muted">
+{tr("intro_text")}
 </div>
-"""
-    st.markdown(html_left, unsafe_allow_html=True)
+</div>
+""",
+        unsafe_allow_html=True
+    )
 
 with col2:
-    html_right = f"""
+    st.markdown(
+        f"""
 <div class="iso-card">
-    <h3>👤 {tr("info_title")}</h3>
+<h3>👤 {tr("info_title")}</h3>
+<div class="iso-info-box">
+<b>{tr("author")}:</b><br>
+Diego Rafael Guerrero Carrillo<br><br>
 
-    <div class="iso-info-item">
-        <span class="iso-label">{tr("author")}:</span><br>
-        Diego Rafael Guerrero Carrillo
-    </div>
+<b>{tr("degree")}:</b><br>
+{tr("degree_value")}<br><br>
 
-    <div class="iso-info-item">
-        <span class="iso-label">{tr("degree")}:</span><br>
-        {tr("degree_value")}
-    </div>
+<b>{tr("university")}:</b><br>
+Pontificia Universidad Católica del Ecuador<br><br>
 
-    <div class="iso-info-item">
-        <span class="iso-label">{tr("university")}:</span><br>
-        Pontificia Universidad Católica del Ecuador
-    </div>
+<b>{tr("field")}:</b><br>
+{tr("field_value")}<br><br>
 
-    <div class="iso-info-item">
-        <span class="iso-label">{tr("field")}:</span><br>
-        {tr("field_value")}
-    </div>
+<hr style="margin:0.65rem 0 0.75rem 0;">
 
-    <hr style="margin:0.65rem 0 0.75rem 0;">
+<b>{tr("project")}:</b><br>
+ISO-LATE<br><br>
 
-    <div class="iso-info-item">
-        <span class="iso-label">{tr("project")}:</span><br>
-        ISO-LATE
-    </div>
-
-    <div class="iso-info-item">
-        <span class="iso-label">{tr("type")}:</span><br>
-        {tr("type_value")}
-    </div>
+<b>{tr("type")}:</b><br>
+{tr("type_value")}
 </div>
-"""
-    st.markdown(html_right, unsafe_allow_html=True)
+</div>
+""",
+        unsafe_allow_html=True
+    )
 
 st.markdown("---")
 
