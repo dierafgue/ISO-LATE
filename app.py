@@ -290,7 +290,6 @@ T = {
         "language": "Language",
         "english": "English",
         "spanish": "Spanish",
-        "signature": "Pontificia Universidad Católica del Ecuador — Developed by Diego R. Guerrero C.",
         "intro_title": "About ISO-LATE",
         "intro_text": (
             "ISO-LATE is an interactive structural engineering application designed to "
@@ -315,7 +314,6 @@ T = {
         "language": "Idioma",
         "english": "Inglés",
         "spanish": "Español",
-        "signature": "Pontificia Universidad Católica del Ecuador — Elaborado por Diego R. Guerrero C.",
         "intro_title": "Acerca de ISO-LATE",
         "intro_text": (
             "ISO-LATE es una aplicación interactiva de ingeniería estructural diseñada para "
@@ -344,12 +342,17 @@ def tr(key: str) -> str:
 # =============================================================================
 # ✅ HEADER + SELECTOR + PRESENTACIÓN INICIAL ================================
 # =============================================================================
-st.title("ISO-LATE")
+st.image("assets/logo.png", width=200)
 
-st.markdown(
-    f"<p class='iso-small-signature'>{tr('signature')}</p>",
-    unsafe_allow_html=True
+lang = st.radio(
+    label="",
+    options=["EN", "ES"],
+    index=0 if st.session_state.lang == "en" else 1,
+    horizontal=True,
+    label_visibility="collapsed",
 )
+
+st.markdown("---")
 
 lang = st.radio(
     label="",
