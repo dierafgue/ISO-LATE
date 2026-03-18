@@ -173,34 +173,57 @@ def _get_css() -> str:
         color: #243447;
         font-size: 0.98rem;
     }
-
+    
     .iso-social-wrap {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.55rem;
         flex-wrap: wrap;
     }
-
-    .iso-github-btn {
+    
+    .iso-badge {
         display: inline-flex;
         align-items: center;
-        gap: 0.45rem;
-        padding: 0.48rem 0.90rem;
+        gap: 0.38rem;
+        padding: 0.22rem 0.58rem;
         border: 1px solid #d0d7de;
-        border-radius: 8px;
+        border-radius: 6px;
         background: #f6f8fa;
         color: #24292f !important;
         text-decoration: none !important;
         font-weight: 600;
-        font-size: 0.95rem;
-        transition: 0.2s ease;
+        font-size: 0.88rem;
+        line-height: 1.2;
+        transition: 0.18s ease;
     }
-
-    .iso-github-btn:hover {
+    
+    .iso-badge:hover {
         background: #eef2f6;
         border-color: #bfc8d1;
         text-decoration: none !important;
         color: #24292f !important;
+    }
+    
+    .iso-email {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.22rem 0.58rem;
+        border: 1px solid #d0d7de;
+        border-radius: 6px;
+        background: #ffffff;
+        color: #30475e !important;
+        text-decoration: none !important;
+        font-weight: 500;
+        font-size: 0.88rem;
+        line-height: 1.2;
+        transition: 0.18s ease;
+    }
+    
+    .iso-email:hover {
+        background: #f8fafc;
+        border-color: #bfc8d1;
+        color: #243447 !important;
+        text-decoration: none !important;
     }
     </style>
     """
@@ -233,10 +256,11 @@ T = {
         "degree": "Degree",
         "university": "University",
         "program": "Program",
-        "find_me": "Find me on:",
-        "github_follow": "Follow on GitHub",
         "degree_value": "Civil Engineer – MDI",
         "program_value": "Master’s Degree in Earthquake-Resistant Structural Design",
+        "contact_title": "Find me on:",
+        "github_badge": "Follow",
+        "email_label": "Email",
     },
     "es": {
         "language": "Idioma",
@@ -257,10 +281,11 @@ T = {
         "degree": "Formación",
         "university": "Universidad",
         "program": "Programa",
-        "find_me": "Encuéntrame en:",
-        "github_follow": "Seguir en GitHub",
         "degree_value": "Ingeniero Civil – MDI",
         "program_value": "Maestría en Diseño de Estructuras Sismorresistentes",
+        "contact_title": "Encuéntrame en:",
+        "github_badge": "Seguir",
+        "email_label": "Correo",
     },
 }
 
@@ -309,21 +334,23 @@ with col1:
 """,
         unsafe_allow_html=True
     )
-
-    st.markdown(
-        f"""
+st.markdown(
+    f"""
 <div class="iso-card">
-    <div class="iso-social-title"><b>{tr("find_me")}</b></div>
+    <div class="iso-social-title"><b>{tr("contact_title")}</b></div>
     <div class="iso-social-wrap">
-        <a href="https://github.com/dierafgue" target="_blank" class="iso-github-btn">
-            <span>🐙</span> {tr("github_follow")}
+        <a href="https://github.com/dierafgue" target="_blank" class="iso-badge">
+            <span>🐙</span> {tr("github_badge")}
+        </a>
+        <a href="mailto:DRAFAELGUE@HOTMAIL.COM" class="iso-email">
+            {tr("email_label")}: DRAFAELGUE@HOTMAIL.COM
         </a>
     </div>
 </div>
 """,
-        unsafe_allow_html=True
-    )
-
+    unsafe_allow_html=True
+)
+    
 with col2:
     st.markdown(
         f"""
