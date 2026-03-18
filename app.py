@@ -126,7 +126,7 @@ def _get_css() -> str:
         box-shadow: 0 3px 10px rgba(0,0,0,0.04);
         margin-top: 0.18rem;
         margin-bottom: 0.70rem;
-        min-height: 285px;   /* 👈 iguala visualmente ambas tarjetas */
+        min-height: 250px;   /* 👈 iguala visualmente ambas tarjetas */
         height: 100%;
     }
 
