@@ -21,8 +21,11 @@ st.set_page_config(
 # =============================================================================
 @st.cache_data(show_spinner=False)
 def _get_css() -> str:
-    return """
+        return """
     <style>
+    /* =========================
+       OCULTAR HEADER STREAMLIT
+    ========================= */
     header[data-testid="stHeader"]{
         height: 0px !important;
         visibility: hidden !important;
@@ -36,6 +39,9 @@ def _get_css() -> str:
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
 
+    /* =========================
+       ESTILO GLOBAL
+    ========================= */
     body {
         background-color: #f6f8fb;
         color: #222831;
@@ -94,6 +100,9 @@ def _get_css() -> str:
         margin: 0.30rem 0 0.55rem 0 !important;
     }
 
+    /* =========================
+       TARJETAS
+    ========================= */
     .iso-card {
         background: #ffffff;
         border: 1px solid #e6ebf2;
@@ -107,7 +116,7 @@ def _get_css() -> str:
 
     .iso-card h3 {
         margin-top: 0rem !important;
-        margin-bottom: 0.65rem !important;
+        margin-bottom: 0.70rem !important;
         color: #243447;
         font-size: 1.12rem !important;
     }
@@ -130,7 +139,7 @@ def _get_css() -> str:
     }
 
     .iso-row {
-        margin-bottom: 0.38rem;
+        margin-bottom: 0.45rem;
         line-height: 1.40;
     }
 
@@ -140,73 +149,6 @@ def _get_css() -> str:
         color: #7a7a7a;
         margin-top: -8px;
         margin-bottom: 4px;
-    }
-
-    .iso-social-title {
-        margin-bottom: 0.45rem;
-        color: #243447;
-        font-size: 0.98rem;
-    }
-
-    .iso-social-wrap {
-        display: flex;
-        align-items: center;
-        gap: 0.55rem;
-        flex-wrap: wrap;
-    }
-
-    .iso-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.38rem;
-        padding: 0.24rem 0.58rem;
-        border: 1px solid #d0d7de;
-        border-radius: 6px;
-        background: #f6f8fa;
-        color: #24292f !important;
-        text-decoration: none !important;
-        font-weight: 600;
-        font-size: 0.88rem;
-        line-height: 1.2;
-        transition: 0.18s ease;
-    }
-
-    .iso-badge:hover {
-        background: #eef2f6;
-        border-color: #bfc8d1;
-        text-decoration: none !important;
-        color: #24292f !important;
-    }
-
-    .iso-email {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.24rem 0.58rem;
-        border: 1px solid #d0d7de;
-        border-radius: 6px;
-        background: #ffffff;
-        color: #30475e !important;
-        text-decoration: none !important;
-        font-weight: 500;
-        font-size: 0.88rem;
-        line-height: 1.2;
-        transition: 0.18s ease;
-    }
-
-    .iso-email:hover {
-        background: #f8fafc;
-        border-color: #bfc8d1;
-        color: #243447 !important;
-        text-decoration: none !important;
-    }
-
-    .iso-github-icon {
-        width: 14px;
-        height: 14px;
-        display: inline-block;
-        vertical-align: middle;
-        fill: currentColor;
-        flex-shrink: 0;
     }
 
     [data-testid="column"] {
@@ -220,14 +162,116 @@ def _get_css() -> str:
     .iso-flex {
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
         min-height: 100%;
     }
 
-    .iso-contact {
-        margin-top: 0.75rem;
-        padding-top: 0.70rem;
-        border-top: 1px solid #e6ebf2;
+    /* =========================
+       TARJETA DERECHA EN 2 COLUMNAS
+    ========================= */
+    .iso-author-grid {
+        display: grid;
+        grid-template-columns: 1.35fr 0.95fr;
+        gap: 1rem;
+        align-items: start;
+    }
+
+    .iso-author-left {
+        min-width: 0;
+    }
+
+    .iso-author-right {
+        min-width: 0;
+        border-left: 1px solid #e6ebf2;
+        padding-left: 1rem;
+    }
+
+    .iso-contact-title {
+        font-size: 0.96rem;
+        font-weight: 700;
+        color: #243447;
+        margin-bottom: 0.60rem;
+    }
+
+    .iso-contact-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+        align-items: flex-start;
+    }
+
+    /* =========================
+       BADGES
+    ========================= */
+    .iso-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.42rem;
+        padding: 0.34rem 0.68rem;
+        border: 1px solid #d0d7de;
+        border-radius: 7px;
+        background: #f6f8fa;
+        color: #24292f !important;
+        text-decoration: none !important;
+        font-weight: 600;
+        font-size: 0.88rem;
+        line-height: 1.2;
+        transition: 0.18s ease;
+        white-space: nowrap;
+    }
+
+    .iso-badge:hover {
+        background: #eef2f6;
+        border-color: #bfc8d1;
+        text-decoration: none !important;
+        color: #24292f !important;
+    }
+
+    .iso-email {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.42rem;
+        padding: 0.34rem 0.68rem;
+        border: 1px solid #d0d7de;
+        border-radius: 7px;
+        background: #ffffff;
+        color: #30475e !important;
+        text-decoration: none !important;
+        font-weight: 600;
+        font-size: 0.88rem;
+        line-height: 1.2;
+        transition: 0.18s ease;
+        white-space: nowrap;
+    }
+
+    .iso-email:hover {
+        background: #f8fafc;
+        border-color: #bfc8d1;
+        color: #243447 !important;
+        text-decoration: none !important;
+    }
+
+    .iso-github-icon,
+    .iso-mail-icon {
+        width: 14px;
+        height: 14px;
+        display: inline-block;
+        vertical-align: middle;
+        fill: currentColor;
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 980px) {
+        .iso-author-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .iso-author-right {
+            border-left: none;
+            padding-left: 0rem;
+            border-top: 1px solid #e6ebf2;
+            padding-top: 0.85rem;
+            margin-top: 0.25rem;
+        }
     }
     </style>
     """
@@ -324,7 +368,7 @@ st.markdown("---")
 # =============================================================================
 # === BLOQUE INICIAL =========================================================
 # =============================================================================
-col1, col2 = st.columns([1.8, 1.2], gap="large")
+col1, col2 = st.columns([1.75, 1.25], gap="large")
 
 github_icon_svg = """
 <svg class="iso-github-icon" viewBox="0 0 16 16" aria-hidden="true">
@@ -341,48 +385,57 @@ c0-4.42-3.58-8-8-8Z"></path>
 </svg>
 """
 
+mail_icon_svg = """
+<svg class="iso-mail-icon" viewBox="0 0 16 16" aria-hidden="true">
+<path d="M1.75 3A1.75 1.75 0 0 0 0 4.75v6.5C0 12.216.784 13 1.75 13h12.5A1.75 1.75 0 0 0 16 11.25v-6.5A1.75 1.75 0 0 0 14.25 3H1.75ZM1.5 4.75c0-.138.112-.25.25-.25h12.5c.138 0 .25.112.25.25v.243L8 8.94 1.5 4.993V4.75Zm0 1.997 4.906 2.978L1.5 11.91V6.747Zm1.279 4.753 4.935-2.196a.75.75 0 0 1 .572 0l4.935 2.196H2.779Zm11.721-.59-4.906-2.185L14.5 6.747v4.163Z"></path>
+</svg>
+"""
+
 with col1:
     about_html = f"""
 <div class="iso-card iso-flex">
-<h3>{tr("intro_title")}</h3>
-<div class="iso-muted">
-{tr("intro_text")}
-</div>
+    <h3>{tr("intro_title")}</h3>
+    <div class="iso-muted">
+        {tr("intro_text")}
+    </div>
 </div>
 """
     st.markdown(about_html, unsafe_allow_html=True)
 
 with col2:
-    author_top_html = f"""
+    author_html = f"""
 <div class="iso-card iso-flex">
-<div>
-<h3>{tr("info_title")}</h3>
-<div class="iso-info-box">
-<div class="iso-row"><b>{tr("author")}:</b> Diego Rafael Guerrero Carrillo</div>
-<div class="iso-row"><b>{tr("degree")}:</b> {tr("degree_value")}</div>
-<div class="iso-row"><b>{tr("university")}:</b> Pontificia Universidad Católica del Ecuador</div>
-<div class="iso-row"><b>{tr("program")}:</b> {tr("program_value")}</div>
-</div>
+    <h3>{tr("info_title")}</h3>
+
+    <div class="iso-author-grid">
+        <div class="iso-author-left">
+            <div class="iso-info-box">
+                <div class="iso-row"><b>{tr("author")}:</b> Diego Rafael Guerrero Carrillo</div>
+                <div class="iso-row"><b>{tr("degree")}:</b> {tr("degree_value")}</div>
+                <div class="iso-row"><b>{tr("university")}:</b> Pontificia Universidad Católica del Ecuador</div>
+                <div class="iso-row"><b>{tr("program")}:</b> {tr("program_value")}</div>
+            </div>
+        </div>
+
+        <div class="iso-author-right">
+            <div class="iso-contact-title">{tr("contact_title")}</div>
+
+            <div class="iso-contact-wrap">
+                <a href="https://github.com/dierafgue" target="_blank" class="iso-badge">
+                    {github_icon_svg}
+                    <span>Follow</span>
+                </a>
+
+                <a href="mailto:DRAFAELGUE@HOTMAIL.COM" class="iso-email">
+                    {mail_icon_svg}
+                    <span>Mail</span>
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
 """
-
-    author_contact_html = f"""
-<div class="iso-contact">
-<div class="iso-social-title"><b>{tr("contact_title")}</b></div>
-<div class="iso-social-wrap">
-<a href="https://github.com/dierafgue" target="_blank" class="iso-badge">
-{github_icon_svg}
-<span>{tr("github_badge")}</span>
-</a>
-<a href="mailto:DRAFAELGUE@HOTMAIL.COM" class="iso-email">
-{tr("email_label")}: DRAFAELGUE@HOTMAIL.COM
-</a>
-</div>
-</div>
-</div>
-"""
-
-    st.markdown(author_top_html + author_contact_html, unsafe_allow_html=True)
+    st.markdown(author_html, unsafe_allow_html=True)
 
 st.markdown("---")
 
