@@ -127,7 +127,7 @@ def _get_css() -> str:
         box-shadow: 0 3px 10px rgba(0,0,0,0.04);
         margin-top: 0.18rem;
         margin-bottom: 0.70rem;
-        height: 100%;
+        min-height: 280px;
         display: flex;
         flex-direction: column;
     }
