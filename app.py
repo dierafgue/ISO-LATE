@@ -340,9 +340,24 @@ def tr(key: str) -> str:
     return T.get(st.session_state.lang, T["en"]).get(key, key)
 
 # =============================================================================
-# ✅ HEADER + SELECTOR + PRESENTACIÓN INICIAL ================================
+# ✅ HEADER + SELECTOR ========================================================
 # =============================================================================
-st.image("assets/logo.png", width=200)
+col_header1, col_header2 = st.columns([1.6, 1])
+
+with col_header1:
+    st.markdown(
+        """
+        <div style="display:flex; align-items:center; height:100%;">
+            <h1 style="margin:0; padding:0;">ISO-LATE</h1>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+with col_header2:
+    st.markdown('<div style="text-align:right;">', unsafe_allow_html=True)
+    st.image("assets/logo.png", width=120)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 lang = st.radio(
     label="",
@@ -350,16 +365,7 @@ lang = st.radio(
     index=0 if st.session_state.lang == "en" else 1,
     horizontal=True,
     label_visibility="collapsed",
-)
-
-st.markdown("---")
-
-lang = st.radio(
-    label="",
-    options=["EN", "ES"],
-    index=0 if st.session_state.lang == "en" else 1,
-    horizontal=True,
-    label_visibility="collapsed",
+    key="main_lang_selector"
 )
 
 new_lang = "en" if lang == "EN" else "es"
