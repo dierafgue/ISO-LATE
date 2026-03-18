@@ -90,8 +90,8 @@ def _get_css() -> str:
 
     div[role="radiogroup"] {
         gap: 0.35rem !important;
-        margin-top: 0rem !important;
-        margin-bottom: -0.10rem !important;
+        margin-top: -0.10rem !important;
+        margin-bottom: -0.15rem !important;
         justify-content: flex-start !important;
     }
     
@@ -150,7 +150,7 @@ def _get_css() -> str:
         justify-content: flex-start;
         align-items: center;
         width: 100%;
-        margin: -0.20rem 0 0 0;
+        margin: -0.45rem 0 0 0;
         padding: 0;
     }
     
@@ -409,7 +409,7 @@ st.markdown(
 )
 
 st.markdown('<div class="hero-logo-wrap">', unsafe_allow_html=True)
-st.image("assets/logo.png", width=82)
+st.image("assets/logo.png", width=90)
 st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="hero-lang">', unsafe_allow_html=True)
