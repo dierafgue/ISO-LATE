@@ -49,7 +49,7 @@ def _get_css() -> str:
     }
 
     .block-container {
-        padding-top: 0.70rem !important;
+        padding-top: 0.35rem !important;
         padding-bottom: 0rem !important;
         padding-left: 2.20rem !important;
         padding-right: 2.20rem !important;
@@ -89,15 +89,15 @@ def _get_css() -> str:
     }
 
     div[role="radiogroup"] {
-        gap: 0.40rem !important;
+        gap: 0.35rem !important;
         margin-top: 0rem !important;
         margin-bottom: 0rem !important;
-        justify-content: center !important;
+        justify-content: flex-start !important;
     }
     
     div[role="radiogroup"] label {
         font-size: 0.88rem !important;
-        padding: 0rem 0.10rem !important;
+        padding: 0rem 0.08rem !important;
     }
 
     hr {
@@ -108,21 +108,21 @@ def _get_css() -> str:
        HERO / HEADER SUPERIOR
     ========================= */
     .hero-card {
-        background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
-        border: 1px solid #e7edf5;
-        border-radius: 20px;
-        padding: 0.85rem 1.10rem 0.65rem 1.10rem;
-        box-shadow: 0 8px 24px rgba(33, 43, 54, 0.05);
-        margin-bottom: 0.70rem;
+        background: transparent;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        box-shadow: none;
+        margin-bottom: 0.35rem;
     }
     
     .hero-stack {
         display: flex;
         flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 0.15rem;
-        text-align: center;
+        align-items: flex-start;   /* 👈 alinea a la izquierda */
+        justify-content: flex-start;
+        gap: 0;
+        text-align: left;
     }
     
     .hero-title {
@@ -137,24 +137,25 @@ def _get_css() -> str:
     
     .hero-logo-wrap {
         display: flex;
-        justify-content: center;
+        justify-content: flex-start;   /* 👈 logo alineado a la izquierda */
         align-items: center;
         margin: 0.05rem 0 0.05rem 0;
+        padding: 0;
     }
     
     .hero-lang {
         display: flex;
-        justify-content: center;
+        justify-content: flex-start;   /* 👈 idioma alineado a la izquierda */
         align-items: center;
         width: 100%;
-        margin-top: -0.05rem;
-        margin-bottom: 0rem;
+        margin: 0;
+        padding: 0;
     }
     
     .hero-divider {
         height: 1px;
         background: #e3e9f1;
-        margin: 0.45rem 0 0rem 0;
+        margin: 0.35rem 0 0.80rem 0;
     }
 
     /* =========================
@@ -406,7 +407,7 @@ st.markdown(
 )
 
 st.markdown('<div class="hero-logo-wrap">', unsafe_allow_html=True)
-st.image("assets/logo.png", width=105)
+st.image("assets/logo.png", width=95)
 st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="hero-lang">', unsafe_allow_html=True)
