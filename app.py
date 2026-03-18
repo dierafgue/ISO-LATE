@@ -49,7 +49,7 @@ def _get_css() -> str:
     }
 
     .block-container {
-        padding-top: 0.55rem !important;
+        padding-top: 0.70rem !important;
         padding-bottom: 0rem !important;
         padding-left: 2.20rem !important;
         padding-right: 2.20rem !important;
@@ -89,14 +89,15 @@ def _get_css() -> str:
     }
 
     div[role="radiogroup"] {
-        gap: 0.40rem !important;
-        margin-top: 0.00rem !important;
-        margin-bottom: 0.00rem !important;
+        gap: 0.50rem !important;
+        margin-top: 0.15rem !important;
+        margin-bottom: 0.05rem !important;
+        justify-content: center !important;
     }
 
     div[role="radiogroup"] label {
-        font-size: 0.88rem !important;
-        padding: 0rem 0.10rem !important;
+        font-size: 0.90rem !important;
+        padding: 0rem 0.15rem !important;
     }
 
     hr {
@@ -107,54 +108,51 @@ def _get_css() -> str:
        HERO / HEADER SUPERIOR
     ========================= */
     .hero-card {
-        background: transparent;
-        border: none;
-        border-radius: 0;
-        padding: 0.10rem 0 0.35rem 0;
-        box-shadow: none;
-        margin-bottom: 0.35rem;
+        background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
+        border: 1px solid #e7edf5;
+        border-radius: 20px;
+        padding: 1.35rem 1.30rem 1.00rem 1.30rem;
+        box-shadow: 0 8px 24px rgba(33, 43, 54, 0.05);
+        margin-bottom: 0.95rem;
     }
 
-    .hero-grid {
-        display: grid;
-        grid-template-columns: 1.45fr 0.55fr;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    .hero-left {
+    .hero-stack {
         display: flex;
         flex-direction: column;
+        align-items: center;
         justify-content: center;
-        align-items: flex-start;
-        min-height: 82px;
+        gap: 0.45rem;
+        text-align: center;
     }
 
     .hero-title {
-        font-size: 3.00rem;
+        font-size: 3.25rem;
         font-weight: 800;
         color: #2d3142;
-        letter-spacing: -0.02em;
+        letter-spacing: -0.03em;
         line-height: 1.0;
-        margin: 0 0 0.35rem 0;
+        margin: 0;
         padding: 0;
-    }
-
-    .hero-lang {
-        margin-top: 0.05rem;
     }
 
     .hero-logo-wrap {
         display: flex;
-        justify-content: flex-end;
+        justify-content: center;
         align-items: center;
-        min-height: 82px;
+        margin-top: 0.10rem;
+        margin-bottom: 0.10rem;
+    }
+
+    .hero-lang {
+        display: flex;
+        justify-content: center;
+        width: 100%;
     }
 
     .hero-divider {
         height: 1px;
-        background: #dfe5ec;
-        margin: 0.60rem 0 0.95rem 0;
+        background: #e3e9f1;
+        margin: 0.80rem 0 0rem 0;
     }
 
     /* =========================
@@ -308,22 +306,8 @@ def _get_css() -> str:
             padding-right: 1rem !important;
         }
 
-        .hero-grid {
-            grid-template-columns: 1fr;
-            gap: 0.60rem;
-        }
-
-        .hero-left,
-        .hero-logo-wrap {
-            min-height: auto;
-        }
-
         .hero-title {
             font-size: 2.45rem;
-        }
-
-        .hero-logo-wrap {
-            justify-content: flex-start;
         }
 
         .iso-author-grid {
@@ -412,30 +396,27 @@ def tr(key: str) -> str:
 # ✅ HEADER SUPERIOR ==========================================================
 # =============================================================================
 st.markdown('<div class="hero-card">', unsafe_allow_html=True)
-st.markdown('<div class="hero-grid">', unsafe_allow_html=True)
+st.markdown('<div class="hero-stack">', unsafe_allow_html=True)
 
-col_header1, col_header2 = st.columns([1.45, 0.55], gap="large")
+st.markdown(
+    '<div class="hero-title">ISO-LATE</div>',
+    unsafe_allow_html=True
+)
 
-with col_header1:
-    st.markdown('<div class="hero-left">', unsafe_allow_html=True)
-    st.markdown('<div class="hero-title">ISO-LATE</div>', unsafe_allow_html=True)
+st.markdown('<div class="hero-logo-wrap">', unsafe_allow_html=True)
+st.image("assets/logo.png", width=125)
+st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown('<div class="hero-lang">', unsafe_allow_html=True)
-    lang = st.radio(
-        label="",
-        options=["EN", "ES"],
-        index=0 if st.session_state.lang == "en" else 1,
-        horizontal=True,
-        label_visibility="collapsed",
-        key="main_lang_selector"
-    )
-    st.markdown('</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-with col_header2:
-    st.markdown('<div class="hero-logo-wrap">', unsafe_allow_html=True)
-    st.image("assets/logo.png", width=88)
-    st.markdown('</div>', unsafe_allow_html=True)
+st.markdown('<div class="hero-lang">', unsafe_allow_html=True)
+lang = st.radio(
+    label="",
+    options=["EN", "ES"],
+    index=0 if st.session_state.lang == "en" else 1,
+    horizontal=True,
+    label_visibility="collapsed",
+    key="main_lang_selector"
+)
+st.markdown('</div>', unsafe_allow_html=True)
 
 new_lang = "en" if lang == "EN" else "es"
 if new_lang != st.session_state.lang:
