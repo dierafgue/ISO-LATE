@@ -49,8 +49,11 @@ def _get_css() -> str:
     }
 
     .block-container {
-        padding-top: 1.35rem !important;
+        padding-top: 1.20rem !important;
         padding-bottom: 0rem !important;
+        padding-left: 0.85rem !important;
+        padding-right: 0.85rem !important;
+        max-width: 100% !important;
     }
 
     [data-testid="stSidebar"] {
@@ -101,22 +104,35 @@ def _get_css() -> str:
     }
 
     /* =========================
+       COLUMNAS EXTERNAS
+    ========================= */
+    [data-testid="column"] {
+        display: flex;
+    }
+
+    [data-testid="column"] > div {
+        width: 100%;
+        height: 100%;
+    }
+
+    /* =========================
        TARJETAS
     ========================= */
     .iso-card {
         background: #ffffff;
         border: 1px solid #e6ebf2;
         border-radius: 14px;
-        padding: 1.05rem 1.15rem;
+        padding: 1.08rem 1.20rem;
         box-shadow: 0 3px 10px rgba(0,0,0,0.04);
-        margin-top: 0.20rem;
+        margin-top: 0.18rem;
         margin-bottom: 0.70rem;
-        min-height: 255px;
+        min-height: 285px;   /* 👈 iguala visualmente ambas tarjetas */
+        height: 100%;
     }
 
     .iso-card h3 {
         margin-top: 0rem !important;
-        margin-bottom: 0.70rem !important;
+        margin-bottom: 0.78rem !important;
         color: #243447;
         font-size: 1.12rem !important;
     }
@@ -124,7 +140,7 @@ def _get_css() -> str:
     .iso-muted {
         color: #5f6b7a;
         font-size: 0.96rem;
-        line-height: 1.70;
+        line-height: 1.75;
         text-align: justify;
     }
 
@@ -141,29 +157,31 @@ def _get_css() -> str:
     ========================= */
     .iso-author-grid {
         display: grid;
-        grid-template-columns: 1.45fr 0.95fr;
-        gap: 1rem;
+        grid-template-columns: 1.55fr 0.78fr; /* 👈 find me más a la izquierda */
+        gap: 0.90rem;
         align-items: start;
+        height: 100%;
     }
 
     .iso-author-left {
         min-width: 0;
+        padding-right: 0.30rem;
     }
 
     .iso-author-right {
         min-width: 0;
         border-left: 1px solid #e6ebf2;
-        padding-left: 1rem;
+        padding-left: 0.90rem; /* 👈 menos espacio, más a la izquierda */
     }
 
     .iso-info-box {
         color: #243447;
         font-size: 0.96rem;
-        line-height: 1.55;
+        line-height: 1.58;
     }
 
     .iso-info-row {
-        margin-bottom: 0.48rem;
+        margin-bottom: 0.55rem;
     }
 
     .iso-info-label {
@@ -175,13 +193,13 @@ def _get_css() -> str:
         font-size: 0.96rem;
         font-weight: 700;
         color: #243447;
-        margin-bottom: 0.60rem;
+        margin-bottom: 0.70rem;
     }
 
     .iso-contact-wrap {
         display: flex;
         flex-direction: column;
-        gap: 0.55rem;
+        gap: 0.70rem;
         align-items: flex-start;
     }
 
@@ -239,6 +257,7 @@ def _get_css() -> str:
     @media (max-width: 980px) {
         .iso-author-grid {
             grid-template-columns: 1fr;
+            gap: 0.85rem;
         }
 
         .iso-author-right {
@@ -246,7 +265,11 @@ def _get_css() -> str:
             padding-left: 0rem;
             border-top: 1px solid #e6ebf2;
             padding-top: 0.85rem;
-            margin-top: 0.25rem;
+            margin-top: 0.10rem;
+        }
+
+        .iso-card {
+            min-height: auto;
         }
     }
     </style>
@@ -344,7 +367,7 @@ st.markdown("---")
 # =============================================================================
 # === BLOQUE INICIAL =========================================================
 # =============================================================================
-col1, col2 = st.columns([1.75, 1.25], gap="large")
+col1, col2 = st.columns([1.78, 1.22], gap="large")
 
 github_icon_svg = """
 <svg class="iso-github-icon" viewBox="0 0 16 16" aria-hidden="true">
