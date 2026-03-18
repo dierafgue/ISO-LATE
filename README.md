@@ -3,7 +3,7 @@
 ### Interactive Tool for Structural Analysis – Fixed Base vs Seismic Isolation
 
 <p align="center">
-  <img src="assets/logo.png" alt="ISO-LATE Logo" width="400"/>
+  <img src="assets/logo.png" alt="ISO-LATE Logo" width="200"/>
 </p>
 
 <p align="center">
@@ -349,7 +349,7 @@ Includes quantitative indicators of isolation efficiency.
 ### Herramienta Interactiva para Análisis Estructural – Base Fija vs Aislamiento Sísmico
 
 <p align="center">
-  <img src="assets/logo.png" alt="Logo ISO-LATE" width="400"/>
+  <img src="assets/logo.png" alt="Logo ISO-LATE" width="200"/>
 </p>
 
 <p align="center">
