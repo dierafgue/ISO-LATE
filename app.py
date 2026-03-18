@@ -89,15 +89,15 @@ def _get_css() -> str:
     }
 
     div[role="radiogroup"] {
-        gap: 0.50rem !important;
-        margin-top: 0.15rem !important;
-        margin-bottom: 0.05rem !important;
+        gap: 0.40rem !important;
+        margin-top: 0rem !important;
+        margin-bottom: 0rem !important;
         justify-content: center !important;
     }
-
+    
     div[role="radiogroup"] label {
-        font-size: 0.90rem !important;
-        padding: 0rem 0.15rem !important;
+        font-size: 0.88rem !important;
+        padding: 0rem 0.10rem !important;
     }
 
     hr {
@@ -111,22 +111,22 @@ def _get_css() -> str:
         background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
         border: 1px solid #e7edf5;
         border-radius: 20px;
-        padding: 1.35rem 1.30rem 1.00rem 1.30rem;
+        padding: 0.85rem 1.10rem 0.65rem 1.10rem;
         box-shadow: 0 8px 24px rgba(33, 43, 54, 0.05);
-        margin-bottom: 0.95rem;
+        margin-bottom: 0.70rem;
     }
-
+    
     .hero-stack {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 0.45rem;
+        gap: 0.15rem;
         text-align: center;
     }
-
+    
     .hero-title {
-        font-size: 3.25rem;
+        font-size: 3.10rem;
         font-weight: 800;
         color: #2d3142;
         letter-spacing: -0.03em;
@@ -134,25 +134,27 @@ def _get_css() -> str:
         margin: 0;
         padding: 0;
     }
-
+    
     .hero-logo-wrap {
         display: flex;
         justify-content: center;
         align-items: center;
-        margin-top: 0.10rem;
-        margin-bottom: 0.10rem;
+        margin: 0.05rem 0 0.05rem 0;
     }
-
+    
     .hero-lang {
         display: flex;
         justify-content: center;
+        align-items: center;
         width: 100%;
+        margin-top: -0.05rem;
+        margin-bottom: 0rem;
     }
-
+    
     .hero-divider {
         height: 1px;
         background: #e3e9f1;
-        margin: 0.80rem 0 0rem 0;
+        margin: 0.45rem 0 0rem 0;
     }
 
     /* =========================
@@ -404,7 +406,7 @@ st.markdown(
 )
 
 st.markdown('<div class="hero-logo-wrap">', unsafe_allow_html=True)
-st.image("assets/logo.png", width=125)
+st.image("assets/logo.png", width=105)
 st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="hero-lang">', unsafe_allow_html=True)
