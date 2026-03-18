@@ -49,7 +49,7 @@ def _get_css() -> str:
     }
 
     .block-container {
-        padding-top: 0.35rem !important;
+        padding-top: 0.20rem !important;
         padding-bottom: 0rem !important;
         padding-left: 2.20rem !important;
         padding-right: 2.20rem !important;
@@ -89,19 +89,19 @@ def _get_css() -> str:
     }
 
     div[role="radiogroup"] {
-        gap: 0.30rem !important;
-        margin-top: -0.20rem !important;
-        margin-bottom: -0.50rem !important;
+        gap: 0.22rem !important;
+        margin-top: -0.35rem !important;
+        margin-bottom: -0.65rem !important;
         justify-content: flex-start !important;
     }
-    
+
     div[role="radiogroup"] label {
-        font-size: 0.88rem !important;
-        padding: 0rem 0.06rem !important;
+        font-size: 0.86rem !important;
+        padding: 0rem 0.04rem !important;
     }
 
     hr {
-        margin: 0.30rem 0 0.55rem 0 !important;
+        margin: 0.10rem 0 0.20rem 0 !important;
     }
 
     /* =========================
@@ -113,9 +113,9 @@ def _get_css() -> str:
         border-radius: 0;
         padding: 0;
         box-shadow: none;
-        margin: 0 0 0.02rem 0;
+        margin: 0 0 0.01rem 0;
     }
-    
+
     .hero-stack {
         display: flex;
         flex-direction: column;
@@ -126,39 +126,38 @@ def _get_css() -> str:
         margin: 0;
         padding: 0;
     }
-    
+
     .hero-title {
         font-size: 3.10rem;
         font-weight: 800;
         color: #2d3142;
         letter-spacing: -0.03em;
         line-height: 1.0;
-        margin: 0 0 0.02rem 0;
+        margin: 0;
         padding: 0;
     }
-    
+
+    .hero-logo-wrap {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        margin: -0.20rem 0 -1.00rem 0;
+        padding: 0;
+    }
+
     .hero-lang {
         display: flex;
         justify-content: flex-start;
         align-items: center;
         width: 100%;
-        margin: -1.00rem 0 -0.45rem 0;
+        margin: -1.15rem 0 -0.55rem 0;
         padding: 0;
     }
- 
-    .hero-lang {
-        display: flex;
-        justify-content: flex-start;
-        align-items: center;
-        width: 100%;
-        margin: -0.95rem 0 -0.40rem 0;
-        padding: 0;
-    }
-    
+
     .hero-divider {
         height: 1px;
         background: #e3e9f1;
-        margin: -0.25rem 0 0.20rem 0;
+        margin: -0.35rem 0 0.12rem 0;
     }
 
     /* =========================
@@ -181,10 +180,10 @@ def _get_css() -> str:
         background: #ffffff;
         border: 1px solid #e6ebf2;
         border-radius: 14px;
-        padding: 1.08rem 1.20rem;
+        padding: 1.00rem 1.10rem;
         box-shadow: 0 3px 10px rgba(0,0,0,0.04);
-        margin-top: 0.18rem;
-        margin-bottom: 0.70rem;
+        margin-top: 0.05rem;
+        margin-bottom: 0.35rem;
         min-height: 230px;
         display: flex;
         flex-direction: column;
@@ -192,15 +191,15 @@ def _get_css() -> str:
 
     .iso-card h3 {
         margin-top: 0rem !important;
-        margin-bottom: 0.78rem !important;
+        margin-bottom: 0.55rem !important;
         color: #243447;
-        font-size: 1.12rem !important;
+        font-size: 1.08rem !important;
     }
 
     .iso-muted {
         color: #5f6b7a;
-        font-size: 0.96rem;
-        line-height: 1.75;
+        font-size: 0.95rem;
+        line-height: 1.68;
         text-align: justify;
     }
 
@@ -210,30 +209,30 @@ def _get_css() -> str:
     .iso-author-grid {
         display: grid;
         grid-template-columns: 1.55fr 0.78fr;
-        gap: 0.90rem;
+        gap: 0.65rem;
         align-items: start;
         height: 100%;
     }
 
     .iso-author-left {
         min-width: 0;
-        padding-right: 0.30rem;
+        padding-right: 0.20rem;
     }
 
     .iso-author-right {
         min-width: 0;
         border-left: 1px solid #e6ebf2;
-        padding-left: 0.90rem;
+        padding-left: 0.70rem;
     }
 
     .iso-info-box {
         color: #243447;
-        font-size: 0.96rem;
-        line-height: 1.58;
+        font-size: 0.95rem;
+        line-height: 1.48;
     }
 
     .iso-info-row {
-        margin-bottom: 0.55rem;
+        margin-bottom: 0.38rem;
     }
 
     .iso-info-label {
@@ -242,16 +241,16 @@ def _get_css() -> str:
     }
 
     .iso-contact-title {
-        font-size: 0.96rem;
+        font-size: 0.94rem;
         font-weight: 700;
         color: #243447;
-        margin-bottom: 0.70rem;
+        margin-bottom: 0.45rem;
     }
 
     .iso-contact-wrap {
         display: flex;
         flex-direction: column;
-        gap: 0.70rem;
+        gap: 0.45rem;
         align-items: flex-start;
     }
 
@@ -261,12 +260,12 @@ def _get_css() -> str:
     .iso-badge, .iso-email {
         display: inline-flex;
         align-items: center;
-        gap: 0.42rem;
-        padding: 0.34rem 0.68rem;
+        gap: 0.36rem;
+        padding: 0.28rem 0.58rem;
         border-radius: 7px;
         font-weight: 600;
-        font-size: 0.88rem;
-        line-height: 1.2;
+        font-size: 0.84rem;
+        line-height: 1.15;
         transition: 0.18s ease;
         white-space: nowrap;
         text-decoration: none !important;
@@ -298,8 +297,8 @@ def _get_css() -> str:
 
     .iso-github-icon,
     .iso-mail-icon {
-        width: 14px;
-        height: 14px;
+        width: 13px;
+        height: 13px;
         display: inline-block;
         vertical-align: middle;
         fill: currentColor;
@@ -313,24 +312,33 @@ def _get_css() -> str:
         }
 
         .hero-title {
-            font-size: 2.45rem;
+            font-size: 2.35rem;
+        }
+
+        .hero-logo-wrap {
+            margin: -0.10rem 0 -0.75rem 0;
+        }
+
+        .hero-lang {
+            margin: -0.90rem 0 -0.40rem 0;
         }
 
         .iso-author-grid {
             grid-template-columns: 1fr;
-            gap: 0.85rem;
+            gap: 0.65rem;
         }
 
         .iso-author-right {
             border-left: none;
             padding-left: 0rem;
             border-top: 1px solid #e6ebf2;
-            padding-top: 0.85rem;
-            margin-top: 0.10rem;
+            padding-top: 0.60rem;
+            margin-top: 0.05rem;
         }
 
         .iso-card {
             height: auto;
+            min-height: auto;
         }
     }
     </style>
@@ -404,10 +412,12 @@ def tr(key: str) -> str:
 st.markdown('<div class="hero-card">', unsafe_allow_html=True)
 st.markdown('<div class="hero-stack">', unsafe_allow_html=True)
 
+# Logo principal
 st.markdown('<div class="hero-logo-wrap">', unsafe_allow_html=True)
-st.image("assets/logo.png", width=105)
+st.image("assets/logo.png", width=150)
 st.markdown('</div>', unsafe_allow_html=True)
 
+# Selector de idioma
 st.markdown('<div class="hero-lang">', unsafe_allow_html=True)
 lang = st.radio(
     label="",
@@ -419,11 +429,13 @@ lang = st.radio(
 )
 st.markdown('</div>', unsafe_allow_html=True)
 
+# Cambio de idioma
 new_lang = "en" if lang == "EN" else "es"
 if new_lang != st.session_state.lang:
     st.session_state.lang = new_lang
     st.rerun()
 
+# Línea separadora
 st.markdown('<div class="hero-divider"></div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
