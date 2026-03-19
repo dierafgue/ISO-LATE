@@ -3003,12 +3003,29 @@ import hashlib
 
 def rayleigh_from_w(w_in, zeta):
     w_in = np.asarray(w_in, dtype=float).ravel()
-    if len(w_in) < 2:
-        raise ValueError("Se requieren al menos 2 frecuencias naturales para Rayleigh.")
+    w_in = w_in[np.isfinite(w_in)]
+    zeta = float(zeta)
+
+    if len(w_in) == 0:
+        raise ValueError("No hay frecuencias válidas para calcular amortiguamiento.")
+
+    # Caso SDOF / 1 modo válido:
+    # usamos amortiguamiento equivalente masa-proporcional:
+    # C = alpha*M, con alpha = 2*zeta*w1
+    if len(w_in) == 1:
+        w1 = float(w_in[0])
+        alpha = 2.0 * zeta * w1
+        beta = 0.0
+        return float(alpha), float(beta)
+
     w1, w2 = float(w_in[0]), float(w_in[1])
-    A = np.array([[1/(2*w1), w1/2],
-                  [1/(2*w2), w2/2]], dtype=float)
+
+    A = np.array([
+        [1.0/(2.0*w1), w1/2.0],
+        [1.0/(2.0*w2), w2/2.0]
+    ], dtype=float)
     b = np.array([zeta, zeta], dtype=float)
+
     alpha, beta = np.linalg.solve(A, b)
     return float(alpha), float(beta)
 
@@ -3016,8 +3033,13 @@ def pick_two_w(w, wmin=1e-6):
     w = np.asarray(w, float).ravel()
     w = w[np.isfinite(w)]
     w = np.sort(w[w > wmin])
-    if len(w) < 2:
-        raise ValueError("No hay 2 frecuencias válidas para Rayleigh (w > wmin).")
+
+    if len(w) == 0:
+        raise ValueError("No hay frecuencias válidas para construir el amortiguamiento (w > wmin).")
+
+    if len(w) == 1:
+        return w[:1]
+
     return w[:2]
 
 def ensure_2d(u, v, a):
