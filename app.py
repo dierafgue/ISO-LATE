@@ -1860,7 +1860,7 @@ with st.container(border=True):
                     help=tr("b3_xi_help")
                 )
 
-                T_min = 0.20 * float(Tref)
+                T_min = 0.50 * float(Tref)
                 T_max = 1.50 * float(Tref)
 
             if rs_ok:
@@ -1876,7 +1876,7 @@ with st.container(border=True):
 
                 mask = (T_rs >= T_min) & (T_rs <= T_max)
                 if np.count_nonzero(mask) < 5:
-                    mask = (T_rs >= max(0.05, 0.10 * float(Tref))) & (T_rs <= 2.0 * float(Tref))
+                    mask = (T_rs >= max(0.05, 0.50 * float(Tref))) & (T_rs <= 1.50 * float(Tref))
 
                 SF = lsq_scale_factor(Sa_reg[mask], Sa_obj[mask]) if escalar_nec else 1.0
                 
