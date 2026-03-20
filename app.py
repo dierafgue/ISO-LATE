@@ -1841,17 +1841,29 @@ with st.container(border=True):
                     help=tr("b3_scale_help")
                 )
 
-                # ✅ Período de referencia para el escalamiento:
-                #    usar SIEMPRE el modo 1 de la estructura fija
+                # ✅ Períodos de referencia para el escalamiento:
+                #    usar hasta los 3 primeros modos disponibles de la estructura fija
                 T_fix_vec = np.asarray(st.session_state.get("T_sin", []), dtype=float).ravel()
+                T_fix_vec = T_fix_vec[np.isfinite(T_fix_vec)]
+                T_fix_vec = T_fix_vec[T_fix_vec > 0]
                 
-                if len(T_fix_vec) > 0 and np.isfinite(T_fix_vec[0]) and T_fix_vec[0] > 0:
-                    Tref = float(T_fix_vec[0])
-                else:
+                if len(T_fix_vec) == 0:
                     Tref = 1.0
+                    T_min = 0.50
+                    T_max = 1.50
+                else:
+                    nmod_scale = min(3, len(T_fix_vec))
+                    T_sel = T_fix_vec[:nmod_scale]
                 
-                Tref = max(0.05, min(10.0, Tref))
-
+                    Tref = float(T_sel[0])
+                    Tref = max(0.05, min(10.0, Tref))
+                
+                    T_low = float(np.min(T_sel))
+                    T_high = float(np.max(T_sel))
+                
+                    T_min = max(0.05, 0.80 * T_low)
+                    T_max = min(5.00, 1.20 * T_high)
+                
                 xi = st.number_input(
                     tr("b3_xi"),
                     0.01, 0.30, 0.05, 0.01,
@@ -1859,10 +1871,6 @@ with st.container(border=True):
                     disabled=(not geom_ok) or (not rs_ok),
                     help=tr("b3_xi_help")
                 )
-
-                T_min = 0.50 * float(Tref)
-                T_max = 1.50 * float(Tref)
-
             if rs_ok:
                 nombre  = st.session_state.get("rs_nombre", "Registro")
                 dt      = float(st.session_state["rs_dt"])
@@ -1876,7 +1884,7 @@ with st.container(border=True):
 
                 mask = (T_rs >= T_min) & (T_rs <= T_max)
                 if np.count_nonzero(mask) < 5:
-                    mask = (T_rs >= max(0.05, 0.50 * float(Tref))) & (T_rs <= 1.50 * float(Tref))
+                    mask = (T_rs >= max(0.05, 0.80 * float(Tref))) & (T_rs <= min(5.0, 1.20 * float(Tref)))
 
                 SF = lsq_scale_factor(Sa_reg[mask], Sa_obj[mask]) if escalar_nec else 1.0
                 
