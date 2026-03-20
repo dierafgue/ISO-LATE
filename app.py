@@ -884,7 +884,8 @@ from funciones_usuario import (
     b2_get_params_from_param_estruct,
     b2_params_key,
     b2_generar_modelo,
-    plot_structure,   # tu plot SIN OpenSees
+    plot_structure, 
+    calcular_peso_total_estructura,
 )
 
 # -------------------------------------------------------------------------
@@ -1087,11 +1088,36 @@ if generar:
         st.session_state["ratio_k"]            = out["ratio_k"]
         st.session_state["model_summary"]      = out["model_summary"]
 
+        # -------------------------------------------------------------
+        # Peso total real de la estructura (guardado para usar después)
+        # -------------------------------------------------------------
+        resumen_peso = calcular_peso_total_estructura(
+            nodes=out["nodes"],
+            element_node_pairs=out["element_node_pairs"],
+            propiedades=out["propiedades"],
+            peso_especifico=p["peso_especifico"],
+            sobrecarga_muerta=p["sobrecarga_muerta"],
+            b_col_x=p.get("b_col_x", 0.50),
+        )
+
+        st.session_state["peso_columnas"] = resumen_peso["peso_columnas"]
+        st.session_state["peso_vigas"] = resumen_peso["peso_vigas"]
+        st.session_state["peso_sobrecarga_muerta_total"] = resumen_peso["peso_sobrecarga_muerta"]
+        st.session_state["peso_total_estructura"] = resumen_peso["peso_total"]
+        st.session_state["masa_total_estructura"] = resumen_peso["masa_total"]
+        
         st.session_state["geom_ready"] = True
         st.rerun()
 
     except Exception as e:
         st.session_state["geom_ready"] = False
+
+        st.session_state["peso_columnas"] = None
+        st.session_state["peso_vigas"] = None
+        st.session_state["peso_sobrecarga_muerta_total"] = None
+        st.session_state["peso_total_estructura"] = None
+        st.session_state["masa_total_estructura"] = None
+
         st.error(f"{tr('b2_err')}: {e}")
 
 # -------------------------------------------------------------------------
