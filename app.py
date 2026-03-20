@@ -1321,6 +1321,15 @@ T["en"].update({
     "b3_region_costa": "Coast",
     "b3_region_sierra": "Highlands and Amazon",
     "h_b3_region": "Defines exponent r for the NEC-24 descending branch.",
+
+    "b3_fit_hdr": "Selected record",
+    "b3_fit_ok": "Compatible",
+    "b3_fit_mid": "Acceptable",
+    "b3_fit_bad": "Not recommended",
+    "b3_fit_msg_ok": "The record is compatible with the NEC-24 target spectrum.",
+    "b3_fit_msg_mid": "The record shows moderate differences with the NEC-24 target spectrum.",
+    "b3_fit_msg_bad": "The record is not sufficiently compatible with the NEC-24 target spectrum.",
+    "b3_fit_note": "Use records with spectral shape reasonably close to NEC-24. Very large scale factors may indicate poor compatibility.",
 })
 
 T["es"].update({
@@ -1411,6 +1420,15 @@ T["es"].update({
     "b3_region_costa": "Costa",
     "b3_region_sierra": "Sierra y oriente",
     "h_b3_region": "Define el exponente r para la rama descendente del espectro NEC-24.",
+
+    "b3_fit_hdr": "Registro seleccionado",
+    "b3_fit_ok": "Compatible",
+    "b3_fit_mid": "Aceptable",
+    "b3_fit_bad": "No recomendable",
+    "b3_fit_msg_ok": "El registro es compatible con el espectro objetivo NEC-24.",
+    "b3_fit_msg_mid": "El registro presenta diferencias moderadas con el espectro objetivo NEC-24.",
+    "b3_fit_msg_bad": "El registro no es suficientemente compatible con el espectro objetivo NEC-24.",
+    "b3_fit_note": "Se recomienda usar registros con forma espectral razonablemente cercana a la NEC-24. Factores de escala muy altos pueden indicar baja compatibilidad.",
 })
 
 # -------------------------------------------------------------------------
@@ -1910,12 +1928,32 @@ with st.container(border=True):
             with c_out:
                 st.markdown(f"#### 📌 {tr('b3_results')}")
                 st.metric("SF", f"{SF:.3f}")
+
                 a, b = st.columns(2)
                 with a:
                     st.metric(tr("b3_pga"), f"{PGA0:.3f}")
                 with b:
                     st.metric(tr("b3_pga_s"), f"{PGA1:.3f}")
+
                 st.caption(tr("b3_ev").format(name=nombre))
+
+                # ---------------------------------------------------------
+                # Compatibilidad espectral del registro
+                # ---------------------------------------------------------
+                if SF < 1.50:
+                    fit_state = tr("b3_fit_ok")
+                    fit_msg = tr("b3_fit_msg_ok")
+                    st.success(f"**{tr('b3_fit_hdr')}: {fit_state}**\n\n{fit_msg}")
+                elif SF <= 3.00:
+                    fit_state = tr("b3_fit_mid")
+                    fit_msg = tr("b3_fit_msg_mid")
+                    st.warning(f"**{tr('b3_fit_hdr')}: {fit_state}**\n\n{fit_msg}")
+                else:
+                    fit_state = tr("b3_fit_bad")
+                    fit_msg = tr("b3_fit_msg_bad")
+                    st.error(f"**{tr('b3_fit_hdr')}: {fit_state}**\n\n{fit_msg}")
+
+                st.caption(tr("b3_fit_note"))
 
     with colR:
         with st.container(border=True):
