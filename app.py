@@ -1858,31 +1858,13 @@ with st.container(border=True):
                     disabled=(not geom_ok) or (not rs_ok),
                     help=tr("b3_scale_help")
                 )
-                
-                # ---------------------------------------------------------
-                # Compatibilidad espectral del registro
-                # ---------------------------------------------------------
-                if SF < 1.50:
-                    fit_state = tr("b3_fit_ok")
-                    fit_msg = tr("b3_fit_msg_ok")
-                    st.success(f"**{tr('b3_fit_hdr')}: {fit_state}**\n\n{fit_msg}")
-                elif SF <= 3.00:
-                    fit_state = tr("b3_fit_mid")
-                    fit_msg = tr("b3_fit_msg_mid")
-                    st.warning(f"**{tr('b3_fit_hdr')}: {fit_state}**\n\n{fit_msg}")
-                else:
-                    fit_state = tr("b3_fit_bad")
-                    fit_msg = tr("b3_fit_msg_bad")
-                    st.error(f"**{tr('b3_fit_hdr')}: {fit_state}**\n\n{fit_msg}")
-                
-                st.caption(tr("b3_fit_note"))
 
                 # ✅ Períodos de referencia para el escalamiento:
                 #    usar hasta los 3 primeros modos disponibles de la estructura fija
                 T_fix_vec = np.asarray(st.session_state.get("T_sin", []), dtype=float).ravel()
                 T_fix_vec = T_fix_vec[np.isfinite(T_fix_vec)]
                 T_fix_vec = T_fix_vec[T_fix_vec > 0]
-                
+
                 if len(T_fix_vec) == 0:
                     Tref = 1.0
                     T_min = 0.50
@@ -1890,16 +1872,16 @@ with st.container(border=True):
                 else:
                     nmod_scale = min(3, len(T_fix_vec))
                     T_sel = T_fix_vec[:nmod_scale]
-                
+
                     Tref = float(T_sel[0])
                     Tref = max(0.05, min(10.0, Tref))
-                
+
                     T_low = float(np.min(T_sel))
                     T_high = float(np.max(T_sel))
-                
+
                     T_min = max(0.05, 0.80 * T_low)
                     T_max = min(5.00, 1.20 * T_high)
-                
+
                 xi = st.number_input(
                     tr("b3_xi"),
                     0.01, 0.30, 0.05, 0.01,
@@ -1907,6 +1889,7 @@ with st.container(border=True):
                     disabled=(not geom_ok) or (not rs_ok),
                     help=tr("b3_xi_help")
                 )
+
             if rs_ok:
                 nombre  = st.session_state.get("rs_nombre", "Registro")
                 dt      = float(st.session_state["rs_dt"])
@@ -1923,7 +1906,7 @@ with st.container(border=True):
                     mask = (T_rs >= max(0.05, 0.80 * float(Tref))) & (T_rs <= min(5.0, 1.20 * float(Tref)))
 
                 SF = lsq_scale_factor(Sa_reg[mask], Sa_obj[mask]) if escalar_nec else 1.0
-                
+
                 if (not np.isfinite(SF)) or (SF <= 0):
                     SF = 1.0
 
@@ -1942,6 +1925,26 @@ with st.container(border=True):
                 PGA0 = PGA1 = 0.0
                 nombre = "—"
                 ag_scaled = None
+
+            with c_in:
+                # ---------------------------------------------------------
+                # Compatibilidad espectral del registro
+                # ---------------------------------------------------------
+                if rs_ok:
+                    if SF < 1.50:
+                        fit_state = tr("b3_fit_ok")
+                        fit_msg = tr("b3_fit_msg_ok")
+                        st.success(f"**{tr('b3_fit_hdr')}: {fit_state}**\n\n{fit_msg}")
+                    elif SF <= 3.00:
+                        fit_state = tr("b3_fit_mid")
+                        fit_msg = tr("b3_fit_msg_mid")
+                        st.warning(f"**{tr('b3_fit_hdr')}: {fit_state}**\n\n{fit_msg}")
+                    else:
+                        fit_state = tr("b3_fit_bad")
+                        fit_msg = tr("b3_fit_msg_bad")
+                        st.error(f"**{tr('b3_fit_hdr')}: {fit_state}**\n\n{fit_msg}")
+
+                    st.caption(tr("b3_fit_note"))
 
             with c_out:
                 st.markdown(f"#### 📌 {tr('b3_results')}")
