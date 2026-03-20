@@ -2389,7 +2389,7 @@ def procesar_registro(ag_mps2: np.ndarray, dt: float, aplicar_proc: bool):
 
         fs = 1.0 / dt
         nyq = fs / 2.0
-        
+
         low = 0.10 / nyq
         high = min(25.0 / nyq, 0.999)
 
@@ -2397,10 +2397,7 @@ def procesar_registro(ag_mps2: np.ndarray, dt: float, aplicar_proc: bool):
             ag_filt = ag_bc.copy()
         else:
             b, a = signal.butter(4, [low, high], btype="band")
-            ag_filt = signal.lfilter(b, a, ag_bc)
-        
-        b, a = signal.butter(4, [low, high], btype="band")
-        ag_filt = signal.lfilter(b, a, ag_bc)
+            ag_filt = signal.filtfilt(b, a, ag_bc)
 
         vel_raw = cumtrapz(ag_filt, t, initial=0.0)
         coef_v = np.polyfit(t, vel_raw, 1)
@@ -2422,9 +2419,8 @@ def procesar_registro(ag_mps2: np.ndarray, dt: float, aplicar_proc: bool):
         "ag_proc": ag_proc,
         "vel_proc": vel_proc,
         "disp_proc": disp_proc,
-        "ag_base": np.asarray(ag_base, float),
+        "ag_base": ag_base,
     }
-
 
 def response_spectrum_newmark(ag_mps2: np.ndarray, dt: float, T: np.ndarray, xi: float = 0.05):
     """
@@ -2482,14 +2478,25 @@ def response_spectrum_newmark(ag_mps2: np.ndarray, dt: float, T: np.ndarray, xi:
 
 
 def lsq_scale_factor(Sa_reg: np.ndarray, Sa_target: np.ndarray):
+    """
+    Mantengo el MISMO nombre para no romper tu app.
+    Pero ahora el cálculo se hace en espacio logarítmico, que da un ajuste
+    mucho más balanceado que el LSQ lineal simple.
+    """
     Sa_reg = np.asarray(Sa_reg, dtype=float).ravel()
     Sa_target = np.asarray(Sa_target, dtype=float).ravel()
 
-    den = float(np.dot(Sa_reg, Sa_reg))
-    if den <= 1e-16:
+    eps = 1e-12
+    ok = (
+        np.isfinite(Sa_reg) & np.isfinite(Sa_target) &
+        (Sa_reg > eps) & (Sa_target > eps)
+    )
+
+    if np.count_nonzero(ok) < 3:
         return 1.0
 
-    SF = float(np.dot(Sa_target, Sa_reg) / den)
+    log_ratio = np.log(Sa_target[ok]) - np.log(Sa_reg[ok])
+    SF = float(np.exp(np.mean(log_ratio)))
 
     if (not np.isfinite(SF)) or (SF <= 0):
         return 1.0
@@ -2503,7 +2510,6 @@ def make_T_rs_piecewise(Tmin: float = 0.05, Tmax: float = 5.0):
     T2 = np.linspace(min(0.50, Tmax), min(2.00, Tmax), 200)
     T3 = np.linspace(min(2.00, Tmax), Tmax, 140)
     return np.unique(np.concatenate([T0, T1, T2, T3]))
-
 
 def decimate_adaptive(ag: np.ndarray, dt: float, dt_target: float):
     dt = float(dt)
