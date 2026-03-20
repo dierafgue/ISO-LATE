@@ -1858,6 +1858,24 @@ with st.container(border=True):
                     disabled=(not geom_ok) or (not rs_ok),
                     help=tr("b3_scale_help")
                 )
+                
+                # ---------------------------------------------------------
+                # Compatibilidad espectral del registro
+                # ---------------------------------------------------------
+                if SF < 1.50:
+                    fit_state = tr("b3_fit_ok")
+                    fit_msg = tr("b3_fit_msg_ok")
+                    st.success(f"**{tr('b3_fit_hdr')}: {fit_state}**\n\n{fit_msg}")
+                elif SF <= 3.00:
+                    fit_state = tr("b3_fit_mid")
+                    fit_msg = tr("b3_fit_msg_mid")
+                    st.warning(f"**{tr('b3_fit_hdr')}: {fit_state}**\n\n{fit_msg}")
+                else:
+                    fit_state = tr("b3_fit_bad")
+                    fit_msg = tr("b3_fit_msg_bad")
+                    st.error(f"**{tr('b3_fit_hdr')}: {fit_state}**\n\n{fit_msg}")
+                
+                st.caption(tr("b3_fit_note"))
 
                 # ✅ Períodos de referencia para el escalamiento:
                 #    usar hasta los 3 primeros modos disponibles de la estructura fija
@@ -1936,24 +1954,6 @@ with st.container(border=True):
                     st.metric(tr("b3_pga_s"), f"{PGA1:.3f}")
 
                 st.caption(tr("b3_ev").format(name=nombre))
-
-                # ---------------------------------------------------------
-                # Compatibilidad espectral del registro
-                # ---------------------------------------------------------
-                if SF < 1.50:
-                    fit_state = tr("b3_fit_ok")
-                    fit_msg = tr("b3_fit_msg_ok")
-                    st.success(f"**{tr('b3_fit_hdr')}: {fit_state}**\n\n{fit_msg}")
-                elif SF <= 3.00:
-                    fit_state = tr("b3_fit_mid")
-                    fit_msg = tr("b3_fit_msg_mid")
-                    st.warning(f"**{tr('b3_fit_hdr')}: {fit_state}**\n\n{fit_msg}")
-                else:
-                    fit_state = tr("b3_fit_bad")
-                    fit_msg = tr("b3_fit_msg_bad")
-                    st.error(f"**{tr('b3_fit_hdr')}: {fit_state}**\n\n{fit_msg}")
-
-                st.caption(tr("b3_fit_note"))
 
     with colR:
         with st.container(border=True):
