@@ -2378,37 +2378,56 @@ def procesar_registro(ag_mps2: np.ndarray, dt: float, aplicar_proc: bool):
     dt = float(dt)
 
     t = np.linspace(0.0, dt * (len(ag_orig) - 1), len(ag_orig))
+
+    # -----------------------------------------------------------------
+    # ORIGINAL
+    # -----------------------------------------------------------------
     vel_orig = cumtrapz(ag_orig, t, initial=0.0)
     disp_orig = cumtrapz(vel_orig, t, initial=0.0)
 
-    ag_proc = vel_proc = disp_proc = None
+    ag_proc = None
+    vel_proc = None
+    disp_proc = None
 
+    # -----------------------------------------------------------------
+    # PROCESAMIENTO
+    # -----------------------------------------------------------------
     if aplicar_proc:
-        coef_a = np.polyfit(t, ag_orig, 1)
-        ag_bc = ag_orig - np.polyval(coef_a, t)
+        # 1) Corrección de línea base en aceleración
+        ag_bc = signal.detrend(ag_orig, type="linear")
 
+        # 2) Filtrado Butterworth pasa banda
         fs = 1.0 / dt
-        nyq = fs / 2.0
-        
-        low = 0.10 / nyq
-        high = min(25.0 / nyq, 0.999)
+        fnyquist = 0.5 * fs
+
+        low = 0.10 / fnyquist
+        high = min(25.0 / fnyquist, 0.999)
 
         if low <= 0 or low >= high:
             ag_filt = ag_bc.copy()
         else:
-            b, a = signal.butter(4, [low, high], btype="band")
-            ag_filt = signal.lfilter(b, a, ag_bc)
+            b_bandpass, a_bandpass = signal.butter(4, [low, high], btype="bandpass")
+            ag_filt = signal.lfilter(b_bandpass, a_bandpass, ag_bc)
 
+        # 3) Velocidad a partir de aceleración filtrada
         vel_raw = cumtrapz(ag_filt, t, initial=0.0)
+
+        # 4) Corrección lineal de línea base en velocidad
         coef_v = np.polyfit(t, vel_raw, 1)
         vel_proc = vel_raw - np.polyval(coef_v, t)
 
+        # 5) Desplazamiento a partir de velocidad corregida
         disp_raw = cumtrapz(vel_proc, t, initial=0.0)
+
+        # 6) Corrección polinómica de orden 2 en desplazamiento
         coef_u = np.polyfit(t, disp_raw, 2)
         disp_proc = disp_raw - np.polyval(coef_u, t)
 
         ag_proc = ag_filt
 
+    # -----------------------------------------------------------------
+    # Señal base para espectro / análisis
+    # -----------------------------------------------------------------
     ag_base = ag_proc if (aplicar_proc and ag_proc is not None) else ag_orig
 
     return {
