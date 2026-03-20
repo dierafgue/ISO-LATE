@@ -564,6 +564,75 @@ def calcular_matriz_masas_por_piso(nodes: list,
 
     return np.diag(masas_por_piso)
 
+def calcular_peso_total_estructura(nodes: list,
+                                   element_node_pairs: list,
+                                   propiedades: dict,
+                                   peso_especifico: float = 2.4028,
+                                   sobrecarga_muerta: float = 0.0,
+                                   b_col_x: float = 0.50) -> dict:
+    """
+    Calcula el peso total real de la estructura a partir de los elementos.
+
+    Incluye:
+    - Peso total de columnas completas
+    - Peso total de vigas
+    - Sobrecarga muerta lineal adicional en vigas (longitud eje a eje)
+
+    Retorna:
+        {
+            "peso_columnas": ...,
+            "peso_vigas": ...,
+            "peso_sobrecarga_muerta": ...,
+            "peso_total": ...,
+            "masa_total": ...
+        }
+
+    Unidades esperadas:
+      peso_especifico [Tf/m³], A [m²], L [m] => peso [Tf]
+      masa = peso/g [Tf·s²/m]
+    """
+    g = 9.80665
+
+    peso_columnas = 0.0
+    peso_vigas = 0.0
+    peso_sobrecarga = 0.0
+
+    node_by_id = {nid: (x, y, nid) for (x, y, nid) in nodes}
+
+    for n1, n2, tipo in element_node_pairs:
+        x1, y1, _ = node_by_id[n1]
+        x2, y2, _ = node_by_id[n2]
+
+        A = float(propiedades[tipo]["A"])
+
+        if tipo == "col":
+            L = float(np.hypot(x2 - x1, y2 - y1))
+            peso_elem = peso_especifico * A * L
+            peso_columnas += peso_elem
+
+        elif tipo == "viga":
+            L_eje = abs(float(x2 - x1))  # longitud eje a eje
+            L_real = max(L_eje - 0.5 * b_col_x - 0.5 * b_col_x, 0.0)  # longitud libre
+
+            # peso propio de viga
+            peso_elem = peso_especifico * A * L_real
+            peso_vigas += peso_elem
+
+            # sobrecarga muerta lineal adicional
+            if sobrecarga_muerta > 0:
+                peso_sobrecarga += sobrecarga_muerta * L_eje
+
+    peso_total = peso_columnas + peso_vigas + peso_sobrecarga
+    masa_total = peso_total / g
+
+    return {
+        "peso_columnas": peso_columnas,
+        "peso_vigas": peso_vigas,
+        "peso_sobrecarga_muerta": peso_sobrecarga,
+        "peso_total": peso_total,
+        "masa_total": masa_total,
+    }
+
 def plot_structure(nodes, elements, nodos_restringidos,
                    gdl_dinamicos_local=None, gdl_estaticos_local=None,
                    gdl_map=None, propiedades=None,
