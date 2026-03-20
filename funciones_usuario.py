@@ -2366,7 +2366,6 @@ def cargar_ejemplo_desde_carpeta(filename: str = "EJEMPLO.txt", base_dir: str | 
 
     return str(nombre), str(unidad), dt, np.asarray(ag_mps2, float), str(fuente), texto
 
-
 def procesar_registro(ag_mps2: np.ndarray, dt: float, aplicar_proc: bool):
     """
     Devuelve dict:
@@ -2379,9 +2378,7 @@ def procesar_registro(ag_mps2: np.ndarray, dt: float, aplicar_proc: bool):
 
     t = np.linspace(0.0, dt * (len(ag_orig) - 1), len(ag_orig))
 
-    # -----------------------------------------------------------------
     # ORIGINAL
-    # -----------------------------------------------------------------
     vel_orig = cumtrapz(ag_orig, t, initial=0.0)
     disp_orig = cumtrapz(vel_orig, t, initial=0.0)
 
@@ -2389,14 +2386,11 @@ def procesar_registro(ag_mps2: np.ndarray, dt: float, aplicar_proc: bool):
     vel_proc = None
     disp_proc = None
 
-    # -----------------------------------------------------------------
-    # PROCESAMIENTO
-    # -----------------------------------------------------------------
     if aplicar_proc:
-        # 1) Corrección de línea base en aceleración
+        # 1) baseline correction
         ag_bc = signal.detrend(ag_orig, type="linear")
 
-        # 2) Filtrado Butterworth pasa banda
+        # 2) bandpass filter
         fs = 1.0 / dt
         fnyquist = 0.5 * fs
 
@@ -2409,25 +2403,22 @@ def procesar_registro(ag_mps2: np.ndarray, dt: float, aplicar_proc: bool):
             b_bandpass, a_bandpass = signal.butter(4, [low, high], btype="bandpass")
             ag_filt = signal.lfilter(b_bandpass, a_bandpass, ag_bc)
 
-        # 3) Velocidad a partir de aceleración filtrada
+        # 3) velocity
         vel_raw = cumtrapz(ag_filt, t, initial=0.0)
 
-        # 4) Corrección lineal de línea base en velocidad
+        # 4) velocity baseline correction
         coef_v = np.polyfit(t, vel_raw, 1)
         vel_proc = vel_raw - np.polyval(coef_v, t)
 
-        # 5) Desplazamiento a partir de velocidad corregida
+        # 5) displacement
         disp_raw = cumtrapz(vel_proc, t, initial=0.0)
 
-        # 6) Corrección polinómica de orden 2 en desplazamiento
+        # 6) displacement correction
         coef_u = np.polyfit(t, disp_raw, 2)
         disp_proc = disp_raw - np.polyval(coef_u, t)
 
         ag_proc = ag_filt
 
-    # -----------------------------------------------------------------
-    # Señal base para espectro / análisis
-    # -----------------------------------------------------------------
     ag_base = ag_proc if (aplicar_proc and ag_proc is not None) else ag_orig
 
     return {
@@ -2441,7 +2432,7 @@ def procesar_registro(ag_mps2: np.ndarray, dt: float, aplicar_proc: bool):
         "ag_base": ag_base,
     }
     
-    def response_spectrum_newmark(ag_mps2: np.ndarray, dt: float, T: np.ndarray, xi: float = 0.05):
+def response_spectrum_newmark(ag_mps2: np.ndarray, dt: float, T: np.ndarray, xi: float = 0.05):
     """
     Espectro (PSA) en g. (tu mismo Newmark)
     """
