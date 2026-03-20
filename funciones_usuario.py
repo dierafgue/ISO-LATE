@@ -2389,7 +2389,7 @@ def procesar_registro(ag_mps2: np.ndarray, dt: float, aplicar_proc: bool):
 
         fs = 1.0 / dt
         nyq = fs / 2.0
-
+        
         low = 0.10 / nyq
         high = min(25.0 / nyq, 0.999)
 
@@ -2397,7 +2397,7 @@ def procesar_registro(ag_mps2: np.ndarray, dt: float, aplicar_proc: bool):
             ag_filt = ag_bc.copy()
         else:
             b, a = signal.butter(4, [low, high], btype="band")
-            ag_filt = signal.filtfilt(b, a, ag_bc)
+            ag_filt = signal.lfilter(b, a, ag_bc)
 
         vel_raw = cumtrapz(ag_filt, t, initial=0.0)
         coef_v = np.polyfit(t, vel_raw, 1)
@@ -2421,8 +2421,8 @@ def procesar_registro(ag_mps2: np.ndarray, dt: float, aplicar_proc: bool):
         "disp_proc": disp_proc,
         "ag_base": ag_base,
     }
-
-def response_spectrum_newmark(ag_mps2: np.ndarray, dt: float, T: np.ndarray, xi: float = 0.05):
+    
+    def response_spectrum_newmark(ag_mps2: np.ndarray, dt: float, T: np.ndarray, xi: float = 0.05):
     """
     Espectro (PSA) en g. (tu mismo Newmark)
     """
