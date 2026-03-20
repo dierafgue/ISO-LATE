@@ -1962,7 +1962,7 @@ with st.container(border=True):
         with st.container(border=True):
             st.markdown(f"### 📊 {tr('b3_plot_scale')}")
 
-            figS, axS = plt.subplots(figsize=(11.8, 3.85))
+            figS, axS = plt.subplots(figsize=(11.8, 5.2))
             figS.set_dpi(240)
             figS.patch.set_facecolor(BG)
             axS.set_facecolor(BG)
