@@ -2488,6 +2488,10 @@ def response_spectrum_newmark(ag_mps2: np.ndarray, dt: float, T: np.ndarray, xi:
 
 
 def lsq_scale_factor(Sa_reg: np.ndarray, Sa_target: np.ndarray):
+    """
+    Factor de escala por mínimos cuadrados en espacio logarítmico.
+    Más robusto que el LSQ lineal simple y evita sobreescalado excesivo.
+    """
     Sa_reg = np.asarray(Sa_reg, dtype=float).ravel()
     Sa_target = np.asarray(Sa_target, dtype=float).ravel()
 
@@ -2500,7 +2504,6 @@ def lsq_scale_factor(Sa_reg: np.ndarray, Sa_target: np.ndarray):
     if np.count_nonzero(ok) < 3:
         return 1.0
 
-    # promedio geométrico de razones -> más balanceado
     log_ratio = np.log(Sa_target[ok]) - np.log(Sa_reg[ok])
     SF = float(np.exp(np.mean(log_ratio)))
 
