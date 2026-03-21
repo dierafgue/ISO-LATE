@@ -889,7 +889,7 @@ from funciones_usuario import (
 )
 
 # -------------------------------------------------------------------------
-# ✅ Texto compacto y profesional (una sola línea bajo el título)
+# ✅ Texto
 # -------------------------------------------------------------------------
 T["en"].update({
     "b2_title": "Geometric and structural model definition",
@@ -938,6 +938,17 @@ T["en"].update({
     "Intermediate stories usually show the best correlation, while the first and "
     "top stories may present larger differences due to global frame interaction "
     "and boundary effects."
+    ),
+
+    "b2_weight_breakdown": "Structural weight breakdown",
+    "b2_weight_cols": "Columns weight",
+    "b2_weight_beams": "Beams weight",
+    "b2_weight_sdl": "Additional dead load weight",
+    "b2_weight_total": "Total structural weight",
+    "b2_mass_total": "Equivalent total mass",
+    "b2_weight_note": (
+        "This summary is computed from the complete structural elements. "
+        "It is reported separately from the condensed mass matrix used in the reduced dynamic model."
     ),
 })
 
@@ -988,6 +999,17 @@ T["es"].update({
     "Los pisos intermedios suelen mostrar el mejor ajuste, mientras que el primer "
     "y último piso pueden presentar mayores diferencias debido a la interacción "
     "global del pórtico y a los efectos de borde del sistema estructural."
+    ),
+
+    "b2_weight_breakdown": "Desglose del peso estructural",
+    "b2_weight_cols": "Peso de columnas",
+    "b2_weight_beams": "Peso de vigas",
+    "b2_weight_sdl": "Peso de sobrecarga muerta adicional",
+    "b2_weight_total": "Peso total estructural",
+    "b2_mass_total": "Masa total equivalente",
+    "b2_weight_note": (
+        "Este resumen se calcula a partir de los elementos estructurales completos. "
+        "Se reporta por separado de la matriz de masas condensada usada en el modelo dinámico reducido."
     ),
 })
 
@@ -1072,7 +1094,7 @@ if generar:
             warn_callback=lambda m: st.warning(tr("b2_warn_pinv")) if "pinv" in m.lower() else st.warning(m),
         )
 
-        # Guardar session_state (igual que tú)
+        # Guardar session_state
         st.session_state["model_key"]          = pkey
         st.session_state["nodes"]              = out["nodes"]
         st.session_state["element_node_pairs"] = out["element_node_pairs"]
@@ -1089,7 +1111,7 @@ if generar:
         st.session_state["model_summary"]      = out["model_summary"]
 
         # -------------------------------------------------------------
-        # Peso total real de la estructura (guardado para usar después)
+        # Peso total real de la estructura
         # -------------------------------------------------------------
         resumen_peso = calcular_peso_total_estructura(
             nodes=out["nodes"],
@@ -1163,6 +1185,11 @@ with col_left:
         k_modelo = st.session_state.get("k_modelo")
         k_aprox  = st.session_state.get("k_aprox")
         ratio_k  = st.session_state.get("ratio_k")
+        peso_columnas = st.session_state.get("peso_columnas")
+        peso_vigas = st.session_state.get("peso_vigas")
+        peso_sobrecarga_muerta_total = st.session_state.get("peso_sobrecarga_muerta_total")
+        peso_total_estructura = st.session_state.get("peso_total_estructura")
+        masa_total_estructura = st.session_state.get("masa_total_estructura")    
 
         if (k_modelo is not None) and (k_aprox is not None) and (ratio_k is not None):
 
@@ -1178,6 +1205,48 @@ with col_left:
                 })
         
                 st.dataframe(df_check, use_container_width=True)
+
+        if (
+            (peso_columnas is not None) and
+            (peso_vigas is not None) and
+            (peso_sobrecarga_muerta_total is not None) and
+            (peso_total_estructura is not None) and
+            (masa_total_estructura is not None)
+        ):
+            with st.expander(tr("b2_weight_breakdown"), expanded=False):
+
+                st.caption(tr("b2_weight_note"))
+
+                lang_now = st.session_state.get("lang", "en")
+                col_name = "Concepto" if lang_now == "es" else "Concept"
+                val_w_name = "Valor [Tf]" if lang_now == "es" else "Value [Tf]"
+                val_m_name = "Valor [Tf·s²/m]" if lang_now == "es" else "Value [Tf·s²/m]"
+
+                df_pesos = pd.DataFrame({
+                    col_name: [
+                        tr("b2_weight_cols"),
+                        tr("b2_weight_beams"),
+                        tr("b2_weight_sdl"),
+                        tr("b2_weight_total"),
+                        tr("b2_mass_total"),
+                    ],
+                    val_w_name: [
+                        round(peso_columnas, 6),
+                        round(peso_vigas, 6),
+                        round(peso_sobrecarga_muerta_total, 6),
+                        round(peso_total_estructura, 6),
+                        np.nan,
+                    ],
+                    val_m_name: [
+                        np.nan,
+                        np.nan,
+                        np.nan,
+                        np.nan,
+                        round(masa_total_estructura, 6),
+                    ],
+                })
+
+                st.dataframe(df_pesos, use_container_width=True)
 
 # -------------------------------------------------------------------------
 # Derecha: gráfico
