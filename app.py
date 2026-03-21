@@ -1219,8 +1219,8 @@ with col_left:
 
                 lang_now = st.session_state.get("lang", "en")
                 col_name = "Concepto" if lang_now == "es" else "Concept"
-                val_w_name = "Valor [Tf]" if lang_now == "es" else "Value [Tf]"
-                val_m_name = "Valor [Tf·s²/m]" if lang_now == "es" else "Value [Tf·s²/m]"
+                val_name = "Valor" if lang_now == "es" else "Value"
+                unit_name = "Unidades" if lang_now == "es" else "Units"
 
                 df_pesos = pd.DataFrame({
                     col_name: [
@@ -1230,19 +1230,19 @@ with col_left:
                         tr("b2_weight_total"),
                         tr("b2_mass_total"),
                     ],
-                    val_w_name: [
+                    "val_name": [
                         round(peso_columnas, 6),
                         round(peso_vigas, 6),
                         round(peso_sobrecarga_muerta_total, 6),
                         round(peso_total_estructura, 6),
-                        np.nan,
-                    ],
-                    val_m_name: [
-                        np.nan,
-                        np.nan,
-                        np.nan,
-                        np.nan,
                         round(masa_total_estructura, 6),
+                    ],
+                    "unit_name": [
+                        "Tf",
+                        "Tf",
+                        "Tf",
+                        "Tf",
+                        "Tf·s²/m",
                     ],
                 })
 
