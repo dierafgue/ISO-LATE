@@ -1246,12 +1246,7 @@ with col_left:
                     ],
                 })
 
-                styled_df = df_pesos.style.set_properties(
-                    subset=[val_name, unit_name],
-                    **{'text-align': 'center'}
-                )
-                
-                st.dataframe(styled_df, use_container_width=True)
+                st.dataframe(df_pesos, use_container_width=True)
 
 # -------------------------------------------------------------------------
 # Derecha: gráfico
