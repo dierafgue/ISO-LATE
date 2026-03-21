@@ -6058,22 +6058,18 @@ with colD:
         # -------------------------------------------------------------
         # Métricas principales (solo 3)
         # -------------------------------------------------------------
-        c1, c2, c3 = st.columns(3)
-
-        c1.metric(
+        st.metric(
             "Base shear reduction" if lang_now == "en" else "Reducción de cortante basal",
             f"{shear_reduction:.1f} %" if np.isfinite(shear_reduction) else "—"
         )
 
-        c2.metric(
+        st.metric(
             "Isolation demand" if lang_now == "en" else "Demanda del aislamiento",
             iso_status
         )
 
-        c3.metric(
-            "Interpretation" if lang_now == "en" else "Interpretación",
-            final_msg
-        )
+        st.markdown(f"**{'Interpretation' if lang_now == 'en' else 'Interpretación'}**")
+        st.info(final_msg)
 
         # -------------------------------------------------------------
         # Tabla corta debajo
