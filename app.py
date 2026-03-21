@@ -1230,14 +1230,14 @@ with col_left:
                         tr("b2_weight_total"),
                         tr("b2_mass_total"),
                     ],
-                    "val_name": [
+                    val_name: [
                         round(peso_columnas, 6),
                         round(peso_vigas, 6),
                         round(peso_sobrecarga_muerta_total, 6),
                         round(peso_total_estructura, 6),
                         round(masa_total_estructura, 6),
                     ],
-                    "unit_name": [
+                    unit_name: [
                         "Tf",
                         "Tf",
                         "Tf",
