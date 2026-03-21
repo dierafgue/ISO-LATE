@@ -5452,7 +5452,7 @@ T["en"].update({
     "b11_hdr_V": "Story shears (FIXED vs ISOLATED)",
     "b11_hdr_U": "Lateral displacements (FIXED vs ISOLATED)",
     "b11_hdr_D": "Story drifts (FIXED vs ISOLATED)",
-    "b11_hdr_S": "Summary (KPIs)",
+    "b11_hdr_S": "Final assessment",
 
     "b11_xlabel_V": "Shear V [tonf]",
     "b11_xlabel_U": "Displacement u [m]",
@@ -5500,7 +5500,7 @@ T["es"].update({
     "b11_hdr_V": "Cortantes por piso (FIJA vs AISLADA)",
     "b11_hdr_U": "Desplazamientos laterales (FIJA vs AISLADA)",
     "b11_hdr_D": "Derivas por entrepiso (FIJA vs AISLADA)",
-    "b11_hdr_S": "Resumen (KPIs)",
+    "b11_hdr_S": "Evaluación final",
 
     "b11_xlabel_V": "Cortante V [tonf]",
     "b11_xlabel_U": "Desplazamiento u [m]",
@@ -5999,77 +5999,100 @@ with colC:
             mode_tag=f"{tagD} | + only"
         )
 
-# ========================= 4) RESUMEN (KPIs) =========================
+# ========================= 4) RESUMEN FINAL (LIMPIO) =========================
 with colD:
     with st.container(border=True):
         st.subheader(tr("b11_hdr_S"))
 
-        df_kpi = pd.DataFrame({
-            tr("b11_sum_item"): [
-                tr("b11_vbase"),
-                tr("b11_roof_u"),
-                tr("b11_drift_max"),
-                tr("b11_pfa_max"),
-                tr("b11_lambdaT"),
-                tr("b11_etaV"),
-                tr("b11_iso_use"),
+        # -------------------------------------------------------------
+        # 1) Reducción de cortante
+        # -------------------------------------------------------------
+        shear_reduction = chg_V if np.isfinite(chg_V) else np.nan
+
+        # -------------------------------------------------------------
+        # 2) Estado de demanda del aislador
+        # -------------------------------------------------------------
+        if np.isfinite(iso_use):
+            if iso_use <= 0.80:
+                iso_status = "Acceptable" if st.session_state.get("lang", "en") == "en" else "Aceptable"
+            elif iso_use <= 1.00:
+                iso_status = "Near limit" if st.session_state.get("lang", "en") == "en" else "Cerca del límite"
+            else:
+                iso_status = "High demand" if st.session_state.get("lang", "en") == "en" else "Alta demanda"
+        else:
+            iso_status = "—"
+
+        # -------------------------------------------------------------
+        # 3) Interpretación final
+        # -------------------------------------------------------------
+        lang_now = st.session_state.get("lang", "en")
+
+        if np.isfinite(etaV) and np.isfinite(iso_use):
+            if etaV <= 0.30 and iso_use <= 0.80:
+                final_msg = (
+                    "Effective and feasible isolation"
+                    if lang_now == "en" else
+                    "Aislamiento efectivo y viable"
+                )
+            elif etaV <= 0.30 and iso_use > 0.80:
+                final_msg = (
+                    "Effective, but with high isolation demand"
+                    if lang_now == "en" else
+                    "Efectivo, pero con alta demanda en el aislamiento"
+                )
+            elif etaV > 0.30:
+                final_msg = (
+                    "Limited benefit for this configuration"
+                    if lang_now == "en" else
+                    "Beneficio limitado para esta configuración"
+                )
+            else:
+                final_msg = (
+                    "Check isolation performance"
+                    if lang_now == "en" else
+                    "Revisar desempeño del aislamiento"
+                )
+        else:
+            final_msg = "—"
+
+        # -------------------------------------------------------------
+        # Métricas principales (solo 3)
+        # -------------------------------------------------------------
+        c1, c2, c3 = st.columns(3)
+
+        c1.metric(
+            "Base shear reduction" if lang_now == "en" else "Reducción de cortante basal",
+            f"{shear_reduction:.1f} %" if np.isfinite(shear_reduction) else "—"
+        )
+
+        c2.metric(
+            "Isolation demand" if lang_now == "en" else "Demanda del aislamiento",
+            iso_status
+        )
+
+        c3.metric(
+            "Interpretation" if lang_now == "en" else "Interpretación",
+            final_msg
+        )
+
+        # -------------------------------------------------------------
+        # Tabla corta debajo
+        # -------------------------------------------------------------
+        st.markdown("#### " + ("Key values" if lang_now == "en" else "Valores clave"))
+
+        df_final = pd.DataFrame({
+            "Indicator" if lang_now == "en" else "Indicador": [
+                "Base shear reduction" if lang_now == "en" else "Reducción de cortante basal",
+                "Isolation demand ratio (u/u_cap)" if lang_now == "en" else "Relación de demanda del aislamiento (u/u_cap)",
+                "Max isolator displacement [m]" if lang_now == "en" else "Desplazamiento máximo del aislador [m]",
             ],
-            tr("b11_sum_fix"): [
-                _fmt(V0_fix, 4),
-                _fmt(uH_fix, 6),
-                _fmt(dmax_fix, 6),
-                _fmt(pfa_fix_max, 3),
-                "—",
-                "—",
-                "—",
-            ],
-            tr("b11_sum_ais"): [
-                _fmt(V0_ais, 4),
-                _fmt(uH_ais, 6),
-                _fmt(dmax_ais, 6),
-                _fmt(pfa_ais_max, 3),
-                _fmt(lambdaT, 4),
-                _fmt(etaV, 4),
-                _fmt(iso_use, 3),
-            ],
-            tr("b11_sum_chg"): [
-                (f"{chg_V:.2f} %"  if np.isfinite(chg_V)  else "—"),
-                (f"{chg_uH:.2f} %" if np.isfinite(chg_uH) else "—"),
-                (f"{chg_d:.2f} %"  if np.isfinite(chg_d)  else "—"),
-                (f"{chg_p:.2f} %"  if np.isfinite(chg_p)  else "—"),
-                "—", "—", "—",
-            ],
-            tr("b11_sum_status"): [
-                _semaforo_reduccion(chg_V),
-                _semaforo_reduccion(chg_uH),
-                _semaforo_reduccion(chg_d),
-                _semaforo_reduccion(chg_p),
-                ("🟢" if np.isfinite(lambdaT) and lambdaT >= 1.2 else ("🟡" if np.isfinite(lambdaT) else "⚪")),
-                ("🟢" if np.isfinite(etaV) and etaV <= 0.8 else ("🟡" if np.isfinite(etaV) else "⚪")),
-                _semaforo_ratio_small_is_better(iso_use, good=0.80, warn=1.00),
-            ],
+            "Value" if lang_now == "en" else "Valor": [
+                f"{shear_reduction:.2f} %" if np.isfinite(shear_reduction) else "—",
+                f"{iso_use:.3f}" if np.isfinite(iso_use) else "—",
+                f"{u_iso_max:.4f}" if (u_iso_max is not None and np.isfinite(float(u_iso_max))) else "—",
+            ]
         })
 
-        with st.expander("KPIs", expanded=False):
-            st.dataframe(df_kpi, hide_index=True, use_container_width=True)
-
-        m1, m2 = st.columns(2)
-        m1.metric(tr("b11_vbase"), f"{V0_fix:.3g} → {V0_ais:.3g}", f"{chg_V:.1f}%" if np.isfinite(chg_V) else "—", help=tr("b11_help_v"))
-        m2.metric(tr("b11_drift_max"), f"{dmax_fix:.4g} → {dmax_ais:.4g}", f"{chg_d:.1f}%" if np.isfinite(chg_d) else "—", help=tr("b11_help_d"))
-
-        m3, m4 = st.columns(2)
-        m3.metric(tr("b11_roof_u"), f"{uH_fix:.4g} → {uH_ais:.4g}", f"{chg_uH:.1f}%" if np.isfinite(chg_uH) else "—", help=tr("b11_help_u"))
-        m4.metric(tr("b11_pfa_max"), f"{pfa_fix_max:.3f} → {pfa_ais_max:.3f}", f"{chg_p:.1f}%" if np.isfinite(chg_p) else "—", help=tr("b11_help_pfa"))
-
-        r1, r2 = st.columns(2)
-        r1.metric(tr("b11_lambdaT"), _fmt(lambdaT, 3), help=tr("b11_help_lT"))
-        r2.metric(tr("b11_etaV"), _fmt(etaV, 3), help=tr("b11_help_eV"))
-
-        r3, r4 = st.columns(2)
-        r3.metric(tr("b11_iso_use"), _fmt(iso_use, 3), help=tr("b11_help_use"))
-        if (u_iso_max is not None) and np.isfinite(float(u_iso_max)):
-            r4.metric(tr("b11_u_iso_max"), f"{float(u_iso_max):.4f}", help=tr("b11_help_u_iso_max"))
-        else:
-            r4.metric(tr("b11_u_iso_max"), "—", help=tr("b11_help_u_iso_max"))
+        st.dataframe(df_final, hide_index=True, use_container_width=True)
 
 st.success(tr("b11_ok"))
