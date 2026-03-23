@@ -405,16 +405,6 @@ T = {
             "subject to the terms of the MIT License."
         ),
 
-        "license_title_es": "Licencia (Español)",
-        "license_text_es": (
-            "ISO-LATE se distribuye bajo la Licencia MIT. "
-            "Copyright (c) 2026 Diego Rafael Guerrero Carrillo."
-        ),
-        "license_note_es": (
-            "Se concede permiso para usar, copiar, modificar y distribuir este software, "
-            "conforme a los términos de la Licencia MIT."
-        ),
-
         "info_title": "Author information",
         "author": "Author",
         "degree": "Degree",
@@ -441,26 +431,16 @@ T = {
             "del espectro NEC-24."
         ),
 
-        "license_title": "License",
+        "license_title": "Licencia",
         "license_text": (
-            "ISO-LATE is distributed under the MIT License. "
-            "Copyright (c) 2026 Diego Rafael Guerrero Carrillo."
-        ),
-        "license_note": (
-            "Permission is granted to use, copy, modify, and distribute this software, "
-            "subject to the terms of the MIT License."
-        ),
-
-        "license_title_es": "Licencia (Español)",
-        "license_text_es": (
             "ISO-LATE se distribuye bajo la Licencia MIT. "
             "Copyright (c) 2026 Diego Rafael Guerrero Carrillo."
         ),
-        "license_note_es": (
+        "license_note": (
             "Se concede permiso para usar, copiar, modificar y distribuir este software, "
             "conforme a los términos de la Licencia MIT."
         ),
-
+        
         "info_title": "Información del autor",
         "author": "Autor",
         "degree": "Formación",
@@ -548,11 +528,6 @@ about_html = (
             f'<div class="iso-subtitle">{tr("license_title")}</div>'
             f'<div class="iso-license-text">'
                 f'{tr("license_text")}<br>{tr("license_note")}'
-            f'</div>'
-
-            f'<div class="iso-license-text">'
-                f'<strong>{tr("license_title_es")}:</strong><br>'
-                f'{tr("license_text_es")}<br>{tr("license_note_es")}'
             f'</div>'
         f'</div>'
     f'</div>'
