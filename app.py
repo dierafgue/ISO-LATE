@@ -203,30 +203,30 @@ def _get_css() -> str:
         text-align: justify;
     }
 
-        .iso-section-sep {
+    .iso-section-sep {
         height: 1px;
         background: #e9eef5;
         margin: 0.75rem 0 0.70rem 0;
     }
-
+    
     .iso-subtitle {
         color: #243447;
         font-size: 0.95rem;
         font-weight: 700;
         margin-bottom: 0.30rem;
     }
-
+    
     .iso-license-box {
         margin-top: 0.10rem;
     }
-
+    
     .iso-license-text {
         color: #5f6b7a;
         font-size: 0.88rem;
         line-height: 1.55;
         text-align: justify;
     }
-
+    
     .iso-license-text + .iso-license-text {
         margin-top: 0.38rem;
     }
@@ -391,7 +391,7 @@ T = {
             "ISO-LATE is an interactive structural engineering application for "
             "simulating, analyzing, and comparing the seismic response of 2D frame "
             "structures with fixed base and base isolation (LRB). It includes modal "
-            analysis, response spectrum analysis (RSA), time history analysis (THA), "
+            "analysis, response spectrum analysis (RSA), time history analysis (THA), "
             "and NEC-24 spectrum tools."
         ),
 
@@ -426,6 +426,7 @@ T = {
         "github_badge": "Follow",
         "mail_badge": "Mail",
     },
+
     "es": {
         "language": "Idioma",
         "english": "Inglés",
