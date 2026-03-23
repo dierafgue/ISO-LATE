@@ -203,6 +203,34 @@ def _get_css() -> str:
         text-align: justify;
     }
 
+        .iso-section-sep {
+        height: 1px;
+        background: #e9eef5;
+        margin: 0.75rem 0 0.70rem 0;
+    }
+
+    .iso-subtitle {
+        color: #243447;
+        font-size: 0.95rem;
+        font-weight: 700;
+        margin-bottom: 0.30rem;
+    }
+
+    .iso-license-box {
+        margin-top: 0.10rem;
+    }
+
+    .iso-license-text {
+        color: #5f6b7a;
+        font-size: 0.88rem;
+        line-height: 1.55;
+        text-align: justify;
+    }
+
+    .iso-license-text + .iso-license-text {
+        margin-top: 0.38rem;
+    }
+
     /* =========================
        TARJETA DERECHA
     ========================= */
@@ -357,15 +385,36 @@ T = {
         "language": "Language",
         "english": "English",
         "spanish": "Spanish",
+
         "intro_title": "About ISO-LATE",
         "intro_text": (
-            "ISO-LATE is an interactive structural engineering application designed to "
-            "simulate, analyze, and compare the seismic response of 2D frame structures "
-            "with fixed base and base isolation systems (LRB). The platform integrates "
-            "modal analysis, response spectrum analysis (RSA), time history analysis "
-            "(THA – Newmark method), and NEC-24 seismic spectrum tools, allowing users "
-            "to evaluate periods, displacements, drifts, and forces in a clear and visual way."
+            "ISO-LATE is an interactive structural engineering application for "
+            "simulating, analyzing, and comparing the seismic response of 2D frame "
+            "structures with fixed base and base isolation (LRB). It includes modal "
+            analysis, response spectrum analysis (RSA), time history analysis (THA), "
+            "and NEC-24 spectrum tools."
         ),
+
+        "license_title": "License",
+        "license_text": (
+            "ISO-LATE is distributed under the MIT License. "
+            "Copyright (c) 2026 Diego Rafael Guerrero Carrillo."
+        ),
+        "license_note": (
+            "Permission is granted to use, copy, modify, and distribute this software, "
+            "subject to the terms of the MIT License."
+        ),
+
+        "license_title_es": "Licencia (Español)",
+        "license_text_es": (
+            "ISO-LATE se distribuye bajo la Licencia MIT. "
+            "Copyright (c) 2026 Diego Rafael Guerrero Carrillo."
+        ),
+        "license_note_es": (
+            "Se concede permiso para usar, copiar, modificar y distribuir este software, "
+            "conforme a los términos de la Licencia MIT."
+        ),
+
         "info_title": "Author information",
         "author": "Author",
         "degree": "Degree",
@@ -381,15 +430,36 @@ T = {
         "language": "Idioma",
         "english": "Inglés",
         "spanish": "Español",
+
         "intro_title": "Acerca de ISO-LATE",
         "intro_text": (
-            "ISO-LATE es una aplicación interactiva de ingeniería estructural diseñada para "
-            "simular, analizar y comparar la respuesta sísmica de pórticos 2D con base fija "
-            "y sistemas con aislamiento sísmico en la base (LRB). La plataforma integra "
-            "análisis modal, análisis espectral (RSA), análisis tiempo historia "
-            "(THA – método de Newmark) y herramientas del espectro sísmico NEC-24, "
-            "permitiendo evaluar períodos, desplazamientos, derivas y fuerzas de manera clara y visual."
+            "ISO-LATE es una aplicación interactiva de ingeniería estructural para "
+            "simular, analizar y comparar la respuesta sísmica de pórticos 2D con base "
+            "fija y aislamiento sísmico en la base (LRB). Incluye análisis modal, "
+            "análisis espectral (RSA), análisis tiempo historia (THA) y herramientas "
+            "del espectro NEC-24."
         ),
+
+        "license_title": "License",
+        "license_text": (
+            "ISO-LATE is distributed under the MIT License. "
+            "Copyright (c) 2026 Diego Rafael Guerrero Carrillo."
+        ),
+        "license_note": (
+            "Permission is granted to use, copy, modify, and distribute this software, "
+            "subject to the terms of the MIT License."
+        ),
+
+        "license_title_es": "Licencia (Español)",
+        "license_text_es": (
+            "ISO-LATE se distribuye bajo la Licencia MIT. "
+            "Copyright (c) 2026 Diego Rafael Guerrero Carrillo."
+        ),
+        "license_note_es": (
+            "Se concede permiso para usar, copiar, modificar y distribuir este software, "
+            "conforme a los términos de la Licencia MIT."
+        ),
+
         "info_title": "Información del autor",
         "author": "Autor",
         "degree": "Formación",
@@ -468,8 +538,22 @@ mail_icon_svg = """
 
 about_html = (
     f'<div class="iso-card">'
-    f'<h3>{tr("intro_title")}</h3>'
-    f'<div class="iso-muted">{tr("intro_text")}</div>'
+        f'<h3>{tr("intro_title")}</h3>'
+        f'<div class="iso-muted">{tr("intro_text")}</div>'
+
+        f'<div class="iso-section-sep"></div>'
+
+        f'<div class="iso-license-box">'
+            f'<div class="iso-subtitle">{tr("license_title")}</div>'
+            f'<div class="iso-license-text">'
+                f'{tr("license_text")}<br>{tr("license_note")}'
+            f'</div>'
+
+            f'<div class="iso-license-text">'
+                f'<strong>{tr("license_title_es")}:</strong><br>'
+                f'{tr("license_text_es")}<br>{tr("license_note_es")}'
+            f'</div>'
+        f'</div>'
     f'</div>'
 )
 
