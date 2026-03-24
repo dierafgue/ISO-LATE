@@ -4008,17 +4008,14 @@ def _plot_story_shear_etabs_maxmin(Vmax_story, Vmin_story, y_levels, title, colo
     fig.patch.set_facecolor(BG)
     ax.set_facecolor(BG)
 
-    # MAX
     xM, yM = _etabs_polyline_xy(Vmax_story, y_levels)
     ax.plot(xM, yM, "-", color=color_line, lw=lw)
 
-    # puntos de MAX en niveles
     y_pts = y_levels
     x_pts_max = np.r_[Vmax_story[0], Vmax_story]
     x_pts_max = x_pts_max[:len(y_pts)]
     ax.plot(x_pts_max, y_pts, "o", color=color_line, ms=ms)
 
-    # MIN
     if Vmin_story is not None:
         Vmin_story = np.asarray(Vmin_story, float).ravel()
         if len(Vmin_story) != n:
@@ -4031,10 +4028,8 @@ def _plot_story_shear_etabs_maxmin(Vmax_story, Vmin_story, y_levels, title, colo
         x_pts_min = x_pts_min[:len(y_pts)]
         ax.plot(x_pts_min, y_pts, "o", color=color_line, ms=ms, alpha=0.85)
 
-        # límites por max absoluto de ambos
         vmax = float(np.max(np.abs(np.r_[Vmax_story, Vmin_story])))
     else:
-        # RSA-SRSS: espejo simétrico (solo para visual)
         ax.plot(-xM, yM, "-", color=color_line, lw=lw, alpha=0.85)
         ax.plot(-x_pts_max, y_pts, "o", color=color_line, ms=ms, alpha=0.75)
         vmax = float(np.max(np.abs(Vmax_story)))
@@ -4071,14 +4066,13 @@ if alt_fix is None:
 
 alt_fix = np.asarray(alt_fix, float).ravel()
 n_pisos = int(len(alt_fix))
-y_levels = np.r_[0.0, alt_fix]  # (n_pisos+1,)
+y_levels = np.r_[0.0, alt_fix]
 
 # =============================================================================
 # RSA (Modal espectral) – SUPER vs SUPER
 # =============================================================================
 if metodo == tr("b8_method_rsa"):
 
-    # --- espectro NEC del BLOQUE 3 ---
     T_spec = st.session_state.get("rs_T_spec", None)
     Sa_el  = st.session_state.get("rs_Sa_elast", None)
     Sa_in  = st.session_state.get("rs_Sa_inelas", None)
@@ -4103,10 +4097,9 @@ if metodo == tr("b8_method_rsa"):
         help=tr("h_b8_sa_type"),
     )
 
-    Sa_use = (Sa_in if (tipo_sa == tr("b8_sa_in")) else Sa_el) * Ie  # [g]
+    Sa_use = (Sa_in if (tipo_sa == tr("b8_sa_in")) else Sa_el) * Ie
     g = 9.8066500000
 
-    # ---- variables modales FIJA ----
     M_fix  = st.session_state.get("M_cond", None)
     Vn_fix = st.session_state.get("v_norm_sin", None)
     T_fix  = st.session_state.get("T_sin", None)
@@ -4119,7 +4112,6 @@ if metodo == tr("b8_method_rsa"):
     T_fix  = np.asarray(T_fix, float).ravel()
     n_fix  = int(M_fix.shape[0])
 
-    # ---- variables modales AISLADA ----
     M_ais  = st.session_state.get("M_cond_ais", st.session_state.get("M_cond_aislador", None))
     Vn_ais = st.session_state.get("v_norm_ais", None)
     T_ais  = st.session_state.get("T_ais", None)
@@ -4139,7 +4131,6 @@ if metodo == tr("b8_method_rsa"):
         st.error(tr("b8_iso_dim_bad"))
         st.stop()
 
-    # ---- RSA: SRSS de cortantes SOLO SUPER (por fuerzas de pisos) ----
     def _rsa_story_shear_super(Mmat, Vnorm, Tvec, n_pisos_ref):
         """
         Retorna V_srss SOLO SUPER (tamaño n_pisos_ref).
@@ -4149,7 +4140,7 @@ if metodo == tr("b8_method_rsa"):
 
         - FIJA: toma todos los DOF.
         - AISLADA: calcula con el sistema completo, pero reporta SOLO
-        la superestructura (excluye el DOF 0 del nivel de aislación).
+          la superestructura (excluye el DOF 0 del nivel de aislación).
         """
         Mmat = np.asarray(Mmat, float)
         Vnorm = np.asarray(Vnorm, float)
@@ -4178,12 +4169,9 @@ if metodo == tr("b8_method_rsa"):
                 continue
 
             Gamma = num / den
-
-            # ✅ Fuerzas modales consistentes con M completa
             F_full = (Gamma * (Mmat @ phi) * Sa_r).ravel()
 
             if has_iso:
-                # excluir DOF 0 del nivel de aislación
                 F_use = F_full[1:1+n_pisos_ref]
             else:
                 F_use = F_full[:n_pisos_ref]
@@ -4203,104 +4191,8 @@ if metodo == tr("b8_method_rsa"):
         V_modes = np.vstack(V_modes)
         return np.sqrt(np.sum(V_modes**2, axis=0))
 
-    def _rsa_story_shear_iso_relative_super(Mmat, Vnorm, Tvec, n_pisos_ref):
-        """
-        AISLADA:
-        Cortantes por piso de la superestructura usando la respuesta modal
-        relativa respecto al DOF del aislador.
-
-        - Gamma se calcula con el sistema completo:
-            Gamma = (phi^T M r) / (phi^T M phi)
-
-        - La forma modal relativa de la superestructura es:
-            phi_rel = phi_super - phi_base
-
-        - Las fuerzas modales se construyen solo para la superestructura.
-        """
-        Mmat = np.asarray(Mmat, float)
-        Vnorm = np.asarray(Vnorm, float)
-        Tvec = np.asarray(Tvec, float).ravel()
-
-        n = int(Mmat.shape[0])
-        nmod = int(Vnorm.shape[1])
-
-        # En el modelo aislado debe existir 1 DOF extra: el del aislador
-        if n != n_pisos_ref + 1:
-            return None
-
-        V_modes = []
-
-        for rr in range(nmod):
-            Tr = float(Tvec[rr]) if rr < len(Tvec) else np.nan
-            if (not np.isfinite(Tr)) or Tr <= 0:
-                continue
-
-            Sa_r = float(np.interp(Tr, T_spec, Sa_use)) * g
-            phi = np.asarray(Vnorm[:, rr], float).reshape(n, 1)
-
-            r = np.ones((n, 1), float)
-
-            num = float((phi.T @ Mmat @ r).item())
-            den = float((phi.T @ Mmat @ phi).item())
-
-            if (not np.isfinite(den)) or abs(den) < 1e-14:
-                continue
-
-            Gamma = num / den
-
-            # DOF 0 = aislador
-            phi_base = float(phi[0, 0])
-
-            # forma modal relativa de la superestructura respecto al aislador
-            phi_rel = (phi[1:1+n_pisos_ref, 0] - phi_base).reshape(n_pisos_ref, 1)
-
-            # masa de la superestructura
-            M_sup = Mmat[1:1+n_pisos_ref, 1:1+n_pisos_ref]
-
-            # fuerzas modales en la superestructura
-            F_r = (Gamma * (M_sup @ phi_rel) * Sa_r).ravel()
-
-            if len(F_r) != n_pisos_ref:
-                return None
-
-            V_r = np.zeros((n_pisos_ref,), float)
-            for k in range(n_pisos_ref):
-                V_r[k] = np.sum(F_r[k:])
-
-            V_modes.append(V_r)
-
-        if len(V_modes) == 0:
-            return None
-
-        V_modes = np.vstack(V_modes)
-        return np.sqrt(np.sum(V_modes**2, axis=0))
-
     V_fix_srss = _rsa_story_shear_super(M_fix, Vn_fix, T_fix, n_pisos)
-    
-    V_ais_rel = _rsa_story_shear_iso_relative_super(M_ais, Vn_ais, T_ais, n_pisos)
-    V_ais_abs = _rsa_story_shear_super(M_ais, Vn_ais, T_ais, n_pisos)
-    
-    st.markdown("### 🔍 DEBUG AISLADA")
-    st.write("V_ais_rel =", np.round(V_ais_rel, 6) if V_ais_rel is not None else None)
-    st.write("V_ais_abs =", np.round(V_ais_abs, 6) if V_ais_abs is not None else None)
-    
-    F_ais_rel = None
-    F_ais_abs = None
-    
-    if V_ais_rel is not None:
-        F_ais_rel = np.zeros_like(np.asarray(V_ais_rel, float).ravel())
-        F_ais_rel[:-1] = np.asarray(V_ais_rel, float).ravel()[:-1] - np.asarray(V_ais_rel, float).ravel()[1:]
-        F_ais_rel[-1] = np.asarray(V_ais_rel, float).ravel()[-1]
-    
-    if V_ais_abs is not None:
-        F_ais_abs = np.zeros_like(np.asarray(V_ais_abs, float).ravel())
-        F_ais_abs[:-1] = np.asarray(V_ais_abs, float).ravel()[:-1] - np.asarray(V_ais_abs, float).ravel()[1:]
-        F_ais_abs[-1] = np.asarray(V_ais_abs, float).ravel()[-1]
-    
-    st.write("F_ais_rel =", np.round(F_ais_rel, 6) if F_ais_rel is not None else None)
-    st.write("F_ais_abs =", np.round(F_ais_abs, 6) if F_ais_abs is not None else None)
-    
-    V_ais_srss = V_ais_rel
+    V_ais_srss = _rsa_story_shear_super(M_ais, Vn_ais, T_ais, n_pisos)
 
     if V_fix_srss is None:
         st.error("❌ RSA FIJA: no se pudieron armar modos válidos o dimensiones no calzan.")
@@ -4312,11 +4204,9 @@ if metodo == tr("b8_method_rsa"):
     V_fix_srss = np.asarray(V_fix_srss, float).ravel()
     V_ais_srss = np.asarray(V_ais_srss, float).ravel()
 
-    # ✅ Para RSA-SRSS: “Max/Min” se reporta como ±SRSS (signo no definido)
     V_fix_max, V_fix_min = V_fix_srss.copy(), -V_fix_srss.copy()
     V_ais_max, V_ais_min = V_ais_srss.copy(), -V_ais_srss.copy()
 
-    # Tablas (ETABS-style Max/Min)
     df_fix = pd.DataFrame({
         "Piso": np.arange(1, n_pisos + 1),
         "Altura sup [m]": np.round(alt_fix, 3),
@@ -4339,7 +4229,6 @@ if metodo == tr("b8_method_rsa"):
             st.subheader(tr("b8_rsa_left"))
             with st.expander(tr("b8_table_fix"), expanded=False):
                 _df_to_compact_table(df_fix)
-            # Para RSA se puede dibujar con Vmin real (= -Vmax) o dejar Vmin=None (espejo)
             _plot_story_shear_etabs_maxmin(V_fix_max, None, y_levels, tr("b8_plot_fix_rsa"), COLOR_FIX, nref=n_pisos)
 
     with colR:
@@ -4351,7 +4240,6 @@ if metodo == tr("b8_method_rsa"):
 
     st.success(tr("b8_rsa_ok"))
 
-    # Guardar para B11 (usa |V|max como “story shear” comparativo)
     st.session_state["cmp_V_fix_story"]     = np.maximum(np.abs(V_fix_max), np.abs(V_fix_min))
     st.session_state["cmp_V_ais_story"]     = np.maximum(np.abs(V_ais_max), np.abs(V_ais_min))
     st.session_state["cmp_V_fix_story_max"] = V_fix_max
@@ -4369,13 +4257,13 @@ else:
     modo_tha = st.selectbox(
         tr("b8_tha_mode"),
         [tr("b8_tha_time"), tr("b8_tha_maxmin"), tr("b8_tha_abs")],
-        index=1,  # por defecto como ETABS
+        index=1,
         help=tr("h_b8_tha_mode"),
         key="b8_tha_mode_sel",
     )
 
     dt = st.session_state.get("dt", None)
-    ag = st.session_state.get("ag_filt", None)  # ✅ ya filtrada + corregida + escalada
+    ag = st.session_state.get("ag_filt", None)
 
     a_fix = st.session_state.get("a_t", None)
     M_fix = st.session_state.get("M_cond", None)
@@ -4419,7 +4307,7 @@ else:
         n, nt = a_rel.shape
         m = np.diag(np.asarray(Mmat, float)).reshape(n, 1)
         a_abs = a_rel + ag_series.reshape(1, nt)
-        return m * a_abs  # (n, nt) en tonf
+        return m * a_abs
 
     def _story_from_forces(F):
         """V_k(t) = sum_{i=k..N} F_i(t)  (cortante acumulado desde el piso k hacia arriba)."""
@@ -4430,40 +4318,32 @@ else:
             V[k, :] = np.sum(F[k:, :], axis=0)
         return V
 
-    # -------- FIJA (ya es superestructura) --------
     t_fix, ag_fix = _match_ag(ag, a_fix.shape[1])
-    F_fix = _floor_forces(M_fix, a_fix, ag_fix)      # (n_pisos, nt)
+    F_fix = _floor_forces(M_fix, a_fix, ag_fix)
     if F_fix.shape[0] != n_pisos:
         st.error("❌ THA FIJA: fuerzas no calzan con n_pisos (revisa GDL cond).")
         st.stop()
-    V_fix_all = _story_from_forces(F_fix)            # (n_pisos, nt)
+    V_fix_all = _story_from_forces(F_fix)
 
-    # -------- AISLADA (SUPER relativa al nivel de aislamiento) --------
     t_ais, ag_ais = _match_ag(ag, a_ais.shape[1])
 
     if a_ais.shape[0] == n_pisos + 1:
-        # DOF 0 = nivel de aislamiento
-        # a_ais viene relativa al suelo; para superestructura relativa a la base:
-        # a_sup_rel_base = (a_sup_abs - a_base_abs) = (a_sup_rel+ag) - (a_base_rel+ag)
-        #                = a_sup_rel - a_base_rel
-        a_base_rel = a_ais[0:1, :]                           # (1, nt)
-        a_sup_rel_base = a_ais[1:1+n_pisos, :] - a_base_rel  # (n_pisos, nt)
+        a_base_rel = a_ais[0:1, :]
+        a_sup_rel_base = a_ais[1:1+n_pisos, :] - a_base_rel
 
         m_sup = np.diag(np.asarray(M_ais, float))[1:1+n_pisos].reshape(n_pisos, 1)
-        F_ais_sup = m_sup * a_sup_rel_base                   # (n_pisos, nt) en tonf
-        V_ais_all = _story_from_forces(F_ais_sup)           # (n_pisos, nt)
+        F_ais_sup = m_sup * a_sup_rel_base
+        V_ais_all = _story_from_forces(F_ais_sup)
 
     elif a_ais.shape[0] == n_pisos:
-        # si ya no existe DOF base, usar directamente la superestructura
         m_sup = np.diag(np.asarray(M_ais, float)).reshape(n_pisos, 1)
-        F_ais_sup = m_sup * a_ais                           # asumiendo ya relativa al nivel base
+        F_ais_sup = m_sup * a_ais
         V_ais_all = _story_from_forces(F_ais_sup)
 
     else:
         st.error("❌ THA AISLADA: dimensiones no calzan con n_pisos ni n_pisos+1.")
         st.stop()
 
-    # --------- SALIDAS según modo ---------
     cap_fix = cap_ais = None
 
     if modo_tha == tr("b8_tha_time"):
@@ -4483,12 +4363,10 @@ else:
         title_fix = tr("b8_plot_fix_tha")
         title_ais = tr("b8_plot_iso_tha")
 
-        # para B11 (single vector)
         V_fix_cmp = np.asarray(V_fix_max, float).ravel()
         V_ais_cmp = np.asarray(V_ais_max, float).ravel()
 
     elif modo_tha == tr("b8_tha_maxmin"):
-        # ✅ ETABS MaxMin: por piso, máximo y mínimo sobre el tiempo
         V_fix_max = np.max(V_fix_all, axis=1)
         V_fix_min = np.min(V_fix_all, axis=1)
         V_ais_max = np.max(V_ais_all, axis=1)
@@ -4497,12 +4375,10 @@ else:
         title_fix = tr("b8_plot_fix_maxmin")
         title_ais = tr("b8_plot_iso_maxmin")
 
-        # para B11 usa |V|max
         V_fix_cmp = np.maximum(np.abs(V_fix_max), np.abs(V_fix_min))
         V_ais_cmp = np.maximum(np.abs(V_ais_max), np.abs(V_ais_min))
 
     else:
-        # Abs max
         V_fix_max = np.max(np.abs(V_fix_all), axis=1)
         V_fix_min = None
         V_ais_max = np.max(np.abs(V_ais_all), axis=1)
@@ -4573,7 +4449,6 @@ else:
 
     st.success(tr("b8_tha_ok"))
 
-    # Guardar para B11
     st.session_state["cmp_V_fix_story"]     = np.asarray(V_fix_cmp, float).ravel()
     st.session_state["cmp_V_ais_story"]     = np.asarray(V_ais_cmp, float).ravel()
     st.session_state["cmp_V_fix_story_max"] = V_fix_max
