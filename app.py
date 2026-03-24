@@ -4209,15 +4209,9 @@ if metodo == tr("b8_method_rsa"):
         Cortantes por piso de la superestructura usando forma modal
         relativa respecto al DOF del aislador.
     
-        - Gamma se calcula correctamente con el sistema completo:
-            Gamma = (phi^T M r) / (phi^T M phi)
-    
-        - Las fuerzas en la superestructura se arman con la masa de los pisos
-          y la forma modal relativa:
-            phi_rel = phi_super - phi_base
-    
-        Esto evita que el modo casi rígido del sistema aislado meta de más
-        arrastre en los cortantes de la superestructura.
+        - Gamma se calcula con el sistema completo
+        - La fuerza modal de la superestructura se arma con la
+          submatriz completa de masa M_sup, no solo con la diagonal
         """
         Mmat = np.asarray(Mmat, float)
         Vnorm = np.asarray(Vnorm, float)
@@ -4250,11 +4244,14 @@ if metodo == tr("b8_method_rsa"):
             Gamma = num / den
     
             phi_base = float(phi[0, 0])
-            phi_rel = phi[1:1+n_pisos_ref, 0] - phi_base
+            phi_rel = (phi[1:1+n_pisos_ref, :] - phi_base).reshape(n_pisos_ref, 1)
     
-            m_sup = np.diag(Mmat)[1:1+n_pisos_ref]
+            M_sup = Mmat[1:1+n_pisos_ref, 1:1+n_pisos_ref]
     
-            F_r = Gamma * m_sup * phi_rel * Sa_r
+            F_r = (Gamma * (M_sup @ phi_rel) * Sa_r).ravel()
+    
+            if len(F_r) != n_pisos_ref:
+                return None
     
             V_r = np.zeros((n_pisos_ref,), float)
             for k in range(n_pisos_ref):
