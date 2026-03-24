@@ -4204,64 +4204,72 @@ if metodo == tr("b8_method_rsa"):
         return np.sqrt(np.sum(V_modes**2, axis=0))
     
     def _rsa_story_shear_iso_relative_super(Mmat, Vnorm, Tvec, n_pisos_ref):
-        """
-        AISLADA:
-        Story shear de la superestructura usando forma modal RELATIVA
-        respecto al nivel de aislamiento, pero manteniendo Gamma del
-        sistema completo (modos masa-normalizados).
+    """
+    AISLADA:
+    Cortantes por piso de la superestructura usando forma modal
+    relativa respecto al DOF del aislador.
 
-        Esto elimina la traslación casi rígida del primer modo en los pisos.
-        """
-        Mmat = np.asarray(Mmat, float)
-        Vnorm = np.asarray(Vnorm, float)
-        Tvec = np.asarray(Tvec, float).ravel()
+    - Gamma se calcula correctamente con el sistema completo:
+        Gamma = (phi^T M r) / (phi^T M phi)
 
-        n = int(Mmat.shape[0])
-        nmod = int(Vnorm.shape[1])
+    - Las fuerzas en la superestructura se arman con la masa de los pisos
+      y la forma modal relativa:
+        phi_rel = phi_super - phi_base
 
-        if n != n_pisos_ref + 1:
-            return None
+    Esto evita que el modo casi rígido del sistema aislado meta de más
+    arrastre en los cortantes de la superestructura.
+    """
+    Mmat = np.asarray(Mmat, float)
+    Vnorm = np.asarray(Vnorm, float)
+    Tvec = np.asarray(Tvec, float).ravel()
 
-        V_modes = []
+    n = int(Mmat.shape[0])
+    nmod = int(Vnorm.shape[1])
 
-        for rr in range(nmod):
-            Tr = float(Tvec[rr]) if rr < len(Tvec) else np.nan
-            if (not np.isfinite(Tr)) or Tr <= 0:
-                continue
+    if n != n_pisos_ref + 1:
+        return None
 
-            Sa_r = float(np.interp(Tr, T_spec, Sa_use)) * g
-            phi  = np.asarray(Vnorm[:, rr], float).reshape(n, 1)
+    V_modes = []
 
-            # ✅ Gamma del sistema completo
-            r = np.ones((n, 1), float)
-            Gamma = float((phi.T @ Mmat @ r).item())
+    for rr in range(nmod):
+        Tr = float(Tvec[rr]) if rr < len(Tvec) else np.nan
+        if (not np.isfinite(Tr)) or Tr <= 0:
+            continue
 
-            # ✅ superestructura relativa al nivel aislado
-            phi_base = float(phi[0, 0])
-            phi_sup_rel = phi[1:1+n_pisos_ref, :] - phi_base
+        Sa_r = float(np.interp(Tr, T_spec, Sa_use)) * g
+        phi = np.asarray(Vnorm[:, rr], float).reshape(n, 1)
 
-            m_sup = np.diag(Mmat)[1:1+n_pisos_ref].reshape(n_pisos_ref, 1)
+        r = np.ones((n, 1), float)
 
-            # fuerzas modales de la superestructura
-            F_r = (m_sup * (Gamma * phi_sup_rel * Sa_r)).ravel()
+        num = float((phi.T @ Mmat @ r).item())
+        den = float((phi.T @ Mmat @ phi).item())
 
-            if len(F_r) != n_pisos_ref:
-                return None
+        if (not np.isfinite(den)) or abs(den) < 1e-14:
+            continue
 
-            V_r = np.zeros((n_pisos_ref,), float)
-            for k in range(n_pisos_ref):
-                V_r[k] = np.sum(F_r[k:])
+        Gamma = num / den
 
-            V_modes.append(V_r)
+        phi_base = float(phi[0, 0])
+        phi_rel = phi[1:1+n_pisos_ref, 0] - phi_base
 
-        if len(V_modes) == 0:
-            return None
+        m_sup = np.diag(Mmat)[1:1+n_pisos_ref]
 
-        V_modes = np.vstack(V_modes)
-        return np.sqrt(np.sum(V_modes**2, axis=0))
+        F_r = Gamma * m_sup * phi_rel * Sa_r
+
+        V_r = np.zeros((n_pisos_ref,), float)
+        for k in range(n_pisos_ref):
+            V_r[k] = np.sum(F_r[k:])
+
+        V_modes.append(V_r)
+
+    if len(V_modes) == 0:
+        return None
+
+    V_modes = np.vstack(V_modes)
+    return np.sqrt(np.sum(V_modes**2, axis=0))
 
     V_fix_srss = _rsa_story_shear_super(M_fix, Vn_fix, T_fix, n_pisos)
-    V_ais_srss = _rsa_story_shear_super(M_ais, Vn_ais, T_ais, n_pisos)
+    V_ais_srss = _rsa_story_shear_iso_relative_super(M_ais, Vn_ais, T_ais, n_pisos)
 
     if V_fix_srss is None:
         st.error("❌ RSA FIJA: no se pudieron armar modos válidos o dimensiones no calzan.")
