@@ -4277,44 +4277,43 @@ if metodo == tr("b8_method_rsa"):
 
         V_fix_srss = _rsa_story_shear_super(M_fix, Vn_fix, T_fix, n_pisos)
         V_ais_srss = _rsa_story_shear_iso_relative_super(M_ais, Vn_ais, T_ais, n_pisos)
-
-        # 🔍 DEBUG AISLADA (NO BORRAR ARRIBA)
+    
         V_ais_rel = _rsa_story_shear_iso_relative_super(M_ais, Vn_ais, T_ais, n_pisos)
         V_ais_abs = _rsa_story_shear_super(M_ais, Vn_ais, T_ais, n_pisos)
-        
+    
         st.markdown("### 🔍 DEBUG AISLADA")
         st.write("V_ais_rel =", np.round(V_ais_rel, 6) if V_ais_rel is not None else None)
         st.write("V_ais_abs =", np.round(V_ais_abs, 6) if V_ais_abs is not None else None)
-
-    if V_fix_srss is None:
-        st.error("❌ RSA FIJA: no se pudieron armar modos válidos o dimensiones no calzan.")
-        st.stop()
-    if V_ais_srss is None:
-        st.error("❌ RSA AISLADA: no se pudieron armar modos válidos o dimensiones no calzan.")
-        st.stop()
-
-    V_fix_srss = np.asarray(V_fix_srss, float).ravel()
-    V_ais_srss = np.asarray(V_ais_srss, float).ravel()
-
-    # ✅ Para RSA-SRSS: “Max/Min” se reporta como ±SRSS (signo no definido)
-    V_fix_max, V_fix_min = V_fix_srss.copy(), -V_fix_srss.copy()
-    V_ais_max, V_ais_min = V_ais_srss.copy(), -V_ais_srss.copy()
-
-    # Tablas (ETABS-style Max/Min)
-    df_fix = pd.DataFrame({
-        "Piso": np.arange(1, n_pisos + 1),
-        "Altura sup [m]": np.round(alt_fix, 3),
-        "Vmax [tonf]": np.round(V_fix_max, 6),
-        "Vmin [tonf]": np.round(V_fix_min, 6),
-        "|V|max [tonf]": np.round(np.maximum(np.abs(V_fix_max), np.abs(V_fix_min)), 6),
-    })
-    df_ais = pd.DataFrame({
-        "Piso": np.arange(1, n_pisos + 1),
-        "Altura sup [m]": np.round(alt_fix, 3),
-        "Vmax [tonf]": np.round(V_ais_max, 6),
-        "Vmin [tonf]": np.round(V_ais_min, 6),
-        "|V|max [tonf]": np.round(np.maximum(np.abs(V_ais_max), np.abs(V_ais_min)), 6),
-    })
+    
+        if V_fix_srss is None:
+            st.error("❌ RSA FIJA: no se pudieron armar modos válidos o dimensiones no calzan.")
+            st.stop()
+        if V_ais_srss is None:
+            st.error("❌ RSA AISLADA: no se pudieron armar modos válidos o dimensiones no calzan.")
+            st.stop()
+    
+        V_fix_srss = np.asarray(V_fix_srss, float).ravel()
+        V_ais_srss = np.asarray(V_ais_srss, float).ravel()
+    
+        # ✅ Para RSA-SRSS: “Max/Min” se reporta como ±SRSS (signo no definido)
+        V_fix_max, V_fix_min = V_fix_srss.copy(), -V_fix_srss.copy()
+        V_ais_max, V_ais_min = V_ais_srss.copy(), -V_ais_srss.copy()
+    
+        # Tablas (ETABS-style Max/Min)
+        df_fix = pd.DataFrame({
+            "Piso": np.arange(1, n_pisos + 1),
+            "Altura sup [m]": np.round(alt_fix, 3),
+            "Vmax [tonf]": np.round(V_fix_max, 6),
+            "Vmin [tonf]": np.round(V_fix_min, 6),
+            "|V|max [tonf]": np.round(np.maximum(np.abs(V_fix_max), np.abs(V_fix_min)), 6),
+        })
+        df_ais = pd.DataFrame({
+            "Piso": np.arange(1, n_pisos + 1),
+            "Altura sup [m]": np.round(alt_fix, 3),
+            "Vmax [tonf]": np.round(V_ais_max, 6),
+            "Vmin [tonf]": np.round(V_ais_min, 6),
+            "|V|max [tonf]": np.round(np.maximum(np.abs(V_ais_max), np.abs(V_ais_min)), 6),
+        })
 
     colL, colR = st.columns([1, 1], gap="large")
 
