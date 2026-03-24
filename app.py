@@ -4284,10 +4284,23 @@ if metodo == tr("b8_method_rsa"):
     st.write("V_ais_rel =", np.round(V_ais_rel, 6) if V_ais_rel is not None else None)
     st.write("V_ais_abs =", np.round(V_ais_abs, 6) if V_ais_abs is not None else None)
     
-    if (V_ais_rel is not None) and (V_ais_abs is not None):
-        V_ais_srss = 0.5 * (np.asarray(V_ais_rel, float) + np.asarray(V_ais_abs, float))
-    else:
-        V_ais_srss = None
+    F_ais_rel = None
+    F_ais_abs = None
+    
+    if V_ais_rel is not None:
+        F_ais_rel = np.zeros_like(np.asarray(V_ais_rel, float).ravel())
+        F_ais_rel[:-1] = np.asarray(V_ais_rel, float).ravel()[:-1] - np.asarray(V_ais_rel, float).ravel()[1:]
+        F_ais_rel[-1] = np.asarray(V_ais_rel, float).ravel()[-1]
+    
+    if V_ais_abs is not None:
+        F_ais_abs = np.zeros_like(np.asarray(V_ais_abs, float).ravel())
+        F_ais_abs[:-1] = np.asarray(V_ais_abs, float).ravel()[:-1] - np.asarray(V_ais_abs, float).ravel()[1:]
+        F_ais_abs[-1] = np.asarray(V_ais_abs, float).ravel()[-1]
+    
+    st.write("F_ais_rel =", np.round(F_ais_rel, 6) if F_ais_rel is not None else None)
+    st.write("F_ais_abs =", np.round(F_ais_abs, 6) if F_ais_abs is not None else None)
+    
+    V_ais_srss = V_ais_rel
 
     if V_fix_srss is None:
         st.error("❌ RSA FIJA: no se pudieron armar modos válidos o dimensiones no calzan.")
