@@ -4202,118 +4202,118 @@ if metodo == tr("b8_method_rsa"):
 
         V_modes = np.vstack(V_modes)
         return np.sqrt(np.sum(V_modes**2, axis=0))
-    
+
     def _rsa_story_shear_iso_relative_super(Mmat, Vnorm, Tvec, n_pisos_ref):
         """
         AISLADA:
         Cortantes por piso de la superestructura usando la respuesta modal
         relativa respecto al DOF del aislador.
-    
+
         - Gamma se calcula con el sistema completo:
             Gamma = (phi^T M r) / (phi^T M phi)
-    
+
         - La forma modal relativa de la superestructura es:
             phi_rel = phi_super - phi_base
-    
+
         - Las fuerzas modales se construyen solo para la superestructura.
         """
         Mmat = np.asarray(Mmat, float)
         Vnorm = np.asarray(Vnorm, float)
         Tvec = np.asarray(Tvec, float).ravel()
-    
+
         n = int(Mmat.shape[0])
         nmod = int(Vnorm.shape[1])
-    
+
         # En el modelo aislado debe existir 1 DOF extra: el del aislador
         if n != n_pisos_ref + 1:
             return None
-    
+
         V_modes = []
-    
+
         for rr in range(nmod):
             Tr = float(Tvec[rr]) if rr < len(Tvec) else np.nan
             if (not np.isfinite(Tr)) or Tr <= 0:
                 continue
-    
+
             Sa_r = float(np.interp(Tr, T_spec, Sa_use)) * g
             phi = np.asarray(Vnorm[:, rr], float).reshape(n, 1)
-    
+
             r = np.ones((n, 1), float)
-    
+
             num = float((phi.T @ Mmat @ r).item())
             den = float((phi.T @ Mmat @ phi).item())
-    
+
             if (not np.isfinite(den)) or abs(den) < 1e-14:
                 continue
-    
+
             Gamma = num / den
-    
+
             # DOF 0 = aislador
             phi_base = float(phi[0, 0])
-    
+
             # forma modal relativa de la superestructura respecto al aislador
             phi_rel = (phi[1:1+n_pisos_ref, 0] - phi_base).reshape(n_pisos_ref, 1)
-    
+
             # masa de la superestructura
             M_sup = Mmat[1:1+n_pisos_ref, 1:1+n_pisos_ref]
-    
+
             # fuerzas modales en la superestructura
             F_r = (Gamma * (M_sup @ phi_rel) * Sa_r).ravel()
-    
+
             if len(F_r) != n_pisos_ref:
                 return None
-    
+
             V_r = np.zeros((n_pisos_ref,), float)
             for k in range(n_pisos_ref):
                 V_r[k] = np.sum(F_r[k:])
-    
+
             V_modes.append(V_r)
-    
+
         if len(V_modes) == 0:
             return None
-    
+
         V_modes = np.vstack(V_modes)
         return np.sqrt(np.sum(V_modes**2, axis=0))
 
-        V_fix_srss = _rsa_story_shear_super(M_fix, Vn_fix, T_fix, n_pisos)
-        V_ais_srss = _rsa_story_shear_iso_relative_super(M_ais, Vn_ais, T_ais, n_pisos)
-    
-        V_ais_rel = _rsa_story_shear_iso_relative_super(M_ais, Vn_ais, T_ais, n_pisos)
-        V_ais_abs = _rsa_story_shear_super(M_ais, Vn_ais, T_ais, n_pisos)
-    
-        st.markdown("### 🔍 DEBUG AISLADA")
-        st.write("V_ais_rel =", np.round(V_ais_rel, 6) if V_ais_rel is not None else None)
-        st.write("V_ais_abs =", np.round(V_ais_abs, 6) if V_ais_abs is not None else None)
-    
-        if V_fix_srss is None:
-            st.error("❌ RSA FIJA: no se pudieron armar modos válidos o dimensiones no calzan.")
-            st.stop()
-        if V_ais_srss is None:
-            st.error("❌ RSA AISLADA: no se pudieron armar modos válidos o dimensiones no calzan.")
-            st.stop()
-    
-        V_fix_srss = np.asarray(V_fix_srss, float).ravel()
-        V_ais_srss = np.asarray(V_ais_srss, float).ravel()
-    
-        # ✅ Para RSA-SRSS: “Max/Min” se reporta como ±SRSS (signo no definido)
-        V_fix_max, V_fix_min = V_fix_srss.copy(), -V_fix_srss.copy()
-        V_ais_max, V_ais_min = V_ais_srss.copy(), -V_ais_srss.copy()
-    
-        # Tablas (ETABS-style Max/Min)
-        df_fix = pd.DataFrame({
-            "Piso": np.arange(1, n_pisos + 1),
-            "Altura sup [m]": np.round(alt_fix, 3),
-            "Vmax [tonf]": np.round(V_fix_max, 6),
-            "Vmin [tonf]": np.round(V_fix_min, 6),
-            "|V|max [tonf]": np.round(np.maximum(np.abs(V_fix_max), np.abs(V_fix_min)), 6),
-        })
-        df_ais = pd.DataFrame({
-            "Piso": np.arange(1, n_pisos + 1),
-            "Altura sup [m]": np.round(alt_fix, 3),
-            "Vmax [tonf]": np.round(V_ais_max, 6),
-            "Vmin [tonf]": np.round(V_ais_min, 6),
-            "|V|max [tonf]": np.round(np.maximum(np.abs(V_ais_max), np.abs(V_ais_min)), 6),
-        })
+    V_fix_srss = _rsa_story_shear_super(M_fix, Vn_fix, T_fix, n_pisos)
+    V_ais_srss = _rsa_story_shear_iso_relative_super(M_ais, Vn_ais, T_ais, n_pisos)
+
+    V_ais_rel = _rsa_story_shear_iso_relative_super(M_ais, Vn_ais, T_ais, n_pisos)
+    V_ais_abs = _rsa_story_shear_super(M_ais, Vn_ais, T_ais, n_pisos)
+
+    st.markdown("### 🔍 DEBUG AISLADA")
+    st.write("V_ais_rel =", np.round(V_ais_rel, 6) if V_ais_rel is not None else None)
+    st.write("V_ais_abs =", np.round(V_ais_abs, 6) if V_ais_abs is not None else None)
+
+    if V_fix_srss is None:
+        st.error("❌ RSA FIJA: no se pudieron armar modos válidos o dimensiones no calzan.")
+        st.stop()
+    if V_ais_srss is None:
+        st.error("❌ RSA AISLADA: no se pudieron armar modos válidos o dimensiones no calzan.")
+        st.stop()
+
+    V_fix_srss = np.asarray(V_fix_srss, float).ravel()
+    V_ais_srss = np.asarray(V_ais_srss, float).ravel()
+
+    # ✅ Para RSA-SRSS: “Max/Min” se reporta como ±SRSS (signo no definido)
+    V_fix_max, V_fix_min = V_fix_srss.copy(), -V_fix_srss.copy()
+    V_ais_max, V_ais_min = V_ais_srss.copy(), -V_ais_srss.copy()
+
+    # Tablas (ETABS-style Max/Min)
+    df_fix = pd.DataFrame({
+        "Piso": np.arange(1, n_pisos + 1),
+        "Altura sup [m]": np.round(alt_fix, 3),
+        "Vmax [tonf]": np.round(V_fix_max, 6),
+        "Vmin [tonf]": np.round(V_fix_min, 6),
+        "|V|max [tonf]": np.round(np.maximum(np.abs(V_fix_max), np.abs(V_fix_min)), 6),
+    })
+    df_ais = pd.DataFrame({
+        "Piso": np.arange(1, n_pisos + 1),
+        "Altura sup [m]": np.round(alt_fix, 3),
+        "Vmax [tonf]": np.round(V_ais_max, 6),
+        "Vmin [tonf]": np.round(V_ais_min, 6),
+        "|V|max [tonf]": np.round(np.maximum(np.abs(V_ais_max), np.abs(V_ais_min)), 6),
+    })
 
     colL, colR = st.columns([1, 1], gap="large")
 
@@ -4421,7 +4421,7 @@ else:
         st.stop()
     V_fix_all = _story_from_forces(F_fix)            # (n_pisos, nt)
 
-        # -------- AISLADA (SUPER relativa al nivel de aislamiento) --------
+    # -------- AISLADA (SUPER relativa al nivel de aislamiento) --------
     t_ais, ag_ais = _match_ag(ag, a_ais.shape[1])
 
     if a_ais.shape[0] == n_pisos + 1:
@@ -4429,17 +4429,17 @@ else:
         # a_ais viene relativa al suelo; para superestructura relativa a la base:
         # a_sup_rel_base = (a_sup_abs - a_base_abs) = (a_sup_rel+ag) - (a_base_rel+ag)
         #                = a_sup_rel - a_base_rel
-        a_base_rel = a_ais[0:1, :]                         # (1, nt)
+        a_base_rel = a_ais[0:1, :]                           # (1, nt)
         a_sup_rel_base = a_ais[1:1+n_pisos, :] - a_base_rel  # (n_pisos, nt)
 
         m_sup = np.diag(np.asarray(M_ais, float))[1:1+n_pisos].reshape(n_pisos, 1)
-        F_ais_sup = m_sup * a_sup_rel_base                 # (n_pisos, nt) en tonf
-        V_ais_all = _story_from_forces(F_ais_sup)         # (n_pisos, nt)
+        F_ais_sup = m_sup * a_sup_rel_base                   # (n_pisos, nt) en tonf
+        V_ais_all = _story_from_forces(F_ais_sup)           # (n_pisos, nt)
 
     elif a_ais.shape[0] == n_pisos:
         # si ya no existe DOF base, usar directamente la superestructura
         m_sup = np.diag(np.asarray(M_ais, float)).reshape(n_pisos, 1)
-        F_ais_sup = m_sup * a_ais                         # asumiendo ya relativa al nivel base
+        F_ais_sup = m_sup * a_ais                           # asumiendo ya relativa al nivel base
         V_ais_all = _story_from_forces(F_ais_sup)
 
     else:
