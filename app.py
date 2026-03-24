@@ -4261,7 +4261,7 @@ if metodo == tr("b8_method_rsa"):
         return np.sqrt(np.sum(V_modes**2, axis=0))
 
     V_fix_srss = _rsa_story_shear_super(M_fix, Vn_fix, T_fix, n_pisos)
-    V_ais_srss = _rsa_story_shear_iso_relative_super(M_ais, Vn_ais, T_ais, n_pisos)
+    V_ais_srss = _rsa_story_shear_super(M_ais, Vn_ais, T_ais, n_pisos)
 
     if V_fix_srss is None:
         st.error("❌ RSA FIJA: no se pudieron armar modos válidos o dimensiones no calzan.")
