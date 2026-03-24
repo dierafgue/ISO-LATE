@@ -4206,12 +4206,16 @@ if metodo == tr("b8_method_rsa"):
     def _rsa_story_shear_iso_relative_super(Mmat, Vnorm, Tvec, n_pisos_ref):
         """
         AISLADA:
-        Cortantes por piso de la superestructura usando forma modal
+        Cortantes por piso de la superestructura usando la respuesta modal
         relativa respecto al DOF del aislador.
     
-        - Gamma se calcula con el sistema completo
-        - La fuerza modal de la superestructura se arma con la
-          submatriz completa de masa M_sup, no solo con la diagonal
+        - Gamma se calcula con el sistema completo:
+            Gamma = (phi^T M r) / (phi^T M phi)
+    
+        - La forma modal relativa de la superestructura es:
+            phi_rel = phi_super - phi_base
+    
+        - Las fuerzas modales se construyen solo para la superestructura.
         """
         Mmat = np.asarray(Mmat, float)
         Vnorm = np.asarray(Vnorm, float)
@@ -4220,6 +4224,7 @@ if metodo == tr("b8_method_rsa"):
         n = int(Mmat.shape[0])
         nmod = int(Vnorm.shape[1])
     
+        # En el modelo aislado debe existir 1 DOF extra: el del aislador
         if n != n_pisos_ref + 1:
             return None
     
@@ -4243,11 +4248,16 @@ if metodo == tr("b8_method_rsa"):
     
             Gamma = num / den
     
+            # DOF 0 = aislador
             phi_base = float(phi[0, 0])
-            phi_rel = (phi[1:1+n_pisos_ref, :] - phi_base).reshape(n_pisos_ref, 1)
     
+            # forma modal relativa de la superestructura respecto al aislador
+            phi_rel = (phi[1:1+n_pisos_ref, 0] - phi_base).reshape(n_pisos_ref, 1)
+    
+            # masa de la superestructura
             M_sup = Mmat[1:1+n_pisos_ref, 1:1+n_pisos_ref]
     
+            # fuerzas modales en la superestructura
             F_r = (Gamma * (M_sup @ phi_rel) * Sa_r).ravel()
     
             if len(F_r) != n_pisos_ref:
