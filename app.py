@@ -4956,23 +4956,27 @@ def _calc_drifts_fixed_from_levels_abs(u_levels, y_levels):
     y_story = y[1:]
     return drift, y_story
 
-def _calc_drifts_isolated_super_same_count(u_levels_abs, y_levels):
+def _calc_drifts_isolated_from_abs_via_iso(u_levels_abs, y_levels):
     """
-    Derivas AISLADAS SOLO para superestructura, manteniendo el MISMO número
-    de valores que la fija.
+    Derivas AISLADAS:
+      1) convertir desplazamientos absolutos a relativos al aislador:
+           u_rel = u_abs - u_iso
+      2) usar:
+           nivel 0 relativo = 0
+           drift_1 = |u_rel_1 - 0| / h1
+           drift_2 = |u_rel_2 - u_rel_1| / h2
+           ...
+      donde:
+           h1 = y1 - 0
+           h2 = y2 - y1
+           ...
 
-    Pasos:
-      1) u_abs = [u_iso, u1, u2, ..., un]
-      2) convertir a desplazamientos relativos a la base aislada:
-           u_rel_super = [u1-u_iso, u2-u_iso, ..., un-u_iso]
-      3) derivas entre pisos de la superestructura:
-           [0, (u2-u1)/h2, (u3-u2)/h3, ...]
-         La primera se fija en 0 para mantener comparación con la fija
-         sin contaminar con la distorsión del aislador.
+    Si u_abs = [u_iso, u1, u2, ..., un]
+    y y      = [0,    y1, y2, ..., yn]
 
-    Retorna:
-      drift_use (n_pisos,)
-      y_story   (n_pisos,) = alturas superiores [y1, y2, ..., yn]
+    retorna:
+      drift (n_pisos,)
+      y_story = [y1, y2, ..., yn]
     """
     u = np.asarray(u_levels_abs, float).ravel()
     y = np.asarray(y_levels, float).ravel()
@@ -4984,29 +4988,19 @@ def _calc_drifts_isolated_super_same_count(u_levels_abs, y_levels):
     if n_pisos < 1:
         raise ValueError("No hay pisos para calcular derivas.")
 
-    # desplazamientos relativos a la base aislada
     u_iso = float(u[0])
-    u_rel = u[1:] - u_iso   # tamaño n_pisos
+    u_rel_floors = u[1:] - u_iso  # tamaño n_pisos
 
-    if len(u_rel) != n_pisos:
-        raise ValueError("Error interno al formar desplazamientos relativos de la superestructura.")
+    u_rel_levels = np.r_[0.0, u_rel_floors]  # base relativa al aislador = 0
+    du = np.diff(u_rel_levels)
+    dh = np.diff(y)
 
-    if n_pisos == 1:
-        drift_use = np.array([0.0], dtype=float)
-    else:
-        # derivas entre pisos estructurales usando desplazamientos relativos
-        # (u_rel[1]-u_rel[0]) / (y2-y1), etc.
-        du_super = np.diff(u_rel)              # tamaño n_pisos-1
-        dh_super = np.diff(y[1:])              # tamaño n_pisos-1
+    if np.any(dh <= 1e-12):
+        raise ValueError("Hay incrementos de altura dh<=0. Revisa 'alturas'.")
 
-        if np.any(dh_super <= 1e-12):
-            raise ValueError("Hay incrementos de altura dh<=0 en la superestructura.")
-
-        drift_super = np.abs(du_super) / dh_super
-        drift_use = np.r_[0.0, drift_super]    # tamaño n_pisos
-
-    y_story = y[1:]  # [y1, y2, ..., yn]
-    return drift_use, y_story
+    drift = np.abs(du) / dh
+    y_story = y[1:]
+    return drift, y_story
 
 def _plot_drift_poly(drift_plot, y_plot, title, color_line, xlabel, n_pisos_ref=10):
     """
@@ -5067,7 +5061,7 @@ alt_fix = np.asarray(alt_fix, float).ravel()
 n_pisos = int(len(alt_fix))
 
 # niveles: Base(0 m) + elevaciones de pisos
-y_levels = np.r_[0.0, alt_fix]   # (n_pisos+1,)
+y_levels = np.r_[0.0, alt_fix]
 expect_levels = n_pisos + 1
 
 u_fix_levels = np.asarray(u_fix_levels, float).ravel()
@@ -5110,12 +5104,8 @@ st.caption(tr("b10_nec_caption").format(cd=float(Cd), ie=float(Ie)))
 # Cálculo de derivas reales base
 # =============================================================================
 try:
-    # FIJA: n_pisos derivas
     drift_fix_real, y_story_fix = _calc_drifts_fixed_from_levels_abs(u_fix_levels, y_levels)
-
-    # AISLADA: mismo número de derivas, pero sin distorsión del aislador
-    drift_ais_real, y_story_ais = _calc_drifts_isolated_super_same_count(u_ais_levels, y_levels)
-
+    drift_ais_real, y_story_ais = _calc_drifts_isolated_from_abs_via_iso(u_ais_levels, y_levels)
 except Exception as e:
     st.error(tr("b10_err_calc").format(e=e))
     st.stop()
@@ -5130,7 +5120,6 @@ xlabel_plot = tr("b10_xlabel_nec")
 # =============================================================================
 # Para plots y tablas
 # =============================================================================
-# Ambas tienen n_pisos valores y arrancan desde 0 en la base
 y_plot_fix = np.r_[0.0, y_story_fix]
 drift_fix_plot = np.r_[0.0, drift_fix]
 
@@ -5140,7 +5129,6 @@ drift_ais_plot = np.r_[0.0, drift_ais]
 # =============================================================================
 # Tablas
 # =============================================================================
-# FIJA: Base + 0→1 + 1→2 + ...
 entrep_tbl_fix = [tr("b10_base")] + ["0→1"] + [f"{i}→{i+1}" for i in range(1, len(drift_fix))]
 dfL = pd.DataFrame({
     tr("b10_story"): entrep_tbl_fix,
@@ -5149,8 +5137,7 @@ dfL = pd.DataFrame({
     tr("b10_drift_pct"): np.round(drift_fix_plot * 100.0, 3),
 })
 
-# AISLADA: Base + 0→1(=0) + 1→2 + 2→3 + ...
-entrep_tbl_ais = [tr("b10_base"), "0→1"] + [f"{i}→{i+1}" for i in range(1, len(drift_ais))]
+entrep_tbl_ais = [tr("b10_base")] + ["0→1"] + [f"{i}→{i+1}" for i in range(1, len(drift_ais))]
 dfR = pd.DataFrame({
     tr("b10_story"): entrep_tbl_ais,
     tr("b10_hsup"): np.round(y_plot_ais, 3),
