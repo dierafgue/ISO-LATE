@@ -3454,7 +3454,7 @@ with colL:
                     u_fix[[idx], :],
                     v_fix_t[[idx], :],
                     a_fix_t[[idx], :],
-                    [float(pisos_y[idx]) if idx < len(pisos_y) else float(idx+1)],
+                    [float(pisos_y[idx]) if idx < len(pisos_y) else float(idx + 1)],
                     t_total,
                     nombre_piso=str(idx + 1),
                 )
@@ -3470,6 +3470,9 @@ with colR:
 
         alpha_ais, beta_ais = rayleigh_from_w(wR_ais, zeta)
         C_ais = alpha_ais * M_ais_eff + beta_ais * K_ais_eff
+
+        # número de aisladores
+        n_aisladores = int(st.session_state.get("n_aisladores", 1))
 
         # ✅ amortiguamiento viscoso equivalente del aislador
         c_1ais = float(st.session_state["res_aislador"]["c_1ais"])
@@ -3509,7 +3512,7 @@ with colR:
             v_ais_t = cache_ais["v"]
             a_ais_t = cache_ais["a"]
 
-        # Guardar THA AISLADA
+        # Guardar THA AISLADA completa
         st.session_state["u_t_ais"] = u_ais
         st.session_state["v_t_ais"] = v_ais_t
         st.session_state["a_t_ais"] = a_ais_t
@@ -3522,17 +3525,21 @@ with colR:
         st.session_state["pfa_ais_mps2"] = np.asarray(pfa_ais_mps2, float).ravel()
         st.session_state["pfa_ais_g"]    = st.session_state["pfa_ais_mps2"] / 9.8066500000
 
+        # PFA SOLO SUPERESTRUCTURA
         if a_ais_t.shape[0] >= 2:
             st.session_state["pfa_ais_super_mps2"] = st.session_state["pfa_ais_mps2"][1:].copy()
             st.session_state["pfa_ais_super_g"]    = st.session_state["pfa_ais_g"][1:].copy()
+        else:
+            st.session_state["pfa_ais_super_mps2"] = np.array([], dtype=float)
+            st.session_state["pfa_ais_super_g"]    = np.array([], dtype=float)
 
-        # Demanda aislador (GDL 0)
+        # Demanda aislador (GDL 0) — se conserva para otros bloques
         u_iso_t = np.asarray(u_ais[0, :], float).ravel()
         u_iso_max = float(np.max(np.abs(u_iso_t)))
         st.session_state["u_iso_t"]   = u_iso_t
         st.session_state["u_iso_max"] = float(u_iso_max)
 
-        # SOLO EXCEL: 1 pestaña por nivel (incluye Isolator_0)
+        # Excel completo del sistema aislado (incluye aislador)
         labels_ais = ["Isolator_0"] + [f"Level_{i}" for i in range(1, int(u_ais.shape[0]))]
 
         if st.session_state["b6_cache_ais"].get("xlsx") is None:
@@ -3550,40 +3557,39 @@ with colR:
         )
 
     with st.container(border=True):
-    st.markdown(f"### {tr('b6_right_resp')}")
+        st.markdown(f"### {tr('b6_right_resp')}")
 
-    alt_fix = st.session_state.get("alturas", None)
-    if alt_fix is None:
-        # solo alturas de pisos reales
-        alt_fix = np.arange(1, max(u_ais.shape[0], 2), dtype=float)
+        alt_fix = st.session_state.get("alturas", None)
+        if alt_fix is None:
+            # alturas de pisos reales solamente
+            alt_fix = np.arange(1, max(u_ais.shape[0], 2), dtype=float)
 
-    alt_fix = np.asarray(alt_fix, float).ravel()
+        alt_fix = np.asarray(alt_fix, float).ravel()
 
-    # ✅ mantener guardadas las alturas del sistema aislado completo
-    #    (por compatibilidad con otros bloques si las usan)
-    st.session_state["alturas_ais"] = np.r_[0.0, alt_fix]
+        # se mantiene completo por compatibilidad con otros bloques
+        st.session_state["alturas_ais"] = np.r_[0.0, alt_fix]
 
-    # ✅ mostrar SOLO pisos reales (excluye GDL 0 = aislador)
-    n_gdl_ais = int(u_ais.shape[0])
+        # ✅ SOLO mostrar pisos reales, no el aislador
+        n_gdl_ais = int(u_ais.shape[0])
 
-    if n_gdl_ais <= 1:
-        st.info("No hay pisos disponibles para mostrar en la superestructura.")
-    else:
-        for idx in range(1, n_gdl_ais):
-            titulo = f"**{tr('b6_floor').format(i=idx)}**"
-            nombre = str(idx)
-            h = float(alt_fix[idx - 1]) if (idx - 1) < len(alt_fix) else float(idx)
+        if n_gdl_ais <= 1:
+            st.info("No hay pisos disponibles para mostrar en la superestructura.")
+        else:
+            for idx in range(1, n_gdl_ais):
+                titulo = f"**{tr('b6_floor').format(i=idx)}**"
+                nombre = str(idx)
+                h = float(alt_fix[idx - 1]) if (idx - 1) < len(alt_fix) else float(idx)
 
-            with st.expander(titulo, expanded=(idx == 1)):
-                _plot_resp(
-                    t,
-                    u_ais[[idx], :],
-                    v_ais_t[[idx], :],
-                    a_ais_t[[idx], :],
-                    [h],
-                    t_total,
-                    nombre_piso=nombre,
-                )
+                with st.expander(titulo, expanded=(idx == 1)):
+                    _plot_resp(
+                        t,
+                        u_ais[[idx], :],
+                        v_ais_t[[idx], :],
+                        a_ais_t[[idx], :],
+                        [h],
+                        t_total,
+                        nombre_piso=nombre,
+                    )
 
 st.success(tr("b6_ok"))
 
