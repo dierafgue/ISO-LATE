@@ -3829,7 +3829,7 @@ with col_right:
 #st.success(tr("b7_ready"))
 
 # =============================================================================
-# === BLOQUE 8: CORTANTES POR PISO (RSA vs THA) – FIJA vs AISLADA (SUPER) =====
+# === BLOQUE 8: CORTANTES POR PISO (RSA INELÁSTICO vs THA MAX/MIN) ============
 # =============================================================================
 import numpy as np
 import pandas as pd
@@ -3841,106 +3841,72 @@ import matplotlib.patheffects as pe
 # ✅ Textos EN/ES (solo para este bloque) + HELPERS
 # -------------------------------------------------------------------------
 T["en"].update({
-    "b8_title": "Story shears – Response Spectrum (RSA) & Time History (THA)",
+    "b8_title": "Story shears – Inelastic response spectrum (RSA) & Time History (THA)",
 
     "b8_method": "Select shear-force method",
-    "h_b8_method": "RSA: SRSS peak from target spectrum. THA: time-history response with real Max/Min.",
-    "b8_method_rsa": "Response spectrum analysis (RSA)",
+    "h_b8_method": "RSA: SRSS peak from the inelastic target spectrum. THA: time-history response using the real Max/Min envelope.",
+    "b8_method_rsa": "Inelastic response spectrum analysis (RSA)",
     "b8_method_tha": "Time history analysis (THA)",
 
     "b8_need_alt": "Missing st.session_state['alturas'] (floor heights). Run Block 6 first.",
-    "b8_need_nec": "Missing NEC spectrum from Block 3: rs_T_spec / rs_Sa_elast / rs_Sa_inelas.",
+    "b8_need_nec": "Missing NEC spectrum from Block 3: rs_T_spec / rs_Sa_inelas.",
     "b8_spec_dim": "Spectrum arrays have inconsistent lengths.",
     "b8_need_fix_modal": "Missing FIXED: M_cond / v_norm_sin / T_sin.",
     "b8_need_iso_modal": "Missing ISOLATED: M_cond_ais / v_norm_ais / T_ais.",
     "b8_fix_dim_bad": "FIXED: v_norm_sin does not match number of DOFs.",
     "b8_iso_dim_bad": "ISOLATED: v_norm_ais does not match number of DOFs.",
 
-    "b8_sa_type": "Sa to use in RSA",
-    "h_b8_sa_type": "Typically use inelastic spectrum (reduced by R). Elastic is for special cases.",
-    "b8_sa_in": "Inelastic (R)",
-    "b8_sa_el": "Elastic",
-
-    "b8_rsa_left": "FIXED – RSA (SRSS)",
-    "b8_rsa_right": "ISOLATED – RSA (SRSS)",
+    "b8_rsa_left": "FIXED – Inelastic RSA (SRSS)",
+    "b8_rsa_right": "ISOLATED – Inelastic RSA (SRSS)",
     "b8_table_fix": "Show shear table (FIXED)",
     "b8_table_iso": "Show shear table (ISOLATED)",
-    "b8_plot_fix_rsa": "Story shears – RSA (FIXED) – ±SRSS envelope",
-    "b8_plot_iso_rsa": "Story shears – RSA (ISOLATED) – ±SRSS envelope",
-    "b8_rsa_ok": "Story shears (RSA) ready.",
-
-    "b8_tha_mode": "THA mode",
-    "h_b8_tha_mode": "Time: pick an instant. Max/Min: envelope over time (MaxMin). Abs max: max absolute value.",
-    "b8_tha_time": "Time",
-    "b8_tha_maxmin": "Max/Min",
-    "b8_tha_abs": "Absolute max (abs)",
+    "b8_plot_fix_rsa": "Story shears – Inelastic RSA (FIXED) – ±SRSS envelope",
+    "b8_plot_iso_rsa": "Story shears – Inelastic RSA (ISOLATED) – ±SRSS envelope",
+    "b8_rsa_ok": "Story shears (inelastic RSA) ready.",
 
     "b8_need_tha": "Missing THA variables: {keys}",
-    "b8_tha_pick_t": "Select time t [s]",
-    "b8_tha_tcap": "t ≈ {t:.3f} s",
 
-    "b8_tha_fix": "FIXED – THA",
-    "b8_tha_iso": "ISOLATED – THA",
-    "b8_plot_fix_tha": "THA – Story shears (FIXED)",
-    "b8_plot_iso_tha": "THA – Story shears (ISOLATED)",
+    "b8_tha_fix": "FIXED – THA (Max/Min)",
+    "b8_tha_iso": "ISOLATED – THA (Max/Min)",
     "b8_plot_fix_maxmin": "THA – Story shears Max/Min (FIXED)",
     "b8_plot_iso_maxmin": "THA – Story shears Max/Min (ISOLATED)",
-    "b8_plot_fix_abs": "THA – Max absolute shear (FIXED)",
-    "b8_plot_iso_abs": "THA – Max absolute shear (ISOLATED)",
-    "b8_tha_ok": "Story shears (THA) ready.",
+    "b8_tha_ok": "Story shears (THA Max/Min) ready.",
 
     "b8_xlabel_V": "Shear V [tonf]",
     "b8_ylabel_h": "Height [m]",
 })
 
 T["es"].update({
-    "b8_title": "Cortantes por piso – Modal espectral (RSA) y Tiempo historia (THA)",
+    "b8_title": "Cortantes por piso – Espectro inelástico (RSA) y Tiempo historia (THA)",
 
     "b8_method": "Selecciona el método de cortantes",
-    "h_b8_method": "RSA: SRSS desde espectro. THA: tiempo-historia con Max/Min reales.",
-    "b8_method_rsa": "Análisis modal espectral (RSA)",
+    "h_b8_method": "RSA: SRSS desde el espectro inelástico. THA: tiempo-historia usando la envolvente real Max/Min.",
+    "b8_method_rsa": "Análisis modal espectral inelástico (RSA)",
     "b8_method_tha": "Tiempo historia (THA)",
 
     "b8_need_alt": "❌ Falta st.session_state['alturas'] (alturas de pisos). Ejecuta el Bloque 6 primero.",
-    "b8_need_nec": "❌ Falta el espectro NEC del Bloque 3: rs_T_spec / rs_Sa_elast / rs_Sa_inelas.",
+    "b8_need_nec": "❌ Falta el espectro NEC del Bloque 3: rs_T_spec / rs_Sa_inelas.",
     "b8_spec_dim": "❌ Espectro: dimensiones no coinciden.",
     "b8_need_fix_modal": "❌ Falta FIJA: M_cond / v_norm_sin / T_sin.",
     "b8_need_iso_modal": "❌ Falta AISLADA: M_cond_ais / v_norm_ais / T_ais.",
     "b8_fix_dim_bad": "❌ FIJA: v_norm_sin no coincide con n_dofs.",
     "b8_iso_dim_bad": "❌ AISLADA: v_norm_ais no coincide con n_dofs.",
 
-    "b8_sa_type": "Sa a usar en RSA",
-    "h_b8_sa_type": "Típico: usar el espectro inelástico (reducido por R). Elástico solo para casos especiales.",
-    "b8_sa_in": "Inelástico (R)",
-    "b8_sa_el": "Elástico",
-
-    "b8_rsa_left": "🟦 FIJA – RSA (SRSS)",
-    "b8_rsa_right": "🟩 AISLADA – RSA (SRSS)",
+    "b8_rsa_left": "🟦 FIJA – RSA inelástico (SRSS)",
+    "b8_rsa_right": "🟩 AISLADA – RSA inelástico (SRSS)",
     "b8_table_fix": "📋 Ver tabla de cortantes (FIJA)",
     "b8_table_iso": "📋 Ver tabla de cortantes (AISLADA)",
-    "b8_plot_fix_rsa": "Cortantes por piso – RSA (FIJA) – envolvente ±SRSS",
-    "b8_plot_iso_rsa": "Cortantes por piso – RSA (AISLADA) – envolvente ±SRSS",
-    "b8_rsa_ok": "✅ Cortantes por RSA listos",
-
-    "b8_tha_mode": "Modo THA",
-    "h_b8_tha_mode": "Tiempo: selecciona un instante. Max/Min: envolvente en el tiempo (MaxMin). Máx abs: máximo absoluto.",
-    "b8_tha_time": "Tiempo",
-    "b8_tha_maxmin": "Max/Min",
-    "b8_tha_abs": "Máximo absoluto (abs)",
+    "b8_plot_fix_rsa": "Cortantes por piso – RSA inelástico (FIJA) – envolvente ±SRSS",
+    "b8_plot_iso_rsa": "Cortantes por piso – RSA inelástico (AISLADA) – envolvente ±SRSS",
+    "b8_rsa_ok": "✅ Cortantes por RSA inelástico listos",
 
     "b8_need_tha": "❌ Faltan variables THA: {keys}",
-    "b8_tha_pick_t": "Selecciona el tiempo t [s]",
-    "b8_tha_tcap": "t ≈ {t:.3f} s",
 
-    "b8_tha_fix": "🟦 FIJA – THA",
-    "b8_tha_iso": "🟩 AISLADA – THA",
-    "b8_plot_fix_tha": "THA – Cortantes por piso (FIJA)",
-    "b8_plot_iso_tha": "THA – Cortantes por piso (AISLADA)",
+    "b8_tha_fix": "🟦 FIJA – THA (Max/Min)",
+    "b8_tha_iso": "🟩 AISLADA – THA (Max/Min)",
     "b8_plot_fix_maxmin": "THA – Cortantes por piso Max/Min (FIJA)",
     "b8_plot_iso_maxmin": "THA – Cortantes por piso Max/Min (AISLADA)",
-    "b8_plot_fix_abs": "THA – Cortante absoluto máximo (FIJA)",
-    "b8_plot_iso_abs": "THA – Cortante absoluto máximo (AISLADA)",
-    "b8_tha_ok": "✅ Cortantes por THA listos",
+    "b8_tha_ok": "✅ Cortantes por THA Max/Min listos",
 
     "b8_xlabel_V": "Cortante V [tonf]",
     "b8_ylabel_h": "Altura [m]",
@@ -3982,7 +3948,6 @@ def _df_to_compact_table(df: pd.DataFrame, height_min=150, height_max=320):
     st.dataframe(df, hide_index=True, use_container_width=True, height=h)
 
 def _etabs_polyline_xy(V_story, y_levels):
-    """Construye polilínea tipo ETABS para un vector V_story (n_pisos) y y_levels (n_pisos+1)."""
     V_story  = np.asarray(V_story, float).ravel()
     y_levels = np.asarray(y_levels, float).ravel()
 
@@ -3997,10 +3962,6 @@ def _etabs_polyline_xy(V_story, y_levels):
     return np.asarray(xs, float), np.asarray(ys, float)
 
 def _plot_story_shear_etabs_maxmin(Vmax_story, Vmin_story, y_levels, title, color_line, nref):
-    """
-    Dibuja 2 polilíneas ETABS: Max y Min (NO espejo).
-    Si Vmin_story es None -> dibuja solo Max y además espejo simétrico (para RSA-SRSS).
-    """
     Vmax_story = np.asarray(Vmax_story, float).ravel()
     y_levels   = np.asarray(y_levels, float).ravel()
     n = len(Vmax_story)
@@ -4069,7 +4030,7 @@ metodo = st.selectbox(
     help=tr("h_b8_method"),
 )
 
-# Alturas pisos (FIJA) -> del bloque 6 guardaste "alturas"
+# Alturas pisos
 alt_fix = st.session_state.get("alturas", None)
 if alt_fix is None:
     st.error(tr("b8_need_alt"))
@@ -4080,35 +4041,26 @@ n_pisos = int(len(alt_fix))
 y_levels = np.r_[0.0, alt_fix]
 
 # =============================================================================
-# RSA (Modal espectral) – SUPER vs SUPER
+# RSA (Modal espectral inelástico) – SUPER vs SUPER
 # =============================================================================
 if metodo == tr("b8_method_rsa"):
 
     T_spec = st.session_state.get("rs_T_spec", None)
-    Sa_el  = st.session_state.get("rs_Sa_elast", None)
     Sa_in  = st.session_state.get("rs_Sa_inelas", None)
     Ie     = float(st.session_state.get("rs_Ie", 1.0))
 
-    if T_spec is None or Sa_el is None or Sa_in is None:
+    if T_spec is None or Sa_in is None:
         st.error(tr("b8_need_nec"))
         st.stop()
 
     T_spec = np.asarray(T_spec, float).ravel()
-    Sa_el  = np.asarray(Sa_el, float).ravel()
     Sa_in  = np.asarray(Sa_in, float).ravel()
-    if not (len(T_spec) == len(Sa_el) == len(Sa_in)):
+
+    if len(T_spec) != len(Sa_in):
         st.error(tr("b8_spec_dim"))
         st.stop()
 
-    tipo_sa = st.selectbox(
-        tr("b8_sa_type"),
-        [tr("b8_sa_in"), tr("b8_sa_el")],
-        index=1,
-        key="sa_use_shear_rsa",
-        help=tr("h_b8_sa_type"),
-    )
-
-    Sa_use = (Sa_in if (tipo_sa == tr("b8_sa_in")) else Sa_el) * Ie
+    Sa_use = Sa_in * Ie
     g = 9.8066500000
 
     M_fix  = st.session_state.get("M_cond", None)
@@ -4143,16 +4095,6 @@ if metodo == tr("b8_method_rsa"):
         st.stop()
 
     def _rsa_story_shear_super(Mmat, Vnorm, Tvec, n_pisos_ref):
-        """
-        Retorna V_srss SOLO SUPER (tamaño n_pisos_ref).
-
-        Usa fuerzas modales consistentes:
-            F_r = Gamma_r * (M * phi_r) * Sa_r
-
-        - FIJA: toma todos los DOF.
-        - AISLADA: calcula con el sistema completo, pero reporta SOLO
-          la superestructura (excluye el DOF 0 del nivel de aislación).
-        """
         Mmat = np.asarray(Mmat, float)
         Vnorm = np.asarray(Vnorm, float)
         Tvec = np.asarray(Tvec, float).ravel()
@@ -4240,14 +4182,18 @@ if metodo == tr("b8_method_rsa"):
             st.subheader(tr("b8_rsa_left"))
             with st.expander(tr("b8_table_fix"), expanded=False):
                 _df_to_compact_table(df_fix)
-            _plot_story_shear_etabs_maxmin(V_fix_max, None, y_levels, tr("b8_plot_fix_rsa"), COLOR_FIX, nref=n_pisos)
+            _plot_story_shear_etabs_maxmin(
+                V_fix_max, None, y_levels, tr("b8_plot_fix_rsa"), COLOR_FIX, nref=n_pisos
+            )
 
     with colR:
         with st.container(border=True):
             st.subheader(tr("b8_rsa_right"))
             with st.expander(tr("b8_table_iso"), expanded=False):
                 _df_to_compact_table(df_ais)
-            _plot_story_shear_etabs_maxmin(V_ais_max, None, y_levels, tr("b8_plot_iso_rsa"), COLOR_AIS, nref=n_pisos)
+            _plot_story_shear_etabs_maxmin(
+                V_ais_max, None, y_levels, tr("b8_plot_iso_rsa"), COLOR_AIS, nref=n_pisos
+            )
 
     st.success(tr("b8_rsa_ok"))
 
@@ -4257,22 +4203,14 @@ if metodo == tr("b8_method_rsa"):
     st.session_state["cmp_V_fix_story_min"] = V_fix_min
     st.session_state["cmp_V_ais_story_max"] = V_ais_max
     st.session_state["cmp_V_ais_story_min"] = V_ais_min
-    st.session_state["cmp_tag_shear"]       = "RSA (SRSS) ±"
+    st.session_state["cmp_tag_shear"]       = "RSA inelástico (SRSS) ±"
     st.session_state["cmp_Vb_fix"]          = float(V_fix_max[0]) if len(V_fix_max) else np.nan
     st.session_state["cmp_Vb_ais"]          = float(V_ais_max[0]) if len(V_ais_max) else np.nan
 
 # =============================================================================
-# THA (Tiempo historia) – SUPER vs SUPER
+# THA (Tiempo historia) – SOLO Max/Min
 # =============================================================================
 else:
-    modo_tha = st.selectbox(
-        tr("b8_tha_mode"),
-        [tr("b8_tha_time"), tr("b8_tha_maxmin"), tr("b8_tha_abs")],
-        index=1,
-        help=tr("h_b8_tha_mode"),
-        key="b8_tha_mode_sel",
-    )
-
     dt = st.session_state.get("dt", None)
     ag = st.session_state.get("ag_filt", None)
 
@@ -4309,11 +4247,6 @@ else:
         return t, ag2
 
     def _floor_forces(Mmat, a_rel, ag_series):
-        """
-        Fuerza inercial por DOF: F = m * a_abs.
-        OJO: aquí a_abs = a_rel + ag (como ya vienes manejando).
-        Con tus unidades: M en tonf*s²/m y a en m/s² => F en tonf ✅
-        """
         a_rel = np.asarray(a_rel, float)
         n, nt = a_rel.shape
         m = np.diag(np.asarray(Mmat, float)).reshape(n, 1)
@@ -4321,7 +4254,6 @@ else:
         return m * a_abs
 
     def _story_from_forces(F):
-        """V_k(t) = sum_{i=k..N} F_i(t)  (cortante acumulado desde el piso k hacia arriba)."""
         F = np.asarray(F, float)
         n, nt = F.shape
         V = np.zeros_like(F)
@@ -4355,78 +4287,35 @@ else:
         st.error("❌ THA AISLADA: dimensiones no calzan con n_pisos ni n_pisos+1.")
         st.stop()
 
-    cap_fix = cap_ais = None
+    V_fix_max = np.max(V_fix_all, axis=1)
+    V_fix_min = np.min(V_fix_all, axis=1)
+    V_ais_max = np.max(V_ais_all, axis=1)
+    V_ais_min = np.min(V_ais_all, axis=1)
 
-    if modo_tha == tr("b8_tha_time"):
-        tmax = float(min(t_fix[-1], t_ais[-1]))
-        t_sel = st.slider(tr("b8_tha_pick_t"), 0.0, tmax, min(5.0, tmax), 0.01, key="t_sel_shear")
-        i_fix = int(np.argmin(np.abs(t_fix - t_sel)))
-        i_ais = int(np.argmin(np.abs(t_ais - t_sel)))
+    V_fix_cmp = np.maximum(np.abs(V_fix_max), np.abs(V_fix_min))
+    V_ais_cmp = np.maximum(np.abs(V_ais_max), np.abs(V_ais_min))
 
-        V_fix_max = V_fix_all[:, i_fix]
-        V_fix_min = None
-        V_ais_max = V_ais_all[:, i_ais]
-        V_ais_min = None
-
-        cap_fix = tr("b8_tha_tcap").format(t=float(t_fix[i_fix]))
-        cap_ais = tr("b8_tha_tcap").format(t=float(t_ais[i_ais]))
-
-        title_fix = tr("b8_plot_fix_tha")
-        title_ais = tr("b8_plot_iso_tha")
-
-        V_fix_cmp = np.asarray(V_fix_max, float).ravel()
-        V_ais_cmp = np.asarray(V_ais_max, float).ravel()
-
-    elif modo_tha == tr("b8_tha_maxmin"):
-        V_fix_max = np.max(V_fix_all, axis=1)
-        V_fix_min = np.min(V_fix_all, axis=1)
-        V_ais_max = np.max(V_ais_all, axis=1)
-        V_ais_min = np.min(V_ais_all, axis=1)
-
-        title_fix = tr("b8_plot_fix_maxmin")
-        title_ais = tr("b8_plot_iso_maxmin")
-
-        V_fix_cmp = np.maximum(np.abs(V_fix_max), np.abs(V_fix_min))
-        V_ais_cmp = np.maximum(np.abs(V_ais_max), np.abs(V_ais_min))
-
-    else:
-        V_fix_max = np.max(np.abs(V_fix_all), axis=1)
-        V_fix_min = None
-        V_ais_max = np.max(np.abs(V_ais_all), axis=1)
-        V_ais_min = None
-
-        title_fix = tr("b8_plot_fix_abs")
-        title_ais = tr("b8_plot_iso_abs")
-
-        V_fix_cmp = np.asarray(V_fix_max, float).ravel()
-        V_ais_cmp = np.asarray(V_ais_max, float).ravel()
+    title_fix = tr("b8_plot_fix_maxmin")
+    title_ais = tr("b8_plot_iso_maxmin")
 
     V_fix_max = np.asarray(V_fix_max, float).ravel()
+    V_fix_min = np.asarray(V_fix_min, float).ravel()
     V_ais_max = np.asarray(V_ais_max, float).ravel()
-    if V_fix_min is not None: V_fix_min = np.asarray(V_fix_min, float).ravel()
-    if V_ais_min is not None: V_ais_min = np.asarray(V_ais_min, float).ravel()
+    V_ais_min = np.asarray(V_ais_min, float).ravel()
 
     colL, colR = st.columns([1, 1], gap="large")
 
     with colL:
         with st.container(border=True):
             st.subheader(tr("b8_tha_fix"))
-            if cap_fix: st.caption(cap_fix)
 
-            if V_fix_min is None:
-                df = pd.DataFrame({
-                    "Piso": np.arange(1, n_pisos + 1),
-                    "Altura sup [m]": np.round(alt_fix, 3),
-                    "V [tonf]": np.round(V_fix_max, 6),
-                })
-            else:
-                df = pd.DataFrame({
-                    "Piso": np.arange(1, n_pisos + 1),
-                    "Altura sup [m]": np.round(alt_fix, 3),
-                    "Vmax [tonf]": np.round(V_fix_max, 6),
-                    "Vmin [tonf]": np.round(V_fix_min, 6),
-                    "|V|max [tonf]": np.round(np.maximum(np.abs(V_fix_max), np.abs(V_fix_min)), 6),
-                })
+            df = pd.DataFrame({
+                "Piso": np.arange(1, n_pisos + 1),
+                "Altura sup [m]": np.round(alt_fix, 3),
+                "Vmax [tonf]": np.round(V_fix_max, 6),
+                "Vmin [tonf]": np.round(V_fix_min, 6),
+                "|V|max [tonf]": np.round(np.maximum(np.abs(V_fix_max), np.abs(V_fix_min)), 6),
+            })
 
             with st.expander(tr("b8_table_fix"), expanded=False):
                 _df_to_compact_table(df)
@@ -4436,22 +4325,14 @@ else:
     with colR:
         with st.container(border=True):
             st.subheader(tr("b8_tha_iso"))
-            if cap_ais: st.caption(cap_ais)
 
-            if V_ais_min is None:
-                df = pd.DataFrame({
-                    "Piso": np.arange(1, n_pisos + 1),
-                    "Altura sup [m]": np.round(alt_fix, 3),
-                    "V [tonf]": np.round(V_ais_max, 6),
-                })
-            else:
-                df = pd.DataFrame({
-                    "Piso": np.arange(1, n_pisos + 1),
-                    "Altura sup [m]": np.round(alt_fix, 3),
-                    "Vmax [tonf]": np.round(V_ais_max, 6),
-                    "Vmin [tonf]": np.round(V_ais_min, 6),
-                    "|V|max [tonf]": np.round(np.maximum(np.abs(V_ais_max), np.abs(V_ais_min)), 6),
-                })
+            df = pd.DataFrame({
+                "Piso": np.arange(1, n_pisos + 1),
+                "Altura sup [m]": np.round(alt_fix, 3),
+                "Vmax [tonf]": np.round(V_ais_max, 6),
+                "Vmin [tonf]": np.round(V_ais_min, 6),
+                "|V|max [tonf]": np.round(np.maximum(np.abs(V_ais_max), np.abs(V_ais_min)), 6),
+            })
 
             with st.expander(tr("b8_table_iso"), expanded=False):
                 _df_to_compact_table(df)
@@ -4464,18 +4345,12 @@ else:
     st.session_state["cmp_V_ais_story"]     = np.asarray(V_ais_cmp, float).ravel()
     st.session_state["cmp_V_fix_story_max"] = V_fix_max
     st.session_state["cmp_V_ais_story_max"] = V_ais_max
-    st.session_state["cmp_V_fix_story_min"] = V_fix_min if (V_fix_min is not None) else None
-    st.session_state["cmp_V_ais_story_min"] = V_ais_min if (V_ais_min is not None) else None
-
-    st.session_state["cmp_tag_shear"] = (
-        "THA (Tiempo)" if (modo_tha == tr("b8_tha_time")) else
-        "THA (Max/Min)" if (modo_tha == tr("b8_tha_maxmin")) else
-        "THA (Máx abs)"
-    )
-
-    st.session_state["cmp_Vb_fix"] = float(st.session_state["cmp_V_fix_story"][0]) if len(st.session_state["cmp_V_fix_story"]) else np.nan
-    st.session_state["cmp_Vb_ais"] = float(st.session_state["cmp_V_ais_story"][0]) if len(st.session_state["cmp_V_ais_story"]) else np.nan
-
+    st.session_state["cmp_V_fix_story_min"] = V_fix_min
+    st.session_state["cmp_V_ais_story_min"] = V_ais_min
+    st.session_state["cmp_tag_shear"]       = "THA (Max/Min)"
+    st.session_state["cmp_Vb_fix"]          = float(st.session_state["cmp_V_fix_story"][0]) if len(st.session_state["cmp_V_fix_story"]) else np.nan
+    st.session_state["cmp_Vb_ais"]          = float(st.session_state["cmp_V_ais_story"][0]) if len(st.session_state["cmp_V_ais_story"]) else np.nan
+    
 # =============================================================================
 # === BLOQUE 9: DESPLAZAMIENTOS LATERALES (RSA vs THA) – FIJA vs AISLADA ======
 # =============================================================================
