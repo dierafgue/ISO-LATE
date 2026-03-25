@@ -4352,7 +4352,7 @@ else:
     st.session_state["cmp_Vb_ais"]          = float(st.session_state["cmp_V_ais_story"][0]) if len(st.session_state["cmp_V_ais_story"]) else np.nan
     
 # =============================================================================
-# === BLOQUE 9: DESPLAZAMIENTOS LATERALES (RSA vs THA) – FIJA vs AISLADA ======
+# === BLOQUE 9: DESPLAZAMIENTOS LATERALES (RSA INELÁSTICO vs THA MAX/MIN) =====
 # =============================================================================
 import numpy as np
 import pandas as pd
@@ -4362,97 +4362,64 @@ import matplotlib.patheffects as pe
 
 # -------------------------------------------------------------------------
 # ✅ Textos EN/ES (solo para este bloque) + HELPERS
-#     Requiere que ya existan: T["en"], T["es"] y la función tr(key)
 # -------------------------------------------------------------------------
 T["en"].update({
-    "b9_title": "Lateral displacements – Response Spectrum (RSA) & Time History (THA)",
+    "b9_title": "Lateral displacements – Inelastic response spectrum (RSA) & Time History (THA)",
     "b9_method": "Select displacement method",
-    "h_b9_method": "RSA: peak displacements from target spectrum (SRSS). THA: time-history response (Time / Max-Min / Abs max).",
-    "b9_method_rsa": "Response spectrum analysis (RSA)",
+    "h_b9_method": "RSA: peak displacements from the inelastic target spectrum (SRSS). THA: real Max/Min envelope over time.",
+    "b9_method_rsa": "Inelastic response spectrum analysis (RSA)",
     "b9_method_tha": "Time history analysis (THA)",
     "b9_need_alt": "Missing st.session_state['alturas'] (floor heights). Run Block 6 first.",
-    "b9_need_spec": "Missing spectrum from Block 3: rs_T_spec / rs_Sa_elast / rs_Sa_inelas.",
-    "b9_spec_dim": "Spectrum arrays have inconsistent lengths: T={t} Sa_elast={el} Sa_inel={ine}.",
-    "b9_sa_type": "Sa to use in RSA",
-    "h_b9_sa_type": "Typically use the inelastic spectrum (reduced by R). Elastic is for special cases.",
-    "b9_sa_in": "Inelastic (R)",
-    "b9_sa_el": "Elastic",
+    "b9_need_spec": "Missing spectrum from Block 3: rs_T_spec / rs_Sa_inelas.",
+    "b9_spec_dim": "Spectrum arrays have inconsistent lengths: T={t} Sa_inel={ine}.",
     "b9_need_fix": "Missing FIXED: M_cond / v_norm_sin / T_sin.",
     "b9_need_iso": "Missing ISOLATED: M_cond_ais / v_norm_ais / T_ais.",
     "b9_fix_dim": "FIXED: v_norm_sin rows ({r}) do not match n_dofs ({n}).",
     "b9_iso_dim": "ISOLATED: v_norm_ais rows ({r}) do not match n_dofs ({n}).",
-    "b9_rsa_fix_hdr": "FIXED – RSA (SRSS)",
-    "b9_rsa_iso_hdr": "ISOLATED – RSA (SRSS)",
+    "b9_rsa_fix_hdr": "FIXED – Inelastic RSA (SRSS)",
+    "b9_rsa_iso_hdr": "ISOLATED – Inelastic RSA (SRSS)",
     "b9_tbl_fix": "Show table (FIXED)",
     "b9_tbl_iso": "Show table (ISOLATED)",
-    "b9_plot_fix_rsa": "Displacement profile – RSA (FIXED)",
-    "b9_plot_iso_rsa": "Displacement profile – RSA (ISOLATED)",
-    "b9_rsa_ok": "RSA ready – FIXED vs ISOLATED.",
-    "b9_tha_mode": "THA mode",
-    "h_b9_tha_mode": "Time: pick an instant. Max/Min: envelope over time. Abs max: maximum absolute over time.",
-    "b9_tha_time": "Time",
-    "b9_tha_maxmin": "Max/Min",
-    "b9_tha_abs": "Absolute max (abs)",
+    "b9_plot_fix_rsa": "Displacement profile – Inelastic RSA (FIXED)",
+    "b9_plot_iso_rsa": "Displacement profile – Inelastic RSA (ISOLATED)",
+    "b9_rsa_ok": "Inelastic RSA ready – FIXED vs ISOLATED.",
     "b9_need_tha": "Missing THA variables: {keys}",
-    "b9_tha_pick": "Select time t [s]",
-    "b9_tha_fix_hdr": "FIXED – THA ({tag})",
-    "b9_tha_iso_hdr": "ISOLATED – THA ({tag})",
-    "b9_tha_tag_abs": "absolute maxima",
+    "b9_tha_fix_hdr": "FIXED – THA (Max/Min)",
+    "b9_tha_iso_hdr": "ISOLATED – THA (Max/Min)",
     "b9_tha_tag_maxmin": "max/min envelope",
-    "b9_tha_tag_t": "t ≈ {t:.3f} s",
-    "b9_plot_fix_tha": "Displacement profile – THA (FIXED)",
-    "b9_plot_iso_tha": "Displacement profile – THA (ISOLATED)",
     "b9_plot_fix_maxmin": "THA – Displacement profile Max/Min (FIXED)",
     "b9_plot_iso_maxmin": "THA – Displacement profile Max/Min (ISOLATED)",
-    "b9_plot_fix_abs": "THA – Max absolute displacement (FIXED)",
-    "b9_plot_iso_abs": "THA – Max absolute displacement (ISOLATED)",
     "b9_tha_ok": "THA ready – FIXED vs ISOLATED.",
     "b9_xlabel": "Displacement u [m]",
     "b9_ylabel": "Height [m]",
 })
 
 T["es"].update({
-    "b9_title": "Desplazamientos laterales – Modal espectral (RSA) y Tiempo historia (THA)",
+    "b9_title": "Desplazamientos laterales – Espectro inelástico (RSA) y Tiempo historia (THA)",
     "b9_method": "Selecciona el método de desplazamientos",
-    "h_b9_method": "RSA: picos desde el espectro (SRSS). THA: respuesta tiempo-historia (Tiempo / Max-Min / Máx abs).",
-    "b9_method_rsa": "Análisis modal espectral (RSA)",
+    "h_b9_method": "RSA: picos desde el espectro inelástico (SRSS). THA: envolvente real Max/Min en el tiempo.",
+    "b9_method_rsa": "Análisis modal espectral inelástico (RSA)",
     "b9_method_tha": "Tiempo historia (THA)",
     "b9_need_alt": "❌ Falta st.session_state['alturas'] (alturas de pisos). Ejecuta el Bloque 6 primero.",
-    "b9_need_spec": "❌ Falta el espectro del Bloque 3: rs_T_spec / rs_Sa_elast / rs_Sa_inelas.",
-    "b9_spec_dim": "❌ Espectro: dimensiones no coinciden: T={t} Sa_elast={el} Sa_inel={ine}.",
-    "b9_sa_type": "Sa a usar en RSA",
-    "h_b9_sa_type": "Típico: usar el espectro inelástico (reducido por R). Elástico solo para casos especiales.",
-    "b9_sa_in": "Inelástico (R)",
-    "b9_sa_el": "Elástico",
+    "b9_need_spec": "❌ Falta el espectro del Bloque 3: rs_T_spec / rs_Sa_inelas.",
+    "b9_spec_dim": "❌ Espectro: dimensiones no coinciden: T={t} Sa_inel={ine}.",
     "b9_need_fix": "❌ Falta FIJA: M_cond / v_norm_sin / T_sin.",
     "b9_need_iso": "❌ Falta AISLADA: M_cond_ais / v_norm_ais / T_ais.",
     "b9_fix_dim": "❌ FIJA: v_norm_sin filas ({r}) != n_dofs ({n}).",
     "b9_iso_dim": "❌ AISLADA: v_norm_ais filas ({r}) != n_dofs ({n}).",
-    "b9_rsa_fix_hdr": "🟦 FIJA – RSA (SRSS)",
-    "b9_rsa_iso_hdr": "🟩 AISLADA – RSA (SRSS)",
+    "b9_rsa_fix_hdr": "🟦 FIJA – RSA inelástico (SRSS)",
+    "b9_rsa_iso_hdr": "🟩 AISLADA – RSA inelástico (SRSS)",
     "b9_tbl_fix": "📋 Ver tabla (FIJA)",
     "b9_tbl_iso": "📋 Ver tabla (AISLADA)",
-    "b9_plot_fix_rsa": "Perfil de desplazamientos – RSA (FIJA)",
-    "b9_plot_iso_rsa": "Perfil de desplazamientos – RSA (AISLADA)",
-    "b9_rsa_ok": "✅ RSA listo – FIJA vs AISLADA.",
-    "b9_tha_mode": "Modo THA",
-    "h_b9_tha_mode": "Tiempo: selecciona un instante. Max/Min: envolvente en el tiempo. Máx abs: máximo absoluto.",
-    "b9_tha_time": "Tiempo",
-    "b9_tha_maxmin": "Max/Min",
-    "b9_tha_abs": "Máximo absoluto (abs)",
+    "b9_plot_fix_rsa": "Perfil de desplazamientos – RSA inelástico (FIJA)",
+    "b9_plot_iso_rsa": "Perfil de desplazamientos – RSA inelástico (AISLADA)",
+    "b9_rsa_ok": "✅ RSA inelástico listo – FIJA vs AISLADA.",
     "b9_need_tha": "❌ Faltan variables THA: {keys}",
-    "b9_tha_pick": "Selecciona el tiempo t [s]",
-    "b9_tha_fix_hdr": "🟦 FIJA – THA ({tag})",
-    "b9_tha_iso_hdr": "🟩 AISLADA – THA ({tag})",
-    "b9_tha_tag_abs": "máximos absolutos",
+    "b9_tha_fix_hdr": "🟦 FIJA – THA (Max/Min)",
+    "b9_tha_iso_hdr": "🟩 AISLADA – THA (Max/Min)",
     "b9_tha_tag_maxmin": "envolvente max/min",
-    "b9_tha_tag_t": "t ≈ {t:.3f} s",
-    "b9_plot_fix_tha": "Perfil de desplazamientos – THA (FIJA)",
-    "b9_plot_iso_tha": "Perfil de desplazamientos – THA (AISLADA)",
     "b9_plot_fix_maxmin": "THA – Perfil de desplazamientos Max/Min (FIJA)",
     "b9_plot_iso_maxmin": "THA – Perfil de desplazamientos Max/Min (AISLADA)",
-    "b9_plot_fix_abs": "THA – Desplazamiento absoluto máximo (FIJA)",
-    "b9_plot_iso_abs": "THA – Desplazamiento absoluto máximo (AISLADA)",
     "b9_tha_ok": "✅ THA listo – FIJA vs AISLADA.",
     "b9_xlabel": "Desplazamiento u [m]",
     "b9_ylabel": "Altura [m]",
@@ -4511,6 +4478,41 @@ def _plot_profile(U, y, title, color_line, nref, xlabel_key="b9_xlabel"):
     fig.tight_layout()
     st.pyplot(fig, use_container_width=True)
 
+def _plot_profile_maxmin(Umax, Umin, y, title, color_line, nref, xlabel_key="b9_xlabel"):
+    Umax = np.asarray(Umax, float).ravel()
+    Umin = np.asarray(Umin, float).ravel()
+    y    = np.asarray(y, float).ravel()
+
+    if (len(Umax) != len(y)) or (len(Umin) != len(y)):
+        st.error(f"❌ Max/Min no calza con niveles. Umax={Umax.shape}, Umin={Umin.shape}, y={y.shape}")
+        return
+
+    lw = _lw_by_n(nref)
+    ms = _ms_by_n(nref)
+
+    fig, ax = plt.subplots(figsize=(6.9, 4.9))
+    fig.patch.set_facecolor(BG)
+    ax.set_facecolor(BG)
+
+    ax.plot(Umax, y, "-o", color=color_line, lw=lw, ms=ms, alpha=0.95)
+    ax.plot(Umin, y, "-o", color=color_line, lw=lw, ms=ms, alpha=0.75)
+
+    ax.axvline(0.0, color=COLOR_GRID, lw=1.0, alpha=0.6)
+    ax.set_xlabel(tr(xlabel_key), color=COLOR_TEXT)
+    ax.set_ylabel(tr("b9_ylabel"), color=COLOR_TEXT)
+    ax.set_title(title, color=COLOR_TEXT, fontweight="bold")
+    ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
+    ax.tick_params(colors=COLOR_TEXT)
+    for s in ("top", "right"):
+        ax.spines[s].set_visible(False)
+
+    vmax = float(np.max(np.abs(np.r_[Umax, Umin])))
+    vmax = 1.0 if (not np.isfinite(vmax) or vmax <= 0) else vmax
+    ax.set_xlim(-1.12 * vmax, 1.12 * vmax)
+
+    fig.tight_layout()
+    st.pyplot(fig, use_container_width=True)
+
 metodo = st.selectbox(
     tr("b9_method"),
     [tr("b9_method_rsa"), tr("b9_method_tha")],
@@ -4528,33 +4530,27 @@ alt_fix = np.asarray(alt_fix, float).ravel()
 n_pisos = int(len(alt_fix))
 y_levels = np.r_[0.0, alt_fix]
 
+# =============================================================================
+# RSA (Modal espectral inelástico)
+# =============================================================================
 if metodo == tr("b9_method_rsa"):
 
     T_spec = st.session_state.get("rs_T_spec", None)
-    Sa_el  = st.session_state.get("rs_Sa_elast", None)
     Sa_in  = st.session_state.get("rs_Sa_inelas", None)
     Ie     = float(st.session_state.get("rs_Ie", 1.0))
 
-    if T_spec is None or Sa_el is None or Sa_in is None:
+    if T_spec is None or Sa_in is None:
         st.error(tr("b9_need_spec"))
         st.stop()
 
     T_spec = np.asarray(T_spec, float).ravel()
-    Sa_el  = np.asarray(Sa_el, float).ravel()
     Sa_in  = np.asarray(Sa_in, float).ravel()
 
-    if not (len(T_spec) == len(Sa_el) == len(Sa_in)):
-        st.error(tr("b9_spec_dim").format(t=T_spec.shape, el=Sa_el.shape, ine=Sa_in.shape))
+    if len(T_spec) != len(Sa_in):
+        st.error(tr("b9_spec_dim").format(t=T_spec.shape, ine=Sa_in.shape))
         st.stop()
 
-    tipo_sa = st.selectbox(
-        tr("b9_sa_type"),
-        [tr("b9_sa_in"), tr("b9_sa_el")],
-        index=1,
-        key="sa_use_disp_rsa",
-        help=tr("h_b9_sa_type"),
-    )
-    Sa_use = (Sa_in if (tipo_sa == tr("b9_sa_in")) else Sa_el) * Ie
+    Sa_use = Sa_in * Ie
 
     M_fix  = st.session_state.get("M_cond", None)
     Vn_fix = st.session_state.get("v_norm_sin", None)
@@ -4590,7 +4586,7 @@ if metodo == tr("b9_method_rsa"):
         st.stop()
 
     g = 9.8066500000
-    
+
     def _srss_u_fixed(Mmat, Vnorm, Tvec, wvec):
         n = Mmat.shape[0]
         r = np.ones((n, 1), float)
@@ -4630,7 +4626,6 @@ if metodo == tr("b9_method_rsa"):
 
     def _srss_u_isolated_abs_levels(Mmat, Vnorm, Tvec, wvec, n_pisos_target):
         n = Mmat.shape[0]
-
         r = np.ones((n, 1), float)
 
         U_modes = []
@@ -4725,18 +4720,12 @@ if metodo == tr("b9_method_rsa"):
 
     st.session_state["cmp_U_fix_levels"] = np.asarray(u_fix_plot, float).ravel()
     st.session_state["cmp_U_ais_levels"] = np.asarray(u_ais_plot, float).ravel()
-    st.session_state["cmp_tag_disp"]     = "RSA (SRSS)"
+    st.session_state["cmp_tag_disp"]     = "RSA inelástico (SRSS)"
 
+# =============================================================================
+# THA (solo Max/Min)
+# =============================================================================
 else:
-    # ====== TU THA ORIGINAL, SIN TOCAR ======
-    modo_tha = st.selectbox(
-        tr("b9_tha_mode"),
-        [tr("b9_tha_time"), tr("b9_tha_maxmin"), tr("b9_tha_abs")],
-        index=1,
-        key="modo_tha_disp",
-        help=tr("h_b9_tha_mode"),
-    )
-
     dt    = st.session_state.get("dt", None)
     u_fix = st.session_state.get("u_t", None)
     u_ais = st.session_state.get("u_t_ais", None)
@@ -4765,182 +4754,56 @@ else:
         st.error(f"❌ THA AISLADA: u_ais={u_ais.shape} no calza con n_pisos ni n_pisos+1.")
         st.stop()
 
-    t_fix = np.arange(u_fix.shape[1], dtype=float) * dt
-    t_ais = np.arange(u_ais_use.shape[1], dtype=float) * dt
+    U_fix_max = np.max(u_fix, axis=1)
+    U_fix_min = np.min(u_fix, axis=1)
+    U_ais_max = np.max(u_ais_use, axis=1)
+    U_ais_min = np.min(u_ais_use, axis=1)
 
-    if modo_tha == tr("b9_tha_time"):
-        tmax = float(min(t_fix[-1], t_ais[-1]))
-        t_sel = st.slider(tr("b9_tha_pick"), 0.0, tmax, min(5.0, tmax), 0.01, key="t_sel_disp")
+    U_fix_plot_max = np.r_[0.0, U_fix_max]
+    U_fix_plot_min = np.r_[0.0, U_fix_min]
 
-        i_fix = int(np.argmin(np.abs(t_fix - t_sel)))
-        i_ais = int(np.argmin(np.abs(t_ais - t_sel)))
+    st.session_state["cmp_U_fix_levels"] = np.maximum(np.abs(U_fix_plot_max), np.abs(U_fix_plot_min))
+    st.session_state["cmp_U_ais_levels"] = np.maximum(np.abs(U_ais_max), np.abs(U_ais_min))
+    st.session_state["cmp_tag_disp"]     = f"THA ({tr('b9_tha_tag_maxmin')})"
 
-        U_fix_floor  = u_fix[:, i_fix]
-        U_ais_levels = u_ais_use[:, i_ais]
-        tag = tr("b9_tha_tag_t").format(t=float(t_fix[i_fix]))
+    niv = np.arange(0, n_pisos + 1)
+    h_tab = np.r_[0.0, alt_fix]
 
-        U_fix_plot = np.r_[0.0, np.asarray(U_fix_floor, float).ravel()]
-        U_ais_plot = np.asarray(U_ais_levels, float).ravel()
+    dfL = pd.DataFrame({
+        "Nivel": niv,
+        "Altura [m]": np.round(h_tab, 3),
+        "u_max [m]": np.round(U_fix_plot_max, 6),
+        "u_min [m]": np.round(U_fix_plot_min, 6),
+        "|u|max [m]": np.round(np.maximum(np.abs(U_fix_plot_max), np.abs(U_fix_plot_min)), 6),
+    })
+    dfR = pd.DataFrame({
+        "Nivel": niv,
+        "Altura [m]": np.round(h_tab, 3),
+        "u_max_abs [m]": np.round(U_ais_max, 6),
+        "u_min_abs [m]": np.round(U_ais_min, 6),
+        "|u|max [m]": np.round(np.maximum(np.abs(U_ais_max), np.abs(U_ais_min)), 6),
+    })
 
-        title_fix = tr("b9_plot_fix_tha")
-        title_ais = tr("b9_plot_iso_tha")
+    colL, colR = st.columns([1, 1], gap="large")
+    with colL:
+        with st.container(border=True):
+            st.subheader(tr("b9_tha_fix_hdr").format(tag=tr("b9_tha_tag_maxmin")))
+            with st.expander(tr("b9_tbl_fix"), expanded=False):
+                _df_to_compact_table(dfL)
+            _plot_profile_maxmin(
+                U_fix_plot_max, U_fix_plot_min, y_levels,
+                tr("b9_plot_fix_maxmin"), COLOR_FIX, nref=n_pisos
+            )
 
-        st.session_state["cmp_U_fix_levels"] = np.asarray(U_fix_plot, float).ravel()
-        st.session_state["cmp_U_ais_levels"] = np.asarray(U_ais_plot, float).ravel()
-        st.session_state["cmp_tag_disp"]     = f"THA ({tag})"
-
-        niv = np.arange(0, n_pisos + 1)
-        h_tab = np.r_[0.0, alt_fix]
-
-        dfL = pd.DataFrame({
-            "Nivel": niv,
-            "Altura [m]": np.round(h_tab, 3),
-            "u [m]": np.round(U_fix_plot, 6),
-            "u [mm]": np.round(U_fix_plot * 1000.0, 3),
-        })
-        dfR = pd.DataFrame({
-            "Nivel": niv,
-            "Altura [m]": np.round(h_tab, 3),
-            "u_abs [m]": np.round(U_ais_plot, 6),
-            "u_abs [mm]": np.round(U_ais_plot * 1000.0, 3),
-        })
-
-        colL, colR = st.columns([1, 1], gap="large")
-        with colL:
-            with st.container(border=True):
-                st.subheader(tr("b9_tha_fix_hdr").format(tag=tag))
-                with st.expander(tr("b9_tbl_fix"), expanded=False):
-                    _df_to_compact_table(dfL)
-                _plot_profile(U_fix_plot, y_levels, title_fix, COLOR_FIX, nref=n_pisos)
-        with colR:
-            with st.container(border=True):
-                st.subheader(tr("b9_tha_iso_hdr").format(tag=tag))
-                with st.expander(tr("b9_tbl_iso"), expanded=False):
-                    _df_to_compact_table(dfR)
-                _plot_profile(U_ais_plot, y_levels, title_ais, COLOR_AIS, nref=n_pisos)
-
-    elif modo_tha == tr("b9_tha_maxmin"):
-        U_fix_max = np.max(u_fix, axis=1)
-        U_fix_min = np.min(u_fix, axis=1)
-        U_ais_max = np.max(u_ais_use, axis=1)
-        U_ais_min = np.min(u_ais_use, axis=1)
-
-        U_fix_plot_max = np.r_[0.0, U_fix_max]
-        U_fix_plot_min = np.r_[0.0, U_fix_min]
-
-        st.session_state["cmp_U_fix_levels"] = np.maximum(np.abs(U_fix_plot_max), np.abs(U_fix_plot_min))
-        st.session_state["cmp_U_ais_levels"] = np.maximum(np.abs(U_ais_max), np.abs(U_ais_min))
-        st.session_state["cmp_tag_disp"]     = f"THA ({tr('b9_tha_tag_maxmin')})"
-
-        niv = np.arange(0, n_pisos + 1)
-        h_tab = np.r_[0.0, alt_fix]
-
-        dfL = pd.DataFrame({
-            "Nivel": niv,
-            "Altura [m]": np.round(h_tab, 3),
-            "u_max [m]": np.round(U_fix_plot_max, 6),
-            "u_min [m]": np.round(U_fix_plot_min, 6),
-            "|u|max [m]": np.round(np.maximum(np.abs(U_fix_plot_max), np.abs(U_fix_plot_min)), 6),
-        })
-        dfR = pd.DataFrame({
-            "Nivel": niv,
-            "Altura [m]": np.round(h_tab, 3),
-            "u_max_abs [m]": np.round(U_ais_max, 6),
-            "u_min_abs [m]": np.round(U_ais_min, 6),
-            "|u|max [m]": np.round(np.maximum(np.abs(U_ais_max), np.abs(U_ais_min)), 6),
-        })
-
-        def _plot_profile_maxmin(Umax, Umin, y, title, color_line, nref, xlabel_key="b9_xlabel"):
-            Umax = np.asarray(Umax, float).ravel()
-            Umin = np.asarray(Umin, float).ravel()
-            y    = np.asarray(y, float).ravel()
-
-            if (len(Umax) != len(y)) or (len(Umin) != len(y)):
-                st.error(f"❌ Max/Min no calza con niveles. Umax={Umax.shape}, Umin={Umin.shape}, y={y.shape}")
-                return
-
-            lw = _lw_by_n(nref)
-            ms = _ms_by_n(nref)
-
-            fig, ax = plt.subplots(figsize=(6.9, 4.9))
-            fig.patch.set_facecolor(BG)
-            ax.set_facecolor(BG)
-
-            ax.plot(Umax, y, "-o", color=color_line, lw=lw, ms=ms, alpha=0.95)
-            ax.plot(Umin, y, "-o", color=color_line, lw=lw, ms=ms, alpha=0.75)
-
-            ax.axvline(0.0, color=COLOR_GRID, lw=1.0, alpha=0.6)
-            ax.set_xlabel(tr(xlabel_key), color=COLOR_TEXT)
-            ax.set_ylabel(tr("b9_ylabel"), color=COLOR_TEXT)
-            ax.set_title(title, color=COLOR_TEXT, fontweight="bold")
-            ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
-            ax.tick_params(colors=COLOR_TEXT)
-            for s in ("top", "right"):
-                ax.spines[s].set_visible(False)
-
-            vmax = float(np.max(np.abs(np.r_[Umax, Umin])))
-            vmax = 1.0 if (not np.isfinite(vmax) or vmax <= 0) else vmax
-            ax.set_xlim(-1.12 * vmax, 1.12 * vmax)
-
-            fig.tight_layout()
-            st.pyplot(fig, use_container_width=True)
-
-        colL, colR = st.columns([1, 1], gap="large")
-        with colL:
-            with st.container(border=True):
-                st.subheader(tr("b9_tha_fix_hdr").format(tag=tr("b9_tha_tag_maxmin")))
-                with st.expander(tr("b9_tbl_fix"), expanded=False):
-                    _df_to_compact_table(dfL)
-                _plot_profile_maxmin(U_fix_plot_max, U_fix_plot_min, y_levels, tr("b9_plot_fix_maxmin"), COLOR_FIX, nref=n_pisos)
-        with colR:
-            with st.container(border=True):
-                st.subheader(tr("b9_tha_iso_hdr").format(tag=tr("b9_tha_tag_maxmin")))
-                with st.expander(tr("b9_tbl_iso"), expanded=False):
-                    _df_to_compact_table(dfR)
-                _plot_profile_maxmin(U_ais_max, U_ais_min, y_levels, tr("b9_plot_iso_maxmin"), COLOR_AIS, nref=n_pisos)
-
-    else:
-        U_fix_floor  = np.max(np.abs(u_fix), axis=1)
-        U_ais_levels = np.max(np.abs(u_ais_use), axis=1)
-
-        tag = tr("b9_tha_tag_abs")
-
-        U_fix_plot = np.r_[0.0, np.asarray(U_fix_floor, float).ravel()]
-        U_ais_plot = np.asarray(U_ais_levels, float).ravel()
-
-        st.session_state["cmp_U_fix_levels"] = np.asarray(U_fix_plot, float).ravel()
-        st.session_state["cmp_U_ais_levels"] = np.asarray(U_ais_plot, float).ravel()
-        st.session_state["cmp_tag_disp"]     = f"THA ({tag})"
-
-        niv = np.arange(0, n_pisos + 1)
-        h_tab = np.r_[0.0, alt_fix]
-
-        dfL = pd.DataFrame({
-            "Nivel": niv,
-            "Altura [m]": np.round(h_tab, 3),
-            "u_abs [m]": np.round(U_fix_plot, 6),
-            "u_abs [mm]": np.round(U_fix_plot * 1000.0, 3),
-        })
-        dfR = pd.DataFrame({
-            "Nivel": niv,
-            "Altura [m]": np.round(h_tab, 3),
-            "u_abs [m]": np.round(U_ais_plot, 6),
-            "u_abs [mm]": np.round(U_ais_plot * 1000.0, 3),
-        })
-
-        colL, colR = st.columns([1, 1], gap="large")
-        with colL:
-            with st.container(border=True):
-                st.subheader(tr("b9_tha_fix_hdr").format(tag=tag))
-                with st.expander(tr("b9_tbl_fix"), expanded=False):
-                    _df_to_compact_table(dfL)
-                _plot_profile(U_fix_plot, y_levels, tr("b9_plot_fix_abs"), COLOR_FIX, nref=n_pisos)
-        with colR:
-            with st.container(border=True):
-                st.subheader(tr("b9_tha_iso_hdr").format(tag=tag))
-                with st.expander(tr("b9_tbl_iso"), expanded=False):
-                    _df_to_compact_table(dfR)
-                _plot_profile(U_ais_plot, y_levels, tr("b9_plot_iso_abs"), COLOR_AIS, nref=n_pisos)
+    with colR:
+        with st.container(border=True):
+            st.subheader(tr("b9_tha_iso_hdr").format(tag=tr("b9_tha_tag_maxmin")))
+            with st.expander(tr("b9_tbl_iso"), expanded=False):
+                _df_to_compact_table(dfR)
+            _plot_profile_maxmin(
+                U_ais_max, U_ais_min, y_levels,
+                tr("b9_plot_iso_maxmin"), COLOR_AIS, nref=n_pisos
+            )
 
     st.success(tr("b9_tha_ok"))
 
