@@ -3550,27 +3550,31 @@ with colR:
         )
 
     with st.container(border=True):
-        st.markdown(f"### {tr('b6_right_resp')}")
+    st.markdown(f"### {tr('b6_right_resp')}")
 
-        alt_fix = st.session_state.get("alturas", None)
-        if alt_fix is None:
-            alt_fix = np.arange(1, max(u_ais.shape[0], 2), dtype=float)
+    alt_fix = st.session_state.get("alturas", None)
+    if alt_fix is None:
+        # solo alturas de pisos reales
+        alt_fix = np.arange(1, max(u_ais.shape[0], 2), dtype=float)
 
-        alt_fix = np.asarray(alt_fix, float).ravel()
-        st.session_state["alturas_ais"] = np.r_[0.0, alt_fix]
+    alt_fix = np.asarray(alt_fix, float).ravel()
 
-        n_gdl_ais = int(u_ais.shape[0])
-        for idx in range(n_gdl_ais):
-            if idx == 0:
-                titulo = f"**{tr('b6_iso_level')}**"
-                nombre = "0"
-                h = 0.0
-            else:
-                titulo = f"**{tr('b6_floor').format(i=idx)}**"
-                nombre = str(idx)
-                h = float(alt_fix[idx - 1]) if (idx - 1) < len(alt_fix) else float(idx)
+    # ✅ mantener guardadas las alturas del sistema aislado completo
+    #    (por compatibilidad con otros bloques si las usan)
+    st.session_state["alturas_ais"] = np.r_[0.0, alt_fix]
 
-            with st.expander(titulo, expanded=(idx == 0)):
+    # ✅ mostrar SOLO pisos reales (excluye GDL 0 = aislador)
+    n_gdl_ais = int(u_ais.shape[0])
+
+    if n_gdl_ais <= 1:
+        st.info("No hay pisos disponibles para mostrar en la superestructura.")
+    else:
+        for idx in range(1, n_gdl_ais):
+            titulo = f"**{tr('b6_floor').format(i=idx)}**"
+            nombre = str(idx)
+            h = float(alt_fix[idx - 1]) if (idx - 1) < len(alt_fix) else float(idx)
+
+            with st.expander(titulo, expanded=(idx == 1)):
                 _plot_resp(
                     t,
                     u_ais[[idx], :],
