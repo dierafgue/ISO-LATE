@@ -4956,48 +4956,56 @@ def _calc_drifts_fixed_from_levels_abs(u_levels, y_levels):
     y_story = y[1:]
     return drift, y_story
 
-def _calc_drifts_isolated_super_same_count(u_levels, y_levels):
+def _calc_drifts_isolated_super_same_count(u_levels_abs, y_levels):
     """
     Derivas AISLADAS SOLO para superestructura, manteniendo el MISMO número
     de valores que la fija.
 
-    Se excluye la distorsión del aislador:
-      - el tramo 0->1 NO se usa como deriva real del aislador
-      - en su lugar, la primera deriva presentada se fija en 0
+    Pasos:
+      1) u_abs = [u_iso, u1, u2, ..., un]
+      2) convertir a desplazamientos relativos a la base aislada:
+           u_rel_super = [u1-u_iso, u2-u_iso, ..., un-u_iso]
+      3) derivas entre pisos de la superestructura:
+           [0, (u2-u1)/h2, (u3-u2)/h3, ...]
+         La primera se fija en 0 para mantener comparación con la fija
+         sin contaminar con la distorsión del aislador.
 
-    Si hay n pisos, retorna n derivas:
-      [0, drift(1->2), drift(2->3), ..., drift(n-1->n)]
-
-    y las alturas superiores asociadas:
-      [y1, y2, y3, ..., yn]
+    Retorna:
+      drift_use (n_pisos,)
+      y_story   (n_pisos,) = alturas superiores [y1, y2, ..., yn]
     """
-    u = np.asarray(u_levels, float).ravel()
+    u = np.asarray(u_levels_abs, float).ravel()
     y = np.asarray(y_levels, float).ravel()
 
     if len(u) != len(y):
         raise ValueError(f"u_levels y y_levels deben tener igual tamaño. u={u.shape}, y={y.shape}")
 
-    if len(u) < 2:
-        raise ValueError("No hay suficientes niveles para calcular derivas.")
-
-    du = np.diff(u)
-    dh = np.diff(y)
-
-    if np.any(dh <= 1e-12):
-        raise ValueError("Hay incrementos de altura dh<=0. Revisa 'alturas'.")
-
-    drift_all = np.abs(du) / dh
     n_pisos = len(y) - 1
+    if n_pisos < 1:
+        raise ValueError("No hay pisos para calcular derivas.")
 
-    # Caso general:
-    # fija tendría n_pisos derivas = [0->1, 1->2, ..., n-1->n]
-    # aislada quiere n_pisos valores también, pero sin usar 0->1 real
+    # desplazamientos relativos a la base aislada
+    u_iso = float(u[0])
+    u_rel = u[1:] - u_iso   # tamaño n_pisos
+
+    if len(u_rel) != n_pisos:
+        raise ValueError("Error interno al formar desplazamientos relativos de la superestructura.")
+
     if n_pisos == 1:
         drift_use = np.array([0.0], dtype=float)
     else:
-        drift_use = np.r_[0.0, drift_all[1:]]
+        # derivas entre pisos estructurales usando desplazamientos relativos
+        # (u_rel[1]-u_rel[0]) / (y2-y1), etc.
+        du_super = np.diff(u_rel)              # tamaño n_pisos-1
+        dh_super = np.diff(y[1:])              # tamaño n_pisos-1
 
-    y_story = y[1:]  # y1..yn
+        if np.any(dh_super <= 1e-12):
+            raise ValueError("Hay incrementos de altura dh<=0 en la superestructura.")
+
+        drift_super = np.abs(du_super) / dh_super
+        drift_use = np.r_[0.0, drift_super]    # tamaño n_pisos
+
+    y_story = y[1:]  # [y1, y2, ..., yn]
     return drift_use, y_story
 
 def _plot_drift_poly(drift_plot, y_plot, title, color_line, xlabel, n_pisos_ref=10):
@@ -5122,7 +5130,7 @@ xlabel_plot = tr("b10_xlabel_nec")
 # =============================================================================
 # Para plots y tablas
 # =============================================================================
-# Ambas tendrán n_pisos valores y arrancan desde 0 en la base
+# Ambas tienen n_pisos valores y arrancan desde 0 en la base
 y_plot_fix = np.r_[0.0, y_story_fix]
 drift_fix_plot = np.r_[0.0, drift_fix]
 
@@ -5132,7 +5140,7 @@ drift_ais_plot = np.r_[0.0, drift_ais]
 # =============================================================================
 # Tablas
 # =============================================================================
-# FIJA: Base + 0->1 + 1->2 + ...
+# FIJA: Base + 0→1 + 1→2 + ...
 entrep_tbl_fix = [tr("b10_base")] + ["0→1"] + [f"{i}→{i+1}" for i in range(1, len(drift_fix))]
 dfL = pd.DataFrame({
     tr("b10_story"): entrep_tbl_fix,
@@ -5141,7 +5149,7 @@ dfL = pd.DataFrame({
     tr("b10_drift_pct"): np.round(drift_fix_plot * 100.0, 3),
 })
 
-# AISLADA: Base + nivel 1 con 0 + luego 1->2 + 2->3 + ...
+# AISLADA: Base + 0→1(=0) + 1→2 + 2→3 + ...
 entrep_tbl_ais = [tr("b10_base"), "0→1"] + [f"{i}→{i+1}" for i in range(1, len(drift_ais))]
 dfR = pd.DataFrame({
     tr("b10_story"): entrep_tbl_ais,
