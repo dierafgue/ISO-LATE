@@ -3611,9 +3611,8 @@ T["en"].update({
     "b7_missing_fun": "Function `newmark_nl_base_bilinear` was not found.",
 
     # Left side
-    "b7_left_hdr": "NEC-24 spectrum + points (FIXED vs ISOLATED)",
-    "b7_elastic": "Elastic spectrum",
-    "b7_inelastic": "Inelastic (R={R:g})",
+    "b7_left_hdr": "NEC-24 inelastic spectrum + points (FIXED vs ISOLATED)",
+    "b7_inelastic": "Inelastic spectrum (R={R:g})",
     "b7_fixed_mark": "FIXED: T₁={T:.3f}s | Sa={Sa:.3f}g",
     "b7_iso_mark": "ISOLATED: T₁={T:.3f}s | Sa={Sa:.3f}g",
     "b7_xlabel_T": "Period T [s]",
@@ -3632,9 +3631,8 @@ T["es"].update({
     "b7_missing_fun": "⚠️ No se encontró la función `newmark_nl_base_bilinear`.",
 
     # Left side
-    "b7_left_hdr": "Espectro NEC-24 + puntos (FIJA vs AISLADA)",
-    "b7_elastic": "Espectro Elástico",
-    "b7_inelastic": "Inelástico (R={R:g})",
+    "b7_left_hdr": "Espectro inelástico NEC-24 + puntos (FIJA vs AISLADA)",
+    "b7_inelastic": "Espectro inelástico (R={R:g})",
     "b7_fixed_mark": "FIJA: T₁={T:.3f}s | Sa={Sa:.3f}g",
     "b7_iso_mark": "AISLADA: T₁={T:.3f}s | Sa={Sa:.3f}g",
     "b7_xlabel_T": "Período T [s]",
@@ -3657,7 +3655,6 @@ COLOR_TEXT = "#E8EDF2"
 COLOR_GRID = "#5B657A"
 HALO = [pe.withStroke(linewidth=2.4, foreground=BG), pe.Normal()]
 
-COLOR_ELAST    = "#A8D5FF"
 COLOR_INELAST  = "#F2A6A0"
 COLOR_MARK_FIX = "#FFE6A3"
 COLOR_MARK_AIS = "#77DD77"
@@ -3671,7 +3668,6 @@ COLOR_LINE1    = "#C79BFF"
 # -----------------------------------------------------------------
 required = [
     "rs_T_spec",
-    "rs_Sa_elast",
     "rs_Sa_inelas",
     "nec24_params",
     "T_sin",
@@ -3702,40 +3698,45 @@ col_left, col_right = st.columns([1, 1], gap="large")
 FIG_W, FIG_H = 7.2, 4.8
 
 # =============================================================================
-# IZQUIERDA: ESPECTRO NEC + MARCADORES
+# IZQUIERDA: ESPECTRO NEC INELÁSTICO + MARCADORES
 # =============================================================================
 with col_left:
     with st.container(border=True):
         st.subheader(f"📈 {tr('b7_left_hdr')}")
 
         T_plot  = np.asarray(st.session_state["rs_T_spec"], dtype=float).ravel()
-        Sa_el   = np.asarray(st.session_state["rs_Sa_elast"], dtype=float).ravel()
         Sa_inel = np.asarray(st.session_state["rs_Sa_inelas"], dtype=float).ravel()
 
         R_spec  = float(st.session_state["nec24_params"]["R"])
         T_final = float(T_plot[-1])
 
-        T1_fix = float(np.asarray(st.session_state["T_sin"]).ravel()[0])
-        T1_ais = float(np.asarray(st.session_state["T_ais"]).ravel()[0])
+        T1_fix = float(np.asarray(st.session_state["T_sin"], dtype=float).ravel()[0])
+        T1_ais = float(np.asarray(st.session_state["T_ais"], dtype=float).ravel()[0])
 
-        Sa_Tfix = float(np.interp(T1_fix, T_plot, Sa_el))
-        Sa_Tais = float(np.interp(T1_ais, T_plot, Sa_el))
+        # ✅ Ambos puntos evaluados SOLO en el espectro inelástico
+        Sa_Tfix = float(np.interp(T1_fix, T_plot, Sa_inel))
+        Sa_Tais = float(np.interp(T1_ais, T_plot, Sa_inel))
 
         fig, ax = plt.subplots(figsize=(FIG_W, FIG_H))
         fig.patch.set_facecolor(BG)
         ax.set_facecolor(BG)
 
-        ax.plot(T_plot, Sa_el,   lw=2.4, color=COLOR_ELAST,   label=tr("b7_elastic"))
         ax.plot(
-            T_plot, Sa_inel, lw=2.2, color=COLOR_INELAST,
-            linestyle="--", label=tr("b7_inelastic").format(R=R_spec)
+            T_plot, Sa_inel,
+            lw=2.4,
+            color=COLOR_INELAST,
+            linestyle="--",
+            label=tr("b7_inelastic").format(R=R_spec)
         )
 
         # FIJA
         ax.plot([T1_fix, T1_fix], [0, Sa_Tfix], color=COLOR_GUIDE, linestyle=":", lw=1.2)
         ax.plot([0, T1_fix], [Sa_Tfix, Sa_Tfix], color=COLOR_GUIDE, linestyle=":", lw=1.2)
         ax.plot(
-            T1_fix, Sa_Tfix, "o", ms=7, mfc=COLOR_MARK_FIX, mec="none",
+            T1_fix, Sa_Tfix, "o",
+            ms=7,
+            mfc=COLOR_MARK_FIX,
+            mec="none",
             label=tr("b7_fixed_mark").format(T=T1_fix, Sa=Sa_Tfix)
         )
 
@@ -3743,7 +3744,10 @@ with col_left:
         ax.plot([T1_ais, T1_ais], [0, Sa_Tais], color=COLOR_GUIDE, linestyle=":", lw=1.2)
         ax.plot([0, T1_ais], [Sa_Tais, Sa_Tais], color=COLOR_GUIDE, linestyle=":", lw=1.2)
         ax.plot(
-            T1_ais, Sa_Tais, "o", ms=7, mfc=COLOR_MARK_AIS, mec="none",
+            T1_ais, Sa_Tais, "o",
+            ms=7,
+            mfc=COLOR_MARK_AIS,
+            mec="none",
             label=tr("b7_iso_mark").format(T=T1_ais, Sa=Sa_Tais)
         )
 
