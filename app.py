@@ -4808,7 +4808,7 @@ else:
     st.success(tr("b9_tha_ok"))
 
 # =============================================================================
-# === BLOQUE 10: DERIVAS (RSA vs THA) – FIJA vs AISLADA =======================
+# === BLOQUE 10: DERIVAS NEC24 (RSA INELÁSTICO vs THA MAX/MIN) =================
 # =============================================================================
 import numpy as np
 import pandas as pd
@@ -4818,15 +4818,9 @@ import matplotlib.patheffects as pe
 
 # -------------------------------------------------------------------------
 # ✅ Textos EN/ES (solo para este bloque) + HELPERS
-#     Requiere que ya existan: T["en"], T["es"] y la función tr(key)
 # -------------------------------------------------------------------------
 T["en"].update({
-    "b10_title": "Story drifts – Response Spectrum (RSA) & Time History (THA)",
-
-    "b10_out_type": "Drift output",
-    "h_b10_out_type": "Real drift is |Δu|/Δh. NEC drift applies (Cd·drift)/I according to NEC-24 workflow.",
-    "b10_out_real": "Real drift (|Δ|/h)",
-    "b10_out_nec": "NEC-24 drift (Cd·|Δ|/h)/I",
+    "b10_title": "NEC-24 story drifts – Inelastic RSA & THA",
 
     "b10_need_b9": "Missing output from Block 9. Needed: cmp_U_fix_levels, cmp_U_ais_levels, cmp_tag_disp.",
     "b10_src": "Source: **{tag}** (from displacements)",
@@ -4836,7 +4830,7 @@ T["en"].update({
     "b10_dim_iso": "cmp_U_ais_levels={u} does not match expected levels n_pisos={n}.",
 
     "b10_nec_cd": "Cd (NEC-24)",
-    "h_b10_nec_cd": "Deflection amplification factor Cd (per NEC-24). Only used when NEC drift output is selected.",
+    "h_b10_nec_cd": "Deflection amplification factor Cd according to NEC-24.",
     "b10_need_Ie": "I cannot find Ie in session_state. Need rs_Ie or nec24_params['Ie'].",
     "b10_bad_Ie": "Invalid Ie (<=0).",
     "b10_nec_caption": "NEC drift = (Cd·real drift)/I with Cd={cd:.3g} and I={ie:.3g}.",
@@ -4845,8 +4839,8 @@ T["en"].update({
 
     "b10_story": "Story",
     "b10_hsup": "Top height [m]",
-    "b10_drift": "Drift",
-    "b10_drift_pct": "Drift [%]",
+    "b10_drift": "NEC drift",
+    "b10_drift_pct": "NEC drift [%]",
 
     "b10_fix_hdr": "FIXED – {tag}",
     "b10_iso_hdr": "ISOLATED – {tag}",
@@ -4854,24 +4848,18 @@ T["en"].update({
     "b10_tbl_fix": "Show drift table (FIXED)",
     "b10_tbl_iso": "Show drift table (ISOLATED)",
 
-    "b10_plot_fix": "Maximum story drifts – FIXED",
-    "b10_plot_iso": "Maximum story drifts – ISOLATED",
+    "b10_plot_fix": "Maximum NEC-24 story drifts – FIXED",
+    "b10_plot_iso": "Maximum NEC-24 story drifts – ISOLATED",
 
-    "b10_xlabel_real": "Drift, unitless",
     "b10_xlabel_nec": "NEC-24 drift (Cd·|Δ|/h)/I",
     "b10_ylabel": "Top height [m]",
 
-    "b10_ok": "Drifts ready",
+    "b10_ok": "NEC-24 drifts ready",
     "b10_base": "Base",
 })
 
 T["es"].update({
-    "b10_title": "Derivas por entrepiso – Modal espectral (RSA) y Tiempo historia (THA)",
-
-    "b10_out_type": "Salida de deriva",
-    "h_b10_out_type": "Deriva real = |Δu|/Δh. Deriva NEC = (Cd·deriva)/I según flujo de NEC-24.",
-    "b10_out_real": "Deriva real (|Δ|/h)",
-    "b10_out_nec": "Deriva NEC24 (Cd·|Δ|/h)/I",
+    "b10_title": "Derivas NEC24 – RSA inelástico y THA",
 
     "b10_need_b9": "❌ Falta salida del BLOQUE 9. Necesito: cmp_U_fix_levels, cmp_U_ais_levels, cmp_tag_disp.",
     "b10_src": "🔗 Fuente: **{tag}** (desde desplazamientos)",
@@ -4881,7 +4869,7 @@ T["es"].update({
     "b10_dim_iso": "❌ cmp_U_ais_levels={u} no coincide con niveles esperados n_pisos={n}.",
 
     "b10_nec_cd": "Cd (NEC24)",
-    "h_b10_nec_cd": "Factor Cd (NEC-24). Solo se usa si NEC esta activo.",
+    "h_b10_nec_cd": "Factor de amplificación de desplazamientos Cd según NEC-24.",
     "b10_need_Ie": "❌ No encuentro Ie en session_state. Necesito rs_Ie o nec24_params['Ie'].",
     "b10_bad_Ie": "❌ Ie inválido (<=0).",
     "b10_nec_caption": "✅ Deriva_NEC = (Cd·Deriva_real)/I con Cd={cd:.3g} e I={ie:.3g}.",
@@ -4890,8 +4878,8 @@ T["es"].update({
 
     "b10_story": "Entrepiso",
     "b10_hsup": "Altura sup [m]",
-    "b10_drift": "Deriva",
-    "b10_drift_pct": "Deriva [%]",
+    "b10_drift": "Deriva NEC24",
+    "b10_drift_pct": "Deriva NEC24 [%]",
 
     "b10_fix_hdr": "🟦 FIJA – {tag}",
     "b10_iso_hdr": "🟩 AISLADA – {tag}",
@@ -4899,14 +4887,13 @@ T["es"].update({
     "b10_tbl_fix": "📋 Ver tabla de derivas (FIJA)",
     "b10_tbl_iso": "📋 Ver tabla de derivas (AISLADA)",
 
-    "b10_plot_fix": "Máximas derivas por entrepiso – FIJA",
-    "b10_plot_iso": "Máximas derivas por entrepiso – AISLADA",
+    "b10_plot_fix": "Máximas derivas NEC24 por entrepiso – FIJA",
+    "b10_plot_iso": "Máximas derivas NEC24 por entrepiso – AISLADA",
 
-    "b10_xlabel_real": "Deriva, adimensional",
     "b10_xlabel_nec": "Deriva NEC24 (Cd·|Δ|/h)/I",
     "b10_ylabel": "Altura sup [m]",
 
-    "b10_ok": "Derivas listas",
+    "b10_ok": "Derivas NEC24 listas",
     "b10_base": "Base",
 })
 
@@ -4944,21 +4931,24 @@ def _df_to_compact_table(df: pd.DataFrame, height_min=150, height_max=300):
     h = int(max(height_min, min(height_max, h)))
     st.dataframe(df, hide_index=True, use_container_width=True, height=h)
 
-def _calc_drifts_from_levels_abs(u_levels, y_levels):
+def _calc_drifts_fixed_from_levels_abs(u_levels, y_levels):
     """
-    Drift por entrepiso desde niveles:
+    Derivas FIJAS:
       drift_i = |u_i - u_{i-1}| / (y_i - y_{i-1})
+
     u_levels y y_levels deben ser (n_pisos+1,) con base incluida.
     Retorna:
       drift_stories (n_pisos,) asociado a alturas superiores y_story = y[1:]
     """
     u = np.asarray(u_levels, float).ravel()
     y = np.asarray(y_levels, float).ravel()
+
     if len(u) != len(y):
         raise ValueError(f"u_levels y y_levels deben tener igual tamaño. u={u.shape}, y={y.shape}")
 
     du = np.diff(u)
     dh = np.diff(y)
+
     if np.any(dh <= 1e-12):
         raise ValueError("Hay incrementos de altura dh<=0. Revisa 'alturas'.")
 
@@ -4966,13 +4956,56 @@ def _calc_drifts_from_levels_abs(u_levels, y_levels):
     y_story = y[1:]
     return drift, y_story
 
+def _calc_drifts_isolated_super_only(u_levels, y_levels):
+    """
+    Derivas AISLADAS SOLO en superestructura:
+      NO incluye el aislador.
+      Se calculan entre pisos estructurales:
+        drift_i = |u_i - u_{i-1}| / (y_i - y_{i-1})
+      pero empezando desde el piso 2.
+
+    Si u_levels = [u0, u1, u2, ..., un]
+    y_levels = [0,  y1, y2, ..., yn]
+
+    retorna derivas para:
+      1->2, 2->3, ..., (n-1)->n
+
+    Es decir, se excluye 0->1.
+    """
+    u = np.asarray(u_levels, float).ravel()
+    y = np.asarray(y_levels, float).ravel()
+
+    if len(u) != len(y):
+        raise ValueError(f"u_levels y y_levels deben tener igual tamaño. u={u.shape}, y={y.shape}")
+
+    if len(u) < 3:
+        raise ValueError("No hay suficientes niveles para calcular derivas de superestructura en el sistema aislado.")
+
+    du = np.diff(u)
+    dh = np.diff(y)
+
+    if np.any(dh <= 1e-12):
+        raise ValueError("Hay incrementos de altura dh<=0. Revisa 'alturas'.")
+
+    drift_all = np.abs(du) / dh
+
+    # Excluir el tramo 0->1 (aislador a primer piso)
+    drift_super = drift_all[1:]
+    y_story_super = y[2:]
+
+    return drift_super, y_story_super
+
 def _plot_drift_poly(drift_plot, y_plot, title, color_line, xlabel, n_pisos_ref=10):
     """
-    Plot tipo ETABS: polilínea con puntos, x>=0, incluyendo (0,0).
-    drift_plot y y_plot: (n_pisos+1,) con base en índice 0.
+    Plot tipo ETABS: polilínea con puntos.
+    drift_plot y y_plot deben tener igual tamaño.
     """
     x = np.asarray(drift_plot, float).ravel()
     y = np.asarray(y_plot, float).ravel()
+
+    if len(x) != len(y):
+        st.error(f"❌ drift_plot y y_plot deben tener igual tamaño. x={x.shape}, y={y.shape}")
+        return
 
     lw = _lw_by_n(n_pisos_ref)
     ms = _ms_by_n(n_pisos_ref)
@@ -4999,21 +5032,9 @@ def _plot_drift_poly(drift_plot, y_plot, title, color_line, xlabel, n_pisos_ref=
     fig.tight_layout()
     st.pyplot(fig, use_container_width=True)
 
-# -------------------------------------------------------------------------
-# Tipo de salida
-# -------------------------------------------------------------------------
-tipo_deriva = st.radio(
-    tr("b10_out_type"),
-    [tr("b10_out_real"), tr("b10_out_nec")],
-    index=0,
-    horizontal=True,
-    key="tipo_deriva_out",
-    help=tr("h_b10_out_type"),
-)
-
 # -------------------- HEREDAR desde BLOQUE 9 --------------------
-u_fix_levels = st.session_state.get("cmp_U_fix_levels", None)  # (n_pisos+1,) base=0 + pisos (FIJA)
-u_ais_levels = st.session_state.get("cmp_U_ais_levels", None)  # (n_pisos+1,) base=u_iso + pisos (AISLADA)
+u_fix_levels = st.session_state.get("cmp_U_fix_levels", None)  # (n_pisos+1,) base=0 + pisos
+u_ais_levels = st.session_state.get("cmp_U_ais_levels", None)  # (n_pisos+1,) aislador + pisos
 tag_disp     = st.session_state.get("cmp_tag_disp", None)
 
 if u_fix_levels is None or u_ais_levels is None or tag_disp is None:
@@ -5032,7 +5053,7 @@ alt_fix = np.asarray(alt_fix, float).ravel()
 n_pisos = int(len(alt_fix))
 
 # niveles: Base(0 m) + elevaciones de pisos
-y_levels = np.r_[0.0, alt_fix]  # (n_pisos+1,)
+y_levels = np.r_[0.0, alt_fix]   # (n_pisos+1,)
 expect_levels = n_pisos + 1
 
 u_fix_levels = np.asarray(u_fix_levels, float).ravel()
@@ -5046,78 +5067,89 @@ if len(u_ais_levels) != expect_levels:
     st.stop()
 
 # -------------------------------------------------------------------------
-# NEC24: pedir Cd e Ie SOLO si usuario pide deriva NEC
+# NEC24: SIEMPRE activo
 # -------------------------------------------------------------------------
-Cd = None
-Ie = None
-is_nec = (tipo_deriva == tr("b10_out_nec"))
+Cd = st.number_input(
+    tr("b10_nec_cd"),
+    0.1, 20.0, 5.5, 0.1,
+    key="nec_Cd_derivas",
+    help=tr("h_b10_nec_cd"),
+)
 
-if is_nec:
-    Cd = st.number_input(
-        tr("b10_nec_cd"),
-        0.1, 20.0, 5.5, 0.1,
-        key="nec_Cd_derivas",
-        help=tr("h_b10_nec_cd"),
-    )
+Ie = st.session_state.get("rs_Ie", None)
+if Ie is None:
+    nec_params = st.session_state.get("nec24_params", {})
+    Ie = nec_params.get("Ie", None)
 
-    Ie = st.session_state.get("rs_Ie", None)
-    if Ie is None:
-        nec_params = st.session_state.get("nec24_params", {})
-        Ie = nec_params.get("Ie", None)
+if Ie is None:
+    st.error(tr("b10_need_Ie"))
+    st.stop()
 
-    if Ie is None:
-        st.error(tr("b10_need_Ie"))
-        st.stop()
+Ie = float(Ie)
+if Ie <= 0:
+    st.error(tr("b10_bad_Ie"))
+    st.stop()
 
-    Ie = float(Ie)
-    if Ie <= 0:
-        st.error(tr("b10_bad_Ie"))
-        st.stop()
-
-    st.caption(tr("b10_nec_caption").format(cd=float(Cd), ie=float(Ie)))
+st.caption(tr("b10_nec_caption").format(cd=float(Cd), ie=float(Ie)))
 
 # =============================================================================
-# Cálculo derivas (MISMA lógica para RSA y THA: desde niveles heredados)
+# Cálculo de derivas reales base
 # =============================================================================
 try:
-    drift_fix_real, y_story = _calc_drifts_from_levels_abs(u_fix_levels, y_levels)  # (n_pisos,)
-    drift_ais_real, _       = _calc_drifts_from_levels_abs(u_ais_levels, y_levels)  # (n_pisos,)
+    # FIJA: sí incluye 0->1
+    drift_fix_real, y_story_fix = _calc_drifts_fixed_from_levels_abs(u_fix_levels, y_levels)
+
+    # AISLADA: SOLO superestructura, excluye 0->1
+    drift_ais_real, y_story_ais = _calc_drifts_isolated_super_only(u_ais_levels, y_levels)
+
 except Exception as e:
     st.error(tr("b10_err_calc").format(e=e))
     st.stop()
 
 # =============================================================================
-# Aplicar NEC si corresponde
+# Aplicar NEC24
 # =============================================================================
-if is_nec:
-    drift_fix = (float(Cd) * drift_fix_real) / float(Ie)
-    drift_ais = (float(Cd) * drift_ais_real) / float(Ie)
-    xlabel_plot = tr("b10_xlabel_nec")
+drift_fix = (float(Cd) * drift_fix_real) / float(Ie)
+drift_ais = (float(Cd) * drift_ais_real) / float(Ie)
+xlabel_plot = tr("b10_xlabel_nec")
+
+# =============================================================================
+# Agregar puntos de arranque para plots
+# =============================================================================
+# FIJA: base en y=0
+y_plot_fix = np.r_[0.0, y_story_fix]
+drift_fix_plot = np.r_[0.0, drift_fix]
+
+# AISLADA: arrancar en el primer piso estructural (sin usar el aislador)
+# El primer punto cero se coloca a la altura del piso 1
+if len(alt_fix) >= 1:
+    y_plot_ais = np.r_[alt_fix[0], y_story_ais]
+    drift_ais_plot = np.r_[0.0, drift_ais]
 else:
-    drift_fix = drift_fix_real
-    drift_ais = drift_ais_real
-    xlabel_plot = tr("b10_xlabel_real")
+    y_plot_ais = np.asarray(y_story_ais, float).ravel()
+    drift_ais_plot = np.asarray(drift_ais, float).ravel()
 
 # =============================================================================
-# Agregar punto base 0,0 (para el plot)
+# Tablas
 # =============================================================================
-y_plot = np.r_[0.0, y_story]                 # (n_pisos+1,)
-drift_fix_plot = np.r_[0.0, drift_fix]       # (n_pisos+1,)
-drift_ais_plot = np.r_[0.0, drift_ais]       # (n_pisos+1,)
-
-# Tablas (incluye fila base)
-entrep_tbl = [tr("b10_base")] + ["0→1"] + [f"{i}→{i+1}" for i in range(1, len(drift_fix))]
-
+# FIJA: Base + 0->1 + ...
+entrep_tbl_fix = [tr("b10_base")] + ["0→1"] + [f"{i}→{i+1}" for i in range(1, len(drift_fix))]
 dfL = pd.DataFrame({
-    tr("b10_story"): entrep_tbl,
-    tr("b10_hsup"): np.round(y_plot, 3),
+    tr("b10_story"): entrep_tbl_fix,
+    tr("b10_hsup"): np.round(y_plot_fix, 3),
     tr("b10_drift"): np.round(drift_fix_plot, 6),
     tr("b10_drift_pct"): np.round(drift_fix_plot * 100.0, 3),
 })
 
+# AISLADA: empieza en 1->2
+if len(drift_ais) > 0:
+    entrep_tbl_ais = ["1"] + [f"{i}→{i+1}" for i in range(1, len(drift_ais) + 1)]
+else:
+    entrep_tbl_ais = ["1"]
+
 dfR = pd.DataFrame({
-    tr("b10_story"): entrep_tbl,
-    tr("b10_hsup"): np.round(y_plot, 3),
+    tr("b10_story"): entrep_tbl_ais,
+    tr("b10_hsup"): np.round(y_plot_ais, 3),
     tr("b10_drift"): np.round(drift_ais_plot, 6),
     tr("b10_drift_pct"): np.round(drift_ais_plot * 100.0, 3),
 })
@@ -5132,23 +5164,33 @@ with colL:
         st.subheader(tr("b10_fix_hdr").format(tag=tag_disp))
         with st.expander(tr("b10_tbl_fix"), expanded=False):
             _df_to_compact_table(dfL)
-        _plot_drift_poly(drift_fix_plot, y_plot, tr("b10_plot_fix"), COLOR_FIX, xlabel_plot, n_pisos_ref=n_pisos)
+        _plot_drift_poly(
+            drift_fix_plot, y_plot_fix,
+            tr("b10_plot_fix"), COLOR_FIX, xlabel_plot, n_pisos_ref=n_pisos
+        )
 
 with colR:
     with st.container(border=True):
         st.subheader(tr("b10_iso_hdr").format(tag=tag_disp))
         with st.expander(tr("b10_tbl_iso"), expanded=False):
             _df_to_compact_table(dfR)
-        _plot_drift_poly(drift_ais_plot, y_plot, tr("b10_plot_iso"), COLOR_AIS, xlabel_plot, n_pisos_ref=n_pisos)
+        _plot_drift_poly(
+            drift_ais_plot, y_plot_ais,
+            tr("b10_plot_iso"), COLOR_AIS, xlabel_plot, n_pisos_ref=max(n_pisos - 1, 1)
+        )
 
 # Guardar para Bloque 11
 st.session_state["cmp_drift_fix"] = np.asarray(drift_fix, float).ravel()
 st.session_state["cmp_drift_ais"] = np.asarray(drift_ais, float).ravel()
-st.session_state["cmp_tag_drift"] = "NEC" if is_nec else "REAL"
+st.session_state["cmp_tag_drift"] = "NEC24"
 
 st.session_state["cmp_drift_fix_levels"] = np.asarray(drift_fix_plot, float).ravel()
 st.session_state["cmp_drift_ais_levels"] = np.asarray(drift_ais_plot, float).ravel()
-st.session_state["cmp_drift_y_levels"]   = np.asarray(y_plot, float).ravel()
+st.session_state["cmp_drift_y_fix_levels"] = np.asarray(y_plot_fix, float).ravel()
+st.session_state["cmp_drift_y_ais_levels"] = np.asarray(y_plot_ais, float).ravel()
+
+# compatibilidad con bloques previos
+st.session_state["cmp_drift_y_levels"] = np.asarray(y_plot_fix, float).ravel()
 
 st.success(tr("b10_ok"))
 
