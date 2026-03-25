@@ -1445,7 +1445,7 @@ T["en"].update({
     "b3_need_rec_scale": "Upload or select a record to enable scaling.",
 
     "b3_scale_on": "Scale to NEC-24",
-    "b3_scale_help": "Scales the record to match the NEC-24 elastic target spectrum at the reference period.",
+    "b3_scale_help": "Scales the record to match only the NEC-24 inelastic target spectrum within the selected period range.",
 
     "b3_xi": "Damping (ξ)",
     "b3_xi_help": "Fraction of critical damping (e.g., 0.05 = 5%).",
@@ -1456,7 +1456,7 @@ T["en"].update({
     "b3_ev": "Event: **{name}**",
 
     "b3_plot_scale": "Target spectrum and scaling",
-    "b3_nec_obj": "NEC-24 target (×Ie)",
+    "b3_nec_obj": "NEC-24 inelastic target (×Ie)",
     "b3_reg_un": "Record (unscaled)",
     "b3_reg_sc": "Scaled record (SF={SF:.3f})",
     "b3_need_rec_plot": "(Upload/select a record to see the spectrum)",
@@ -1544,7 +1544,7 @@ T["es"].update({
     "b3_need_rec_scale": "📁 Cargue o seleccione un registro para habilitar el escalamiento.",
 
     "b3_scale_on": "Escalar a NEC-24",
-    "b3_scale_help": "Escala el registro sísmico para ajustarlo al espectro elástico objetivo NEC-24 en el período de referencia.",
+    "b3_scale_help": "Escala el registro sísmico para ajustarlo solo al espectro inelástico objetivo NEC-24 dentro del rango de períodos seleccionado.",
 
     "b3_xi": "Amortiguamiento (ξ)",
     "b3_xi_help": "Fracción de amortiguamiento crítico (ej.: 0.05 = 5%).",
@@ -1555,7 +1555,7 @@ T["es"].update({
     "b3_ev": "Evento: **{name}**",
 
     "b3_plot_scale": "Espectro objetivo y escalamiento",
-    "b3_nec_obj": "NEC-24 objetivo (×Ie)",
+    "b3_nec_obj": "Objetivo inelástico NEC-24 (×Ie)",
     "b3_reg_un": "Registro (sin escala)",
     "b3_reg_sc": "Registro escalado (SF={SF:.3f})",
     "b3_need_rec_plot": "(Cargue/seleccione un registro para ver el espectro)",
@@ -2014,8 +2014,7 @@ with st.container(border=True):
                     help=tr("b3_scale_help")
                 )
 
-                # ✅ Períodos de referencia para el escalamiento:
-                #    usar hasta los 3 primeros modos disponibles de la estructura fija
+                # usar hasta los 3 primeros modos disponibles de la estructura fija
                 T_fix_vec = np.asarray(st.session_state.get("T_sin", []), dtype=float).ravel()
                 T_fix_vec = T_fix_vec[np.isfinite(T_fix_vec)]
                 T_fix_vec = T_fix_vec[T_fix_vec > 0]
@@ -2050,7 +2049,8 @@ with st.container(border=True):
                 dt      = float(st.session_state["rs_dt"])
                 ag_base = np.asarray(st.session_state["rs_ag_base"], dtype=float).ravel()
 
-                Sa_obj_base = Sa_elast_nec
+                # ✅ SOLO espectro inelástico
+                Sa_obj_base = Sa_inel_nec
 
                 T_rs = make_T_rs_piecewise(0.05, 5.0)
                 Sa_reg = compute_Sa_piecewise(ag_base, dt, T_rs, xi=float(xi))
@@ -2072,7 +2072,7 @@ with st.container(border=True):
                 PGA1 = float(np.max(np.abs(ag_scaled)) / G_STD)
             else:
                 T_rs = make_T_rs_piecewise(0.05, 5.0)
-                Sa_obj = np.interp(T_rs, T_spec_nec, Sa_elast_nec) * float(Ie_nec)
+                Sa_obj = np.interp(T_rs, T_spec_nec, Sa_inel_nec) * float(Ie_nec)
                 Sa_reg = None
                 Sa_reg_scaled = None
                 mask = (T_rs >= 0.2) & (T_rs <= 1.0)
@@ -2082,9 +2082,6 @@ with st.container(border=True):
                 ag_scaled = None
 
             with c_in:
-                # ---------------------------------------------------------
-                # Compatibilidad espectral del registro
-                # ---------------------------------------------------------
                 if rs_ok:
                     if SF < 1.50:
                         fit_state = tr("b3_fit_ok")
