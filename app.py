@@ -4762,21 +4762,16 @@ else:
     U_fix_plot_max = np.r_[0.0, U_fix_max]
     U_fix_plot_min = np.r_[0.0, U_fix_min]
 
-    # -----------------------------------------------------------------
-    # Envolventes por nivel (solo para mostrar desplazamientos / comparativos)
-    # -----------------------------------------------------------------
     st.session_state["cmp_U_fix_levels"] = np.maximum(np.abs(U_fix_plot_max), np.abs(U_fix_plot_min))
     st.session_state["cmp_U_ais_levels"] = np.maximum(np.abs(U_ais_max), np.abs(U_ais_min))
     st.session_state["cmp_tag_disp"]     = f"THA ({tr('b9_tha_tag_maxmin')})"
 
     # -----------------------------------------------------------------
     # NUEVO: historias completas por nivel para derivas THA exactas
-    # FIXED: agrega base fija = 0 en todos los tiempos
-    # AISLADA: u_ais_use ya es [u_iso, u_1, u_2, ..., u_n]
     # -----------------------------------------------------------------
     nt_fix = u_fix.shape[1]
-    U_fix_hist_levels = np.vstack([np.zeros((1, nt_fix)), u_fix])  # (n_pisos+1, nt)
-
+    U_fix_hist_levels = np.vstack([np.zeros((1, nt_fix)), u_fix])  # base fija = 0
+    
     st.session_state["cmp_U_fix_hist_levels"] = np.asarray(U_fix_hist_levels, float)
     st.session_state["cmp_U_ais_hist_levels"] = np.asarray(u_ais_use, float)
 
