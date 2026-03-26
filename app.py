@@ -5511,33 +5511,59 @@ def _plot_profile_compare(U_fix_max, U_fix_min, U_ais_max, U_ais_min, y_levels, 
     fig.patch.set_facecolor(BG)
     ax.set_facecolor(BG)
 
+    # --------------------------------------------------------------
+    # FIJA
+    # --------------------------------------------------------------
     ax.plot(U_fix_max, y_levels, "-o", color=COLOR_FIX, lw=lw, ms=ms, label=tr("b11_fix"))
+
+    # --------------------------------------------------------------
+    # AISLADA
+    # --------------------------------------------------------------
     ax.plot(U_ais_max, y_levels, "-o", color=COLOR_AIS, lw=lw, ms=ms, label=tr("b11_ais"))
 
+    # --------------------------------------------------------------
+    # THA: usar max/min reales si existen
+    # RSA: reflejar simétricamente el perfil positivo
+    # --------------------------------------------------------------
     if U_fix_min is not None and U_ais_min is not None:
         U_fix_min = np.asarray(U_fix_min, float).ravel()
         U_ais_min = np.asarray(U_ais_min, float).ravel()
+
         ax.plot(U_fix_min, y_levels, "-o", color=COLOR_FIX, lw=lw, ms=ms, alpha=0.75)
         ax.plot(U_ais_min, y_levels, "-o", color=COLOR_AIS, lw=lw, ms=ms, alpha=0.75)
+
         vmax = float(np.max(np.abs(np.r_[U_fix_max, U_fix_min, U_ais_max, U_ais_min])))
+
     else:
+        # RSA o caso sin min explícito: reflejo simétrico
+        ax.plot(-U_fix_max, y_levels, "-o", color=COLOR_FIX, lw=lw, ms=ms, alpha=0.60)
+        ax.plot(-U_ais_max, y_levels, "-o", color=COLOR_AIS, lw=lw, ms=ms, alpha=0.60)
+
         vmax = float(np.max(np.abs(np.r_[U_fix_max, U_ais_max])))
 
     ax.axvline(0.0, color=COLOR_GRID, lw=1.0, alpha=0.6)
     ax.set_xlabel(xlabel, color=COLOR_TEXT)
     ax.set_ylabel(tr("b11_ylabel_h"), color=COLOR_TEXT)
     ax.set_title(title, color=COLOR_TEXT, fontweight="bold")
+
     if mode_tag:
-        ax.text(0.98, 0.02, str(mode_tag), transform=ax.transAxes,
-                ha="right", va="bottom", color=COLOR_TEXT, fontsize=9, alpha=0.85)
+        ax.text(
+            0.98, 0.02, str(mode_tag),
+            transform=ax.transAxes,
+            ha="right", va="bottom",
+            color=COLOR_TEXT, fontsize=9, alpha=0.85
+        )
+
     ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
     ax.tick_params(colors=COLOR_TEXT)
     ax.legend(facecolor=BG, edgecolor=COLOR_GRID, labelcolor=COLOR_TEXT, loc="best")
+
     for s in ("top", "right"):
         ax.spines[s].set_visible(False)
 
     vmax = 1.0 if (not np.isfinite(vmax) or vmax <= 0) else vmax
     ax.set_xlim(-1.12 * vmax, 1.12 * vmax)
+
     fig.tight_layout()
     st.pyplot(fig, use_container_width=True)
 
