@@ -5847,20 +5847,23 @@ with colD:
         else:
             final_msg = "—"
 
-        st.metric(
-            "Base shear reduction" if lang_now == "en" else "Reducción de cortante basal",
-            f"{shear_reduction:.1f} %" if np.isfinite(shear_reduction) else "—"
-        )
-
-        st.metric(
-            "Isolation demand" if lang_now == "en" else "Demanda del aislamiento",
-            iso_status
-        )
+        # --------------------------------------------------------------
+        # Resumen compacto para que no crezca demasiado
+        # --------------------------------------------------------------
+        c1, c2 = st.columns(2)
+        with c1:
+            st.metric(
+                "Base shear reduction" if lang_now == "en" else "Reducción de cortante basal",
+                f"{shear_reduction:.1f} %" if np.isfinite(shear_reduction) else "—"
+            )
+        with c2:
+            st.metric(
+                "Isolation demand" if lang_now == "en" else "Demanda del aislamiento",
+                iso_status
+            )
 
         st.markdown(f"**{'Interpretation' if lang_now == 'en' else 'Interpretación'}**")
         st.info(final_msg)
-
-        st.markdown("#### " + ("Main values" if lang_now == "en" else "Valores principales"))
 
         df_final = pd.DataFrame({
             "Indicator" if lang_now == "en" else "Indicador": [
@@ -5889,7 +5892,7 @@ with colD:
             ],
         })
 
-        st.dataframe(df_final, hide_index=True, use_container_width=True)
+        st.dataframe(df_final, hide_index=True, use_container_width=True, height=215)
 
         st.caption(
             f"{tr('b11_lambdaT')}: {_fmt(lambdaT, 4)}   |   {tr('b11_etaV')}: {_fmt(etaV, 4)}"
