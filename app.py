@@ -5847,9 +5847,9 @@ with colD:
         else:
             final_msg = "—"
 
-        # --------------------------------------------------------------
-        # Resumen compacto para que no crezca demasiado
-        # --------------------------------------------------------------
+        # -----------------------------------------------------------------
+        # Fila superior: 2 métricas principales
+        # -----------------------------------------------------------------
         c1, c2 = st.columns(2)
         with c1:
             st.metric(
@@ -5865,37 +5865,35 @@ with colD:
         st.markdown(f"**{'Interpretation' if lang_now == 'en' else 'Interpretación'}**")
         st.info(final_msg)
 
-        df_final = pd.DataFrame({
-            "Indicator" if lang_now == "en" else "Indicador": [
+        # -----------------------------------------------------------------
+        # Fila inferior: 4 métricas para ocupar mejor la altura
+        # -----------------------------------------------------------------
+        c3, c4 = st.columns(2)
+        with c3:
+            st.metric(
                 tr("b11_vbase"),
-                tr("b11_roof_u"),
-                tr("b11_drift_max"),
-                tr("b11_iso_use"),
-            ],
-            tr("b11_fix"): [
-                _fmt(V0_fix, 4),
-                _fmt(uH_fix, 4),
-                _fmt(dmax_fix * 100.0, 3) + " %" if np.isfinite(dmax_fix) else "—",
-                "—",
-            ],
-            tr("b11_ais"): [
                 _fmt(V0_ais, 4),
-                _fmt(uH_ais, 4),
+                f"{chg_V:.2f} %" if np.isfinite(chg_V) else "—"
+            )
+            st.metric(
+                tr("b11_drift_max"),
                 _fmt(dmax_ais * 100.0, 3) + " %" if np.isfinite(dmax_ais) else "—",
-                _fmt(iso_use, 4),
-            ],
-            "Change" if lang_now == "en" else "Cambio": [
-                f"{chg_V:.2f} %" if np.isfinite(chg_V) else "—",
-                f"{chg_uH:.2f} %" if np.isfinite(chg_uH) else "—",
-                f"{chg_d:.2f} %" if np.isfinite(chg_d) else "—",
-                _fmt(iso_use, 4),
-            ],
-        })
+                f"{chg_d:.2f} %" if np.isfinite(chg_d) else "—"
+            )
 
-        st.dataframe(df_final, hide_index=True, use_container_width=True, height=215)
+        with c4:
+            st.metric(
+                tr("b11_roof_u"),
+                _fmt(uH_ais, 4),
+                f"{chg_uH:.2f} %" if np.isfinite(chg_uH) else "—"
+            )
+            st.metric(
+                tr("b11_iso_use"),
+                _fmt(iso_use, 4),
+                None
+            )
 
-        st.caption(
-            f"{tr('b11_lambdaT')}: {_fmt(lambdaT, 4)}   |   {tr('b11_etaV')}: {_fmt(etaV, 4)}"
-        )
+        # pequeño espacio final para que el panel empate mejor en altura
+        st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
 
 st.success(tr("b11_ok"))
