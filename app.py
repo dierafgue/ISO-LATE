@@ -5847,9 +5847,9 @@ with colD:
         else:
             final_msg = "—"
 
-        # -----------------------------------------------------------------
-        # Fila superior: 2 métricas principales
-        # -----------------------------------------------------------------
+        # --------------------------------------------------------------
+        # Métricas principales
+        # --------------------------------------------------------------
         c1, c2 = st.columns(2)
         with c1:
             st.metric(
@@ -5865,35 +5865,82 @@ with colD:
         st.markdown(f"**{'Interpretation' if lang_now == 'en' else 'Interpretación'}**")
         st.info(final_msg)
 
-        # -----------------------------------------------------------------
-        # Fila inferior: 4 métricas para ocupar mejor la altura
-        # -----------------------------------------------------------------
-        c3, c4 = st.columns(2)
-        with c3:
-            st.metric(
-                tr("b11_vbase"),
-                _fmt(V0_ais, 4),
-                f"{chg_V:.2f} %" if np.isfinite(chg_V) else "—"
-            )
-            st.metric(
-                tr("b11_drift_max"),
-                _fmt(dmax_ais * 100.0, 3) + " %" if np.isfinite(dmax_ais) else "—",
-                f"{chg_d:.2f} %" if np.isfinite(chg_d) else "—"
-            )
+        # --------------------------------------------------------------
+        # Tabla comparativa compacta y clara
+        # --------------------------------------------------------------
+        hdr_indicator = "Indicator" if lang_now == "en" else "Indicador"
+        hdr_change = "Change" if lang_now == "en" else "Cambio"
 
-        with c4:
-            st.metric(
-                tr("b11_roof_u"),
-                _fmt(uH_ais, 4),
-                f"{chg_uH:.2f} %" if np.isfinite(chg_uH) else "—"
-            )
-            st.metric(
-                tr("b11_iso_use"),
-                _fmt(iso_use, 4),
-                None
-            )
+        row_v_fix = _fmt(V0_fix, 4)
+        row_v_ais = _fmt(V0_ais, 4)
+        row_v_chg = f"{chg_V:.2f} %" if np.isfinite(chg_V) else "—"
 
-        # pequeño espacio final para que el panel empate mejor en altura
-        st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
+        row_u_fix = _fmt(uH_fix, 4)
+        row_u_ais = _fmt(uH_ais, 4)
+        row_u_chg = f"{chg_uH:.2f} %" if np.isfinite(chg_uH) else "—"
+
+        row_d_fix = _fmt(dmax_fix * 100.0, 3) + " %" if np.isfinite(dmax_fix) else "—"
+        row_d_ais = _fmt(dmax_ais * 100.0, 3) + " %" if np.isfinite(dmax_ais) else "—"
+        row_d_chg = f"{chg_d:.2f} %" if np.isfinite(chg_d) else "—"
+
+        row_i_fix = "—"
+        row_i_ais = _fmt(iso_use, 4)
+        row_i_chg = "—"
+
+        table_html = f"""
+        <div style="
+            border: 1px solid #D9D9D9;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-top: 8px;
+            margin-bottom: 8px;
+        ">
+            <table style="
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 15px;
+            ">
+                <thead>
+                    <tr style="background-color: #F7F7F9;">
+                        <th style="text-align:left; padding:10px 12px; border-bottom:1px solid #E6E6E6;">{hdr_indicator}</th>
+                        <th style="text-align:left; padding:10px 12px; border-bottom:1px solid #E6E6E6;">{tr("b11_fix")}</th>
+                        <th style="text-align:left; padding:10px 12px; border-bottom:1px solid #E6E6E6;">{tr("b11_ais")}</th>
+                        <th style="text-align:left; padding:10px 12px; border-bottom:1px solid #E6E6E6;">{hdr_change}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding:10px 12px; border-bottom:1px solid #EEEEEE;">{tr("b11_vbase")}</td>
+                        <td style="padding:10px 12px; border-bottom:1px solid #EEEEEE;">{row_v_fix}</td>
+                        <td style="padding:10px 12px; border-bottom:1px solid #EEEEEE;">{row_v_ais}</td>
+                        <td style="padding:10px 12px; border-bottom:1px solid #EEEEEE;">{row_v_chg}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:10px 12px; border-bottom:1px solid #EEEEEE;">{tr("b11_roof_u")}</td>
+                        <td style="padding:10px 12px; border-bottom:1px solid #EEEEEE;">{row_u_fix}</td>
+                        <td style="padding:10px 12px; border-bottom:1px solid #EEEEEE;">{row_u_ais}</td>
+                        <td style="padding:10px 12px; border-bottom:1px solid #EEEEEE;">{row_u_chg}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:10px 12px; border-bottom:1px solid #EEEEEE;">{tr("b11_drift_max")}</td>
+                        <td style="padding:10px 12px; border-bottom:1px solid #EEEEEE;">{row_d_fix}</td>
+                        <td style="padding:10px 12px; border-bottom:1px solid #EEEEEE;">{row_d_ais}</td>
+                        <td style="padding:10px 12px; border-bottom:1px solid #EEEEEE;">{row_d_chg}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:10px 12px;">{tr("b11_iso_use")}</td>
+                        <td style="padding:10px 12px;">{row_i_fix}</td>
+                        <td style="padding:10px 12px;">{row_i_ais}</td>
+                        <td style="padding:10px 12px;">{row_i_chg}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        """
+
+        st.markdown(table_html, unsafe_allow_html=True)
+
+        # Espacio final para empatar mejor con la altura del gráfico izquierdo
+        st.markdown("<div style='height: 110px;'></div>", unsafe_allow_html=True)
 
 st.success(tr("b11_ok"))
