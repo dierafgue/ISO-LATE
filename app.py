@@ -5898,6 +5898,4 @@ with colD:
             f"{tr('b11_lambdaT')}: {_fmt(lambdaT, 4)}   |   {tr('b11_etaV')}: {_fmt(etaV, 4)}"
         )
 
-        st.dataframe(df_final, hide_index=True, use_container_width=True)
-
 st.success(tr("b11_ok"))
