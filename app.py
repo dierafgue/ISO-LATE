@@ -5825,48 +5825,40 @@ with colD:
         st.markdown(f"**{'Interpretation' if lang_now == 'en' else 'Interpretación'}**")
         st.info(final_msg)
 
-        st.markdown("#### " + ("Key values" if lang_now == "en" else "Valores clave"))
+        st.markdown("#### " + ("Main values" if lang_now == "en" else "Valores principales"))
 
         df_final = pd.DataFrame({
             "Indicator" if lang_now == "en" else "Indicador": [
                 tr("b11_vbase"),
                 tr("b11_roof_u"),
                 tr("b11_drift_max"),
-                tr("b11_pfa_max"),
                 tr("b11_lambdaT"),
                 tr("b11_etaV"),
                 tr("b11_iso_use"),
-                tr("b11_u_iso_max"),
             ],
-            tr("b11_fix") if lang_now == "en" else tr("b11_fix"): [
+            tr("b11_fix"): [
                 _fmt(V0_fix, 4),
                 _fmt(uH_fix, 4),
                 _fmt(dmax_fix * 100.0, 3) + " %" if np.isfinite(dmax_fix) else "—",
-                _fmt(pfa_fix_max, 4),
                 _fmt(T_fix[0], 4) if len(T_fix) else "—",
                 "—",
                 "—",
-                "—",
             ],
-            tr("b11_ais") if lang_now == "en" else tr("b11_ais"): [
+            tr("b11_ais"): [
                 _fmt(V0_ais, 4),
                 _fmt(uH_ais, 4),
                 _fmt(dmax_ais * 100.0, 3) + " %" if np.isfinite(dmax_ais) else "—",
-                _fmt(pfa_ais_max, 4),
                 _fmt(T_ais[0], 4) if len(T_ais) else "—",
                 _fmt(etaV, 4),
                 _fmt(iso_use, 4),
-                _fmt(u_iso_max, 4),
             ],
             "Change" if lang_now == "en" else "Cambio": [
                 f"{chg_V:.2f} %" if np.isfinite(chg_V) else "—",
                 f"{chg_uH:.2f} %" if np.isfinite(chg_uH) else "—",
                 f"{chg_d:.2f} %" if np.isfinite(chg_d) else "—",
-                f"{chg_p:.2f} %" if np.isfinite(chg_p) else "—",
                 _fmt(lambdaT, 4),
                 _fmt(etaV, 4),
                 _fmt(iso_use, 4),
-                _fmt(u_iso_max, 4),
             ],
         })
 
