@@ -4762,9 +4762,23 @@ else:
     U_fix_plot_max = np.r_[0.0, U_fix_max]
     U_fix_plot_min = np.r_[0.0, U_fix_min]
 
+    # -----------------------------------------------------------------
+    # Envolventes por nivel (solo para mostrar desplazamientos / comparativos)
+    # -----------------------------------------------------------------
     st.session_state["cmp_U_fix_levels"] = np.maximum(np.abs(U_fix_plot_max), np.abs(U_fix_plot_min))
     st.session_state["cmp_U_ais_levels"] = np.maximum(np.abs(U_ais_max), np.abs(U_ais_min))
     st.session_state["cmp_tag_disp"]     = f"THA ({tr('b9_tha_tag_maxmin')})"
+
+    # -----------------------------------------------------------------
+    # NUEVO: historias completas por nivel para derivas THA exactas
+    # FIXED: agrega base fija = 0 en todos los tiempos
+    # AISLADA: u_ais_use ya es [u_iso, u_1, u_2, ..., u_n]
+    # -----------------------------------------------------------------
+    nt_fix = u_fix.shape[1]
+    U_fix_hist_levels = np.vstack([np.zeros((1, nt_fix)), u_fix])  # (n_pisos+1, nt)
+
+    st.session_state["cmp_U_fix_hist_levels"] = np.asarray(U_fix_hist_levels, float)
+    st.session_state["cmp_U_ais_hist_levels"] = np.asarray(u_ais_use, float)
 
     niv = np.arange(0, n_pisos + 1)
     h_tab = np.r_[0.0, alt_fix]
@@ -5101,11 +5115,93 @@ if Ie <= 0:
 st.caption(tr("b10_nec_caption").format(cd=float(Cd), ie=float(Ie)))
 
 # =============================================================================
+# Helpers THA exactos
+# =============================================================================
+def _calc_drifts_fixed_from_hist(u_hist_levels, y_levels):
+    """
+    FIJA THA:
+      u_hist_levels: (n_pisos+1, nt) con base incluida en la fila 0
+      drift_i(t) = |u_i(t) - u_{i-1}(t)| / h_i
+
+    retorna:
+      drift_max (n_pisos,)
+      y_story = y[1:]
+    """
+    U = np.asarray(u_hist_levels, float)
+    y = np.asarray(y_levels, float).ravel()
+
+    if U.ndim != 2:
+        raise ValueError(f"u_hist_levels debe ser 2D. Llegó {U.shape}")
+    if U.shape[0] != len(y):
+        raise ValueError(f"Filas de U={U.shape[0]} no coinciden con niveles={len(y)}")
+
+    du_t = np.diff(U, axis=0)
+    dh = np.diff(y).reshape(-1, 1)
+
+    if np.any(dh <= 1e-12):
+        raise ValueError("Hay incrementos de altura dh<=0. Revisa 'alturas'.")
+
+    drift_t = np.abs(du_t) / dh
+    drift_max = np.max(drift_t, axis=1)
+    y_story = y[1:]
+    return drift_max, y_story
+
+
+def _calc_drifts_isolated_from_hist(u_hist_levels, y_levels):
+    """
+    AISLADA THA:
+      u_hist_levels: (n_pisos+1, nt) con:
+        fila 0 = u_aislador(t)
+        fila 1 = u_piso1(t)
+        fila 2 = u_piso2(t)
+        ...
+
+      drift_1(t) = |u_1(t) - u_iso(t)| / h1
+      drift_2(t) = |u_2(t) - u_1(t)| / h2
+      ...
+
+    retorna:
+      drift_max (n_pisos,)
+      y_story = y[1:]
+    """
+    U = np.asarray(u_hist_levels, float)
+    y = np.asarray(y_levels, float).ravel()
+
+    if U.ndim != 2:
+        raise ValueError(f"u_hist_levels debe ser 2D. Llegó {U.shape}")
+    if U.shape[0] != len(y):
+        raise ValueError(f"Filas de U={U.shape[0]} no coinciden con niveles={len(y)}")
+
+    du_t = np.diff(U, axis=0)
+    dh = np.diff(y).reshape(-1, 1)
+
+    if np.any(dh <= 1e-12):
+        raise ValueError("Hay incrementos de altura dh<=0. Revisa 'alturas'.")
+
+    drift_t = np.abs(du_t) / dh
+    drift_max = np.max(drift_t, axis=1)
+    y_story = y[1:]
+    return drift_max, y_story
+
+
+# =============================================================================
 # Cálculo de derivas reales base
 # =============================================================================
 try:
-    drift_fix_real, y_story_fix = _calc_drifts_fixed_from_levels_abs(u_fix_levels, y_levels)
-    drift_ais_real, y_story_ais = _calc_drifts_isolated_from_abs_via_iso(u_ais_levels, y_levels)
+    if "THA" in str(tag_disp):
+        u_fix_hist = st.session_state.get("cmp_U_fix_hist_levels", None)
+        u_ais_hist = st.session_state.get("cmp_U_ais_hist_levels", None)
+
+        if u_fix_hist is None or u_ais_hist is None:
+            raise ValueError("Faltan historias THA guardadas desde el Bloque 9.")
+
+        drift_fix_real, y_story_fix = _calc_drifts_fixed_from_hist(u_fix_hist, y_levels)
+        drift_ais_real, y_story_ais = _calc_drifts_isolated_from_hist(u_ais_hist, y_levels)
+
+    else:
+        drift_fix_real, y_story_fix = _calc_drifts_fixed_from_levels_abs(u_fix_levels, y_levels)
+        drift_ais_real, y_story_ais = _calc_drifts_isolated_from_abs_via_iso(u_ais_levels, y_levels)
+
 except Exception as e:
     st.error(tr("b10_err_calc").format(e=e))
     st.stop()
