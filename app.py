@@ -5943,4 +5943,4 @@ with colD:
         # Espacio final para empatar mejor con la altura del gráfico izquierdo
         st.markdown("<div style='height: 110px;'></div>", unsafe_allow_html=True)
 
-st.success(tr("b11_ok"))
+# st.success(tr("b11_ok"))
