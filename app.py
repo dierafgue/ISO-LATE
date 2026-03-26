@@ -5736,12 +5736,23 @@ etaV = float(V0_ais / V0_fix) if (np.isfinite(V0_fix) and abs(V0_fix) > 1e-15 an
 u_iso_max = np.nan
 u_cap = np.nan
 iso_use = np.nan
+
+# --------------------------------------------------------------
+# Demanda del aislador:
+# THA -> desde historia temporal
+# RSA -> desde desplazamiento absoluto del aislador (nivel 0)
+# --------------------------------------------------------------
 u_ais_hist = st.session_state.get("cmp_U_ais_hist_levels", None)
 
 if u_ais_hist is not None:
     u_ais_hist = np.asarray(u_ais_hist, float)
     if u_ais_hist.ndim == 2 and u_ais_hist.shape[0] >= 1:
+        # THA: máximo absoluto en el tiempo del GDL del aislador
         u_iso_max = float(np.max(np.abs(u_ais_hist[0, :])))
+else:
+    # RSA: usar el desplazamiento absoluto del aislador en el perfil almacenado
+    if len(U_ais_levels) >= 1 and np.isfinite(U_ais_levels[0]):
+        u_iso_max = float(np.abs(U_ais_levels[0]))
 
 for key in ("D_M", "u_cap", "u_capacidad", "u_cap_ais"):
     val = st.session_state.get(key, None)
