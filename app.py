@@ -4122,27 +4122,11 @@ if metodo == tr("b8_method_rsa"):
                 continue
 
             Gamma = num / den
+            F_full = (Gamma * (Mmat @ phi) * Sa_r).ravel()
+
             if has_iso:
-                # ------------------------------------------------------
-                # AISLADA:
-                # para cortantes del superestructura se usa la forma modal
-                # RELATIVA al aislador, no la absoluta
-                # phi_rel = phi_sup - phi_base
-                # ------------------------------------------------------
-                phi_base = float(phi[0, 0])
-                phi_sup  = phi[1:1+n_pisos_ref, 0]
-
-                phi_rel = phi_sup - phi_base
-
-                m_sup = np.diag(Mmat)[1:1+n_pisos_ref]
-                F_use = Gamma * m_sup * phi_rel * Sa_r
-
+                F_use = F_full[1:1+n_pisos_ref]
             else:
-                # ------------------------------------------------------
-                # FIJA:
-                # usar la formulación habitual
-                # ------------------------------------------------------
-                F_full = (Gamma * (Mmat @ phi) * Sa_r).ravel()
                 F_use = F_full[:n_pisos_ref]
 
             if len(F_use) != n_pisos_ref:
