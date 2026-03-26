@@ -5287,6 +5287,10 @@ import matplotlib.patheffects as pe
 
 # -------------------------------------------------------------------------
 # ✅ Textos EN/ES (solo para este bloque)
+#    Consistentes con Bloques 8, 9 y 10:
+#    - Cortantes: tonf
+#    - Desplazamientos: m
+#    - Derivas: NEC24 [%]
 # -------------------------------------------------------------------------
 T["en"].update({
     "b11_title": "Comparison – FIXED vs ISOLATED",
@@ -5294,7 +5298,7 @@ T["en"].update({
     "b11_need": "Missing variables for this block: {keys}",
     "b11_tag_shear": "Shear source: **{tag}**",
     "b11_tag_disp": "Displacement source: **{tag}**",
-    "b11_tag_drift": "Drift output: **{tag}**",
+    "b11_tag_drift": "Drift source: **{tag}**",
 
     "b11_hdr_V": "Story shears (FIXED vs ISOLATED)",
     "b11_hdr_U": "Lateral displacements (FIXED vs ISOLATED)",
@@ -5303,35 +5307,29 @@ T["en"].update({
 
     "b11_xlabel_V": "Shear V [tonf]",
     "b11_xlabel_U": "Displacement u [m]",
-    "b11_xlabel_D": "Drift Δ/h",
+    "b11_xlabel_D": "NEC-24 drift [%]",
     "b11_ylabel_h": "Height [m]",
 
     "b11_fix": "FIXED",
     "b11_ais": "ISOLATED",
 
-    "b11_sum_item": "Indicator",
-    "b11_sum_fix": "FIXED",
-    "b11_sum_ais": "ISOLATED",
-    "b11_sum_chg": "Change",
-    "b11_sum_status": "Status",
+    "b11_help_v": "Base shear V₀ at level 0.",
+    "b11_help_u": "Roof displacement u(H): peak roof displacement.",
+    "b11_help_d": "Maximum NEC-24 interstory drift.",
+    "b11_help_pfa": "Maximum absolute floor acceleration in g (a_abs = a_rel + ag).",
+    "b11_help_lT": "λT: ratio between the 1st-mode period of isolated vs fixed models.",
+    "b11_help_eV": "ηV: ratio between isolated and fixed base shear (smaller is typically better).",
+    "b11_help_use": "Isolator use: demand/capacity at the isolator DOF (u_max/u_cap).",
+    "b11_help_u_iso_max": "Peak absolute isolator displacement demand (DOF 0) from time-history: u_iso_max = max|u_iso(t)|.",
 
+    "b11_u_iso_max": "u_iso_max [m]",
     "b11_vbase": "Base shear V₀",
     "b11_roof_u": "Roof displacement u(H)",
-    "b11_drift_max": "Max drift",
+    "b11_drift_max": "Max NEC-24 drift",
     "b11_pfa_max": "Max PFA (abs) [g]",
     "b11_lambdaT": "λT = T_iso/T_fix (mode 1)",
     "b11_etaV": "ηV = Vb_iso/Vb_fix",
     "b11_iso_use": "Isolator use (u_max/u_cap)",
-
-    "b11_help_v": "Base shear V₀ at level 0.",
-    "b11_help_u": "Roof displacement u(H): peak roof displacement.",
-    "b11_help_d": "Max drift: maximum absolute interstory drift (Δu/Δh).",
-    "b11_help_pfa": "Max PFA: maximum absolute floor acceleration in g (a_abs = a_rel + ag).",
-    "b11_help_lT": "λT: ratio between the 1st-mode period of isolated vs fixed models.",
-    "b11_help_eV": "ηV: ratio between isolated and fixed base shear (smaller is typically better).",
-    "b11_help_use": "Isolator use: demand/capacity at isolator DOF (u_max/u_cap).",
-    "b11_u_iso_max": "u_iso_max [m]",
-    "b11_help_u_iso_max": "Peak absolute isolator displacement demand (DOF 0) from time-history: u_iso_max = max|u_iso(t)|.",
 
     "b11_ok": "Comparison ready.",
 })
@@ -5342,7 +5340,7 @@ T["es"].update({
     "b11_need": "❌ Faltan variables para este bloque: {keys}",
     "b11_tag_shear": "Fuente cortantes: **{tag}**",
     "b11_tag_disp": "Fuente desplazamientos: **{tag}**",
-    "b11_tag_drift": "Salida derivas: **{tag}**",
+    "b11_tag_drift": "Fuente derivas: **{tag}**",
 
     "b11_hdr_V": "Cortantes por piso (FIJA vs AISLADA)",
     "b11_hdr_U": "Desplazamientos laterales (FIJA vs AISLADA)",
@@ -5351,66 +5349,48 @@ T["es"].update({
 
     "b11_xlabel_V": "Cortante V [tonf]",
     "b11_xlabel_U": "Desplazamiento u [m]",
-    "b11_xlabel_D": "Deriva Δ/h",
+    "b11_xlabel_D": "Deriva NEC24 [%]",
     "b11_ylabel_h": "Altura [m]",
 
     "b11_fix": "FIJA",
     "b11_ais": "AISLADA",
 
-    "b11_sum_item": "Indicador",
-    "b11_sum_fix": "FIJA",
-    "b11_sum_ais": "AISLADA",
-    "b11_sum_chg": "Cambio",
-    "b11_sum_status": "Estado",
+    "b11_help_v": "Cortante basal V₀ en el nivel 0.",
+    "b11_help_u": "Desplazamiento en techo u(H): desplazamiento máximo del último nivel.",
+    "b11_help_d": "Deriva máxima NEC24 por entrepiso.",
+    "b11_help_pfa": "Máxima aceleración absoluta de piso en g (a_abs = a_rel + ag).",
+    "b11_help_lT": "λT: relación entre el periodo del modo 1 aislado y el fijo.",
+    "b11_help_eV": "ηV: relación entre el cortante basal aislado y el fijo (menor suele ser mejor).",
+    "b11_help_use": "Uso del aislador: demanda/capacidad en el GDL del aislador (u_max/u_cap).",
+    "b11_help_u_iso_max": "Demanda máxima absoluta de desplazamiento del aislador (GDL 0) desde tiempo-historia: u_iso_max = max|u_iso(t)|.",
 
+    "b11_u_iso_max": "u_iso_max [m]",
     "b11_vbase": "Cortante basal V₀",
     "b11_roof_u": "Desplazamiento en techo u(H)",
-    "b11_drift_max": "Deriva máxima",
+    "b11_drift_max": "Deriva máxima NEC24",
     "b11_pfa_max": "PFA máx (abs) [g]",
     "b11_lambdaT": "λT = T_iso/T_fix (modo 1)",
     "b11_etaV": "ηV = Vb_iso/Vb_fix",
     "b11_iso_use": "Uso del aislador (u_max/u_cap)",
 
-    "b11_help_v": "Cortante basal V₀ en el nivel 0.",
-    "b11_help_u": "u(H): desplazamiento máximo en techo.",
-    "b11_help_d": "Deriva máxima: máximo absoluto Δu/Δh.",
-    "b11_help_pfa": "PFA máx: máxima aceleración absoluta por piso en g (a_abs = a_rel + ag).",
-    "b11_help_lT": "λT: razón entre el período del modo 1 de aislada vs fija.",
-    "b11_help_eV": "ηV: razón entre el cortante basal aislada y fija (más pequeño suele ser mejor).",
-    "b11_help_use": "Uso del aislador: demanda/capacidad u_max/u_cap en el DOF del aislador.",
-    "b11_u_iso_max": "u_iso_max [m]",
-    "b11_help_u_iso_max": "Demanda máxima absoluta del aislador (GDL 0) en TH: u_iso_max = max|u_iso(t)|.",
-
-    "b11_ok": "✅ Comparativo listo",
+    "b11_ok": "Comparativo listo.",
 })
 
 # -------------------------------------------------------------------------
 # Header
 # -------------------------------------------------------------------------
-st.markdown(f"## 📌 {tr('b11_title')}")
+st.markdown(f"## 📊 {tr('b11_title')}")
 
-# ----------------------- Estilos (app) -----------------------
-BG            = "#2B3141"
-COLOR_TEXT    = "#E8EDF2"
-COLOR_GRID    = "#5B657A"
-
-COLOR_FIX_V   = "#A8D5FF"
-COLOR_AIS_V   = "#77DD77"
-COLOR_FIX_U   = "#FFE6A3"
-COLOR_AIS_U   = "#77DD77"
-COLOR_FIX_D   = "#FFE6A3"
-COLOR_AIS_D   = "#77DD77"
-
-LEG_FACE      = "#3A4050"
-LEG_EDGE      = "#A7B1C5"
+# ----------------------- Estilos -----------------------
+BG         = "#2B3141"
+COLOR_TEXT = "#E8EDF2"
+COLOR_GRID = "#5B657A"
+COLOR_FIX  = "#A8D5FF"   # consistente con Bloque 8 para fija
+COLOR_AIS  = "#77DD77"   # consistente en todos los bloques
 HALO = [pe.withStroke(linewidth=2.4, foreground=BG), pe.Normal()]
 
-FIG_W, FIG_H = 7.2, 4.8
-
-# -------------------------------------------------------------------------
-# Helpers gráficos (adaptativos)
-# -------------------------------------------------------------------------
-def _lw_by_n(n_pisos: int, lw_min=0.65, lw_max=2.2):
+# ----------------------- Helpers -----------------------
+def _lw_by_n(n_pisos: int, lw_min=0.65, lw_max=2.0):
     n = max(int(n_pisos), 1)
     if n <= 3:
         return lw_max
@@ -5424,25 +5404,10 @@ def _ms_by_n(n_pisos: int, ms_min=2.6, ms_max=5.5):
     t = min(max((n - 3) / (30 - 3), 0.0), 1.0)
     return float(ms_max * (1 - t) + ms_min * t)
 
-def _style_axes(ax):
-    ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
-    ax.tick_params(colors=COLOR_TEXT)
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-
-def _legend(ax):
-    leg = ax.legend(facecolor=LEG_FACE, edgecolor=LEG_EDGE, framealpha=0.95)
-    for txt in leg.get_texts():
-        txt.set_color(COLOR_TEXT)
-
-def _is_maxmin(tag: str) -> bool:
-    t = (tag or "").lower()
-    return ("max/min" in t) or ("maxmin" in t) or ("max-min" in t)
-
-# ---------- ETABS-style polyline for story results ----------
 def _etabs_polyline_xy(V_story, y_levels):
     V_story  = np.asarray(V_story, float).ravel()
     y_levels = np.asarray(y_levels, float).ravel()
+
     xs, ys = [], []
     xs.append(V_story[0]); ys.append(y_levels[0])
     for i in range(len(V_story)):
@@ -5454,331 +5419,165 @@ def _etabs_polyline_xy(V_story, y_levels):
     return np.asarray(xs, float), np.asarray(ys, float)
 
 def _plot_story_shear_compare(V_fix_max, V_fix_min, V_ais_max, V_ais_min, y_levels, title, n_pisos_ref, mode_tag):
-    y_levels = np.asarray(y_levels, float).ravel()
+    V_fix_max = np.asarray(V_fix_max, float).ravel()
+    V_ais_max = np.asarray(V_ais_max, float).ravel()
+    y_levels  = np.asarray(y_levels, float).ravel()
+
+    n = len(V_fix_max)
+    if len(V_ais_max) != n or len(y_levels) != n + 1:
+        st.error("❌ Error de dimensiones en cortantes del comparativo final.")
+        return
+
     lw = _lw_by_n(n_pisos_ref)
     ms = _ms_by_n(n_pisos_ref)
 
-    fig, ax = plt.subplots(figsize=(FIG_W, FIG_H))
+    fig, ax = plt.subplots(figsize=(6.9, 4.9))
     fig.patch.set_facecolor(BG)
     ax.set_facecolor(BG)
 
-    def _plot_one(Vmax, Vmin, color, lab):
-        Vmax = np.asarray(Vmax, float).ravel()
-        xM, yM = _etabs_polyline_xy(Vmax, y_levels)
-        ax.plot(xM, yM, "-", color=color, lw=lw, label=lab)
+    # FIJA
+    x1, y1 = _etabs_polyline_xy(V_fix_max, y_levels)
+    ax.plot(x1, y1, "-", color=COLOR_FIX, lw=lw, label=tr("b11_fix"))
+    ax.plot(np.r_[V_fix_max[0], V_fix_max], y_levels, "o", color=COLOR_FIX, ms=ms)
 
-        y_pts = y_levels
-        x_pts_max = np.r_[Vmax[0], Vmax]
-        x_pts_max = x_pts_max[:len(y_pts)]
-        ax.plot(x_pts_max, y_pts, "o", color=color, ms=ms, alpha=0.95)
+    # AISLADA
+    x2, y2 = _etabs_polyline_xy(V_ais_max, y_levels)
+    ax.plot(x2, y2, "-", color=COLOR_AIS, lw=lw, label=tr("b11_ais"))
+    ax.plot(np.r_[V_ais_max[0], V_ais_max], y_levels, "o", color=COLOR_AIS, ms=ms)
 
-        if Vmin is None:
-            ax.plot(-xM, yM, "-", color=color, lw=lw, alpha=0.80)
-            ax.plot(-x_pts_max, y_pts, "o", color=color, ms=ms, alpha=0.70)
-            vmax_abs = float(np.max(np.abs(Vmax))) if len(Vmax) else 1.0
-        else:
-            Vmin = np.asarray(Vmin, float).ravel()
-            xm, ym = _etabs_polyline_xy(Vmin, y_levels)
-            ax.plot(xm, ym, "-", color=color, lw=lw, alpha=0.75)
+    # Si hay THA Max/Min, mostrar ambos; si no, reflejar para RSA signless
+    if V_fix_min is not None and V_ais_min is not None:
+        V_fix_min = np.asarray(V_fix_min, float).ravel()
+        V_ais_min = np.asarray(V_ais_min, float).ravel()
 
-            x_pts_min = np.r_[Vmin[0], Vmin]
-            x_pts_min = x_pts_min[:len(y_pts)]
-            ax.plot(x_pts_min, y_pts, "o", color=color, ms=ms, alpha=0.70)
+        x1m, y1m = _etabs_polyline_xy(V_fix_min, y_levels)
+        ax.plot(x1m, y1m, "-", color=COLOR_FIX, lw=lw, alpha=0.75)
+        ax.plot(np.r_[V_fix_min[0], V_fix_min], y_levels, "o", color=COLOR_FIX, ms=ms, alpha=0.75)
 
-            vmax_abs = float(np.max(np.abs(np.r_[Vmax, Vmin]))) if len(Vmax) else 1.0
+        x2m, y2m = _etabs_polyline_xy(V_ais_min, y_levels)
+        ax.plot(x2m, y2m, "-", color=COLOR_AIS, lw=lw, alpha=0.75)
+        ax.plot(np.r_[V_ais_min[0], V_ais_min], y_levels, "o", color=COLOR_AIS, ms=ms, alpha=0.75)
 
-        return vmax_abs
+        vmax = float(np.max(np.abs(np.r_[V_fix_max, V_fix_min, V_ais_max, V_ais_min])))
+    else:
+        ax.plot(-x1, y1, "-", color=COLOR_FIX, lw=lw, alpha=0.55)
+        ax.plot(-np.r_[V_fix_max[0], V_fix_max], y_levels, "o", color=COLOR_FIX, ms=ms, alpha=0.55)
 
-    vmaxF = _plot_one(V_fix_max, V_fix_min, COLOR_FIX_V, tr("b11_fix"))
-    vmaxA = _plot_one(V_ais_max, V_ais_min, COLOR_AIS_V, tr("b11_ais"))
+        ax.plot(-x2, y2, "-", color=COLOR_AIS, lw=lw, alpha=0.55)
+        ax.plot(-np.r_[V_ais_max[0], V_ais_max], y_levels, "o", color=COLOR_AIS, ms=ms, alpha=0.55)
+
+        vmax = float(np.max(np.abs(np.r_[V_fix_max, V_ais_max])))
 
     ax.axvline(0.0, color=COLOR_GRID, lw=1.0, alpha=0.6)
     ax.set_xlabel(tr("b11_xlabel_V"), color=COLOR_TEXT)
     ax.set_ylabel(tr("b11_ylabel_h"), color=COLOR_TEXT)
     ax.set_title(title, color=COLOR_TEXT, fontweight="bold")
-    _style_axes(ax)
-    _legend(ax)
+    if mode_tag:
+        ax.text(0.98, 0.02, str(mode_tag), transform=ax.transAxes,
+                ha="right", va="bottom", color=COLOR_TEXT, fontsize=9, alpha=0.85)
+    ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
+    ax.tick_params(colors=COLOR_TEXT)
+    ax.legend(facecolor=BG, edgecolor=COLOR_GRID, labelcolor=COLOR_TEXT, loc="best")
+    for s in ("top", "right"):
+        ax.spines[s].set_visible(False)
 
-    vmax = float(np.max([vmaxF, vmaxA, 1.0]))
     vmax = 1.0 if (not np.isfinite(vmax) or vmax <= 0) else vmax
-    ax.set_xlim(-1.10 * vmax, 1.10 * vmax)
-
-    ax.text(0.99, 0.02, mode_tag, transform=ax.transAxes,
-            ha="right", va="bottom", color=COLOR_TEXT, alpha=0.75, fontsize=9)
-
+    ax.set_xlim(-1.12 * vmax, 1.12 * vmax)
     fig.tight_layout()
     st.pyplot(fig, use_container_width=True)
-    return fig
 
 def _plot_profile_compare(U_fix_max, U_fix_min, U_ais_max, U_ais_min, y_levels, title, n_pisos_ref, xlabel, mode_tag):
-    y_levels = np.asarray(y_levels, float).ravel()
+    U_fix_max = np.asarray(U_fix_max, float).ravel()
+    U_ais_max = np.asarray(U_ais_max, float).ravel()
+    y_levels  = np.asarray(y_levels, float).ravel()
+
+    if len(U_fix_max) != len(y_levels) or len(U_ais_max) != len(y_levels):
+        st.error("❌ Error de dimensiones en desplazamientos del comparativo final.")
+        return
+
     lw = _lw_by_n(n_pisos_ref)
     ms = _ms_by_n(n_pisos_ref)
 
-    fig, ax = plt.subplots(figsize=(FIG_W, FIG_H))
+    fig, ax = plt.subplots(figsize=(6.9, 4.9))
     fig.patch.set_facecolor(BG)
     ax.set_facecolor(BG)
 
-    def _plot_one(Umax, Umin, color, lab):
-        Umax = np.asarray(Umax, float).ravel()
-        ax.plot(Umax, y_levels, "-o", color=color, lw=lw, ms=ms, label=lab)
+    ax.plot(U_fix_max, y_levels, "-o", color=COLOR_FIX, lw=lw, ms=ms, label=tr("b11_fix"))
+    ax.plot(U_ais_max, y_levels, "-o", color=COLOR_AIS, lw=lw, ms=ms, label=tr("b11_ais"))
 
-        if Umin is None:
-            ax.plot(-Umax, y_levels, "-o", color=color, lw=lw, ms=ms, alpha=0.80)
-            vmax_abs = float(np.max(np.abs(Umax))) if len(Umax) else 1.0
-        else:
-            Umin = np.asarray(Umin, float).ravel()
-            ax.plot(Umin, y_levels, "-o", color=color, lw=lw, ms=ms, alpha=0.70)
-            vmax_abs = float(np.max(np.abs(np.r_[Umax, Umin]))) if len(Umax) else 1.0
-
-        return vmax_abs
-
-    vmaxF = _plot_one(U_fix_max, U_fix_min, COLOR_FIX_U, tr("b11_fix"))
-    vmaxA = _plot_one(U_ais_max, U_ais_min, COLOR_AIS_U, tr("b11_ais"))
+    if U_fix_min is not None and U_ais_min is not None:
+        U_fix_min = np.asarray(U_fix_min, float).ravel()
+        U_ais_min = np.asarray(U_ais_min, float).ravel()
+        ax.plot(U_fix_min, y_levels, "-o", color=COLOR_FIX, lw=lw, ms=ms, alpha=0.75)
+        ax.plot(U_ais_min, y_levels, "-o", color=COLOR_AIS, lw=lw, ms=ms, alpha=0.75)
+        vmax = float(np.max(np.abs(np.r_[U_fix_max, U_fix_min, U_ais_max, U_ais_min])))
+    else:
+        vmax = float(np.max(np.abs(np.r_[U_fix_max, U_ais_max])))
 
     ax.axvline(0.0, color=COLOR_GRID, lw=1.0, alpha=0.6)
     ax.set_xlabel(xlabel, color=COLOR_TEXT)
     ax.set_ylabel(tr("b11_ylabel_h"), color=COLOR_TEXT)
     ax.set_title(title, color=COLOR_TEXT, fontweight="bold")
-    _style_axes(ax)
-    _legend(ax)
+    if mode_tag:
+        ax.text(0.98, 0.02, str(mode_tag), transform=ax.transAxes,
+                ha="right", va="bottom", color=COLOR_TEXT, fontsize=9, alpha=0.85)
+    ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
+    ax.tick_params(colors=COLOR_TEXT)
+    ax.legend(facecolor=BG, edgecolor=COLOR_GRID, labelcolor=COLOR_TEXT, loc="best")
+    for s in ("top", "right"):
+        ax.spines[s].set_visible(False)
 
-    vmax = float(np.max([vmaxF, vmaxA]))
-    vmax = 1e-6 if (not np.isfinite(vmax) or vmax <= 0) else vmax
-
-    zoom = 1.20   # 🔥 más cerrado = más zoom (antes 1.10)
-    ax.set_xlim(-zoom * vmax, zoom * vmax)
-
-    ax.text(0.99, 0.02, mode_tag, transform=ax.transAxes,
-            ha="right", va="bottom", color=COLOR_TEXT, alpha=0.75, fontsize=9)
-
+    vmax = 1.0 if (not np.isfinite(vmax) or vmax <= 0) else vmax
+    ax.set_xlim(-1.12 * vmax, 1.12 * vmax)
     fig.tight_layout()
     st.pyplot(fig, use_container_width=True)
-    return fig
 
-def _plot_drift_compare_symmetric(D_fix_levels, D_ais_levels,
-                                  y_levels, title,
-                                  n_pisos_ref, xlabel, mode_tag):
-
+def _plot_drift_compare_positive(D_fix_levels, D_ais_levels, y_levels, title, n_pisos_ref, xlabel, mode_tag):
     D_fix_levels = np.asarray(D_fix_levels, float).ravel()
     D_ais_levels = np.asarray(D_ais_levels, float).ravel()
     y_levels     = np.asarray(y_levels, float).ravel()
 
+    if len(D_fix_levels) != len(y_levels) or len(D_ais_levels) != len(y_levels):
+        st.error("❌ Error de dimensiones en derivas del comparativo final.")
+        return
+
     lw = _lw_by_n(n_pisos_ref)
     ms = _ms_by_n(n_pisos_ref)
 
-    fig, ax = plt.subplots(figsize=(FIG_W, FIG_H))
+    x_fix = D_fix_levels * 100.0
+    x_ais = D_ais_levels * 100.0
+
+    fig, ax = plt.subplots(figsize=(6.9, 4.9))
     fig.patch.set_facecolor(BG)
     ax.set_facecolor(BG)
 
-    # FIXED
-    ax.plot(D_fix_levels,  y_levels, "-o", color=COLOR_FIX_D, lw=lw, ms=ms, label=tr("b11_fix"))
-    ax.plot(-D_fix_levels, y_levels, "-o", color=COLOR_FIX_D, lw=lw, ms=ms, alpha=0.70)
-
-    # ISOLATED
-    ax.plot(D_ais_levels,  y_levels, "-o", color=COLOR_AIS_D, lw=lw, ms=ms, label=tr("b11_ais"))
-    ax.plot(-D_ais_levels, y_levels, "-o", color=COLOR_AIS_D, lw=lw, ms=ms, alpha=0.70)
+    ax.plot(x_fix, y_levels, "-o", color=COLOR_FIX, lw=lw, ms=ms, label=tr("b11_fix"))
+    ax.plot(x_ais, y_levels, "-o", color=COLOR_AIS, lw=lw, ms=ms, label=tr("b11_ais"))
 
     ax.axvline(0.0, color=COLOR_GRID, lw=1.0, alpha=0.6)
-
     ax.set_xlabel(xlabel, color=COLOR_TEXT)
     ax.set_ylabel(tr("b11_ylabel_h"), color=COLOR_TEXT)
     ax.set_title(title, color=COLOR_TEXT, fontweight="bold")
+    if mode_tag:
+        ax.text(0.98, 0.02, str(mode_tag), transform=ax.transAxes,
+                ha="right", va="bottom", color=COLOR_TEXT, fontsize=9, alpha=0.85)
+    ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
+    ax.tick_params(colors=COLOR_TEXT)
+    ax.legend(facecolor=BG, edgecolor=COLOR_GRID, labelcolor=COLOR_TEXT, loc="best")
+    for s in ("top", "right"):
+        ax.spines[s].set_visible(False)
 
-    _style_axes(ax)
-    _legend(ax)
-
-    vmax = float(np.max(np.abs(np.r_[D_fix_levels, D_ais_levels])))
-    vmax = 1e-6 if (not np.isfinite(vmax) or vmax <= 0) else vmax
-
-    ax.set_xlim(-1.15 * vmax, 1.15 * vmax)
-
-    ax.text(0.99, 0.02, mode_tag,
-            transform=ax.transAxes,
-            ha="right", va="bottom",
-            color=COLOR_TEXT, alpha=0.75, fontsize=9)
-
+    vmax = float(np.max(np.r_[x_fix, x_ais])) if len(x_fix) else 1.0
+    vmax = 1.0 if (not np.isfinite(vmax) or vmax <= 0) else vmax
+    ax.set_xlim(0.0, 1.10 * vmax)
     fig.tight_layout()
     st.pyplot(fig, use_container_width=True)
-    return fig
-
-# -------------------------------------------------------------------------
-# ✅ Validación de lo necesario (heredado de B8/B9/B10/B6)
-# -------------------------------------------------------------------------
-need = [
-    "alturas",
-    "cmp_V_fix_story", "cmp_V_ais_story", "cmp_tag_shear",
-    "cmp_U_fix_levels", "cmp_U_ais_levels", "cmp_tag_disp",
-    "cmp_drift_fix_levels", "cmp_drift_ais_levels", "cmp_tag_drift",
-    "pfa_fix_g", "pfa_ais_g",
-]
-missing = [k for k in need if k not in st.session_state]
-if missing:
-    st.error(tr("b11_need").format(keys=", ".join(missing)))
-    st.stop()
-
-alt_fix = np.asarray(st.session_state["alturas"], float).ravel()
-n_pisos = len(alt_fix)
-y_levels = np.r_[0.0, alt_fix]  # niveles (base + pisos)
-
-# -------- Cortantes (B8) --------
-V_fix_abs = np.asarray(st.session_state["cmp_V_fix_story"], float).ravel()
-V_ais_abs = np.asarray(st.session_state["cmp_V_ais_story"], float).ravel()
-tagV      = str(st.session_state.get("cmp_tag_shear", ""))
-
-V_fix_max = st.session_state.get("cmp_V_fix_story_max", None)
-V_fix_min = st.session_state.get("cmp_V_fix_story_min", None)
-V_ais_max = st.session_state.get("cmp_V_ais_story_max", None)
-V_ais_min = st.session_state.get("cmp_V_ais_story_min", None)
-
-isV_maxmin = _is_maxmin(tagV) and (V_fix_min is not None) and (V_ais_min is not None)
-
-if not isV_maxmin:
-    V_fix_max = V_fix_abs
-    V_fix_min = None
-    V_ais_max = V_ais_abs
-    V_ais_min = None
-    modeV_tag = f"{tagV} | ± (visual)"
-else:
-    V_fix_max = np.asarray(V_fix_max, float).ravel()
-    V_fix_min = np.asarray(V_fix_min, float).ravel()
-    V_ais_max = np.asarray(V_ais_max, float).ravel()
-    V_ais_min = np.asarray(V_ais_min, float).ravel()
-    modeV_tag = f"{tagV} | Max/Min"
-
-# -------- Desplazamientos (B9) --------
-U_fix_levels = np.asarray(st.session_state["cmp_U_fix_levels"], float).ravel()
-U_ais_levels = np.asarray(st.session_state["cmp_U_ais_levels"], float).ravel()
-tagU         = str(st.session_state.get("cmp_tag_disp", ""))
-
-isU_maxmin = _is_maxmin(tagU)
-
-U_fix_max = None
-U_fix_min = None
-U_ais_max = None
-U_ais_min = None
-
-if isU_maxmin and ("u_t" in st.session_state) and ("u_t_ais" in st.session_state):
-    u_fix = np.asarray(st.session_state["u_t"], float)
-    u_ais = np.asarray(st.session_state["u_t_ais"], float)
-
-    u_fix = u_fix if u_fix.ndim == 2 else u_fix[np.newaxis, :]
-    u_ais = u_ais if u_ais.ndim == 2 else u_ais[np.newaxis, :]
-
-    if u_fix.shape[0] == n_pisos:
-        U_fix_max = np.r_[0.0, np.max(u_fix, axis=1)]
-        U_fix_min = np.r_[0.0, np.min(u_fix, axis=1)]
-    else:
-        U_fix_max = U_fix_levels
-        U_fix_min = None
-
-    if u_ais.shape[0] == n_pisos + 1:
-        U_ais_max = np.max(u_ais, axis=1)
-        U_ais_min = np.min(u_ais, axis=1)
-    elif u_ais.shape[0] == n_pisos:
-        u_ais2 = np.vstack([np.zeros((1, u_ais.shape[1])), u_ais])
-        U_ais_max = np.max(u_ais2, axis=1)
-        U_ais_min = np.min(u_ais2, axis=1)
-    else:
-        U_ais_max = U_ais_levels
-        U_ais_min = None
-
-    modeU_tag = f"{tagU} | Max/Min"
-else:
-    U_fix_max = U_fix_levels
-    U_fix_min = None
-    U_ais_max = U_ais_levels
-    U_ais_min = None
-    modeU_tag = f"{tagU} | ± (visual)"
-
-# -------- Derivas (B10) --------
-D_fix_levels = np.asarray(st.session_state["cmp_drift_fix_levels"], float).ravel()
-D_ais_levels = np.asarray(st.session_state["cmp_drift_ais_levels"], float).ravel()
-tagD         = str(st.session_state.get("cmp_tag_drift", "REAL"))
-
-# -------- PFA --------
-pfa_fix_g = np.asarray(st.session_state["pfa_fix_g"], float).ravel()
-pfa_ais_g = np.asarray(st.session_state["pfa_ais_g"], float).ravel()
-
-# -------------------------------------------------------------------------
-# Checks dimensiones
-# -------------------------------------------------------------------------
-if len(V_fix_max) != n_pisos or len(V_ais_max) != n_pisos:
-    st.error(f"❌ Cortantes: esperado n_pisos={n_pisos}. V_fix={np.asarray(V_fix_max).shape}, V_ais={np.asarray(V_ais_max).shape}")
-    st.stop()
-if len(U_fix_max) != (n_pisos + 1) or len(U_ais_max) != (n_pisos + 1):
-    st.error(f"❌ Desplazamientos: esperado n_levels={n_pisos+1}. U_fix={np.asarray(U_fix_max).shape}, U_ais={np.asarray(U_ais_max).shape}")
-    st.stop()
-if len(D_fix_levels) != (n_pisos + 1) or len(D_ais_levels) != (n_pisos + 1):
-    st.error(f"❌ Derivas: esperado n_levels={n_pisos+1}. D_fix={D_fix_levels.shape}, D_ais={D_ais_levels.shape}")
-    st.stop()
-
-# -------------------------------------------------------------------------
-# ✅ Ratios extra
-# -------------------------------------------------------------------------
-T_fix = st.session_state.get("T_sin", None)
-T_iso = st.session_state.get("T_ais", None)
-lambdaT = np.nan
-try:
-    if T_fix is not None and T_iso is not None:
-        Tf1 = float(np.asarray(T_fix, float).ravel()[0])
-        Ti1 = float(np.asarray(T_iso, float).ravel()[0])
-        if np.isfinite(Tf1) and Tf1 > 0 and np.isfinite(Ti1) and Ti1 > 0:
-            lambdaT = Ti1 / Tf1
-except Exception:
-    lambdaT = np.nan
-
-V0_fix = float(np.asarray(V_fix_abs, float).ravel()[0])
-V0_ais = float(np.asarray(V_ais_abs, float).ravel()[0])
-etaV = (V0_ais / V0_fix) if (np.isfinite(V0_fix) and abs(V0_fix) > 1e-15) else np.nan
-
-u_iso_max = st.session_state.get("u_iso_max", None)
-u_cap     = st.session_state.get("D_M", None)
-iso_use = np.nan
-try:
-    if u_iso_max is not None and u_cap is not None:
-        u_iso_max = float(u_iso_max)
-        u_cap = float(u_cap)
-        if np.isfinite(u_iso_max) and np.isfinite(u_cap) and u_cap > 0:
-            iso_use = u_iso_max / u_cap
-except Exception:
-    iso_use = np.nan
-
-# -------------------------------------------------------------------------
-# ✅ KPIs base
-# -------------------------------------------------------------------------
-uH_fix = float(np.asarray(U_fix_levels, float).ravel()[-1])
-uH_ais = float(np.asarray(U_ais_levels, float).ravel()[-1])
-
-dmax_fix = float(np.max(np.asarray(D_fix_levels, float).ravel())) if len(D_fix_levels) else np.nan
-dmax_ais = float(np.max(np.asarray(D_ais_levels, float).ravel())) if len(D_ais_levels) else np.nan
-
-pfa_fix_max = float(np.max(np.abs(pfa_fix_g))) if len(pfa_fix_g) else np.nan
-pfa_ais_max = float(np.max(np.abs(pfa_ais_g))) if len(pfa_ais_g) else np.nan
 
 def _pct_red(a, b):
     a = float(a); b = float(b)
     if (not np.isfinite(a)) or abs(a) < 1e-15 or (not np.isfinite(b)):
         return np.nan
     return (1.0 - (b / a)) * 100.0
-
-def _semaforo_reduccion(pct):
-    if not np.isfinite(pct):
-        return "⚪"
-    if pct >= 20.0:
-        return "🟢"
-    if pct >= 0.0:
-        return "🟡"
-    return "🔴"
-
-def _semaforo_ratio_small_is_better(r, good=0.8, warn=1.0):
-    if not np.isfinite(r):
-        return "⚪"
-    if r <= good:
-        return "🟢"
-    if r <= warn:
-        return "🟡"
-    return "🔴"
 
 def _fmt(x, nd=4):
     try:
@@ -5788,6 +5587,138 @@ def _fmt(x, nd=4):
         return f"{x:.{nd}f}"
     except Exception:
         return "—"
+
+# -------------------------------------------------------------------------
+# Datos requeridos
+# -------------------------------------------------------------------------
+required_keys = [
+    "cmp_V_fix_story", "cmp_V_ais_story", "cmp_tag_shear",
+    "cmp_U_fix_levels", "cmp_U_ais_levels", "cmp_tag_disp",
+    "cmp_drift_fix_levels", "cmp_drift_ais_levels", "cmp_tag_drift",
+    "alturas",
+]
+missing = [k for k in required_keys if st.session_state.get(k, None) is None]
+if missing:
+    st.error(tr("b11_need").format(keys=", ".join(missing)))
+    st.stop()
+
+alt_fix = np.asarray(st.session_state.get("alturas"), float).ravel()
+n_pisos = int(len(alt_fix))
+y_levels = np.r_[0.0, alt_fix]
+
+# Tags
+tagV = str(st.session_state.get("cmp_tag_shear", "—"))
+tagU = str(st.session_state.get("cmp_tag_disp", "—"))
+tagD = str(st.session_state.get("cmp_tag_drift", "—"))
+
+# -------------------------------------------------------------------------
+# CORTANTES
+# -------------------------------------------------------------------------
+V_fix_env = np.asarray(st.session_state.get("cmp_V_fix_story"), float).ravel()
+V_ais_env = np.asarray(st.session_state.get("cmp_V_ais_story"), float).ravel()
+V_fix_max = np.asarray(st.session_state.get("cmp_V_fix_story_max", V_fix_env), float).ravel()
+V_fix_min = st.session_state.get("cmp_V_fix_story_min", None)
+V_ais_max = np.asarray(st.session_state.get("cmp_V_ais_story_max", V_ais_env), float).ravel()
+V_ais_min = st.session_state.get("cmp_V_ais_story_min", None)
+
+if V_fix_min is not None:
+    V_fix_min = np.asarray(V_fix_min, float).ravel()
+if V_ais_min is not None:
+    V_ais_min = np.asarray(V_ais_min, float).ravel()
+
+isV_maxmin = ("THA" in tagV and V_fix_min is not None and V_ais_min is not None)
+modeV_tag = tagV
+
+# -------------------------------------------------------------------------
+# DESPLAZAMIENTOS
+# -------------------------------------------------------------------------
+U_fix_levels = np.asarray(st.session_state.get("cmp_U_fix_levels"), float).ravel()
+U_ais_levels = np.asarray(st.session_state.get("cmp_U_ais_levels"), float).ravel()
+
+U_fix_max = U_fix_levels.copy()
+U_ais_max = U_ais_levels.copy()
+U_fix_min = None
+U_ais_min = None
+isU_maxmin = False
+
+if "THA" in tagU:
+    U_fix_hist = st.session_state.get("cmp_U_fix_hist_levels", None)
+    U_ais_hist = st.session_state.get("cmp_U_ais_hist_levels", None)
+
+    if U_fix_hist is not None and U_ais_hist is not None:
+        U_fix_hist = np.asarray(U_fix_hist, float)
+        U_ais_hist = np.asarray(U_ais_hist, float)
+
+        if U_fix_hist.ndim == 2 and U_fix_hist.shape[0] == len(y_levels):
+            U_fix_max = np.max(U_fix_hist, axis=1)
+            U_fix_min = np.min(U_fix_hist, axis=1)
+        if U_ais_hist.ndim == 2 and U_ais_hist.shape[0] == len(y_levels):
+            U_ais_max = np.max(U_ais_hist, axis=1)
+            U_ais_min = np.min(U_ais_hist, axis=1)
+
+        if U_fix_min is not None and U_ais_min is not None:
+            isU_maxmin = True
+
+modeU_tag = tagU
+
+# -------------------------------------------------------------------------
+# DERIVAS (desde Bloque 10 ya vienen como NEC24, con base = 0 y niveles)
+# -------------------------------------------------------------------------
+D_fix_levels = np.asarray(st.session_state.get("cmp_drift_fix_levels"), float).ravel()
+D_ais_levels = np.asarray(st.session_state.get("cmp_drift_ais_levels"), float).ravel()
+y_drift_fix  = np.asarray(st.session_state.get("cmp_drift_y_fix_levels", y_levels), float).ravel()
+y_drift_ais  = np.asarray(st.session_state.get("cmp_drift_y_ais_levels", y_levels), float).ravel()
+
+# para comparativo final usamos mismo eje vertical del modelo
+if len(y_drift_fix) == len(y_levels):
+    y_plot_d = y_drift_fix
+else:
+    y_plot_d = y_levels
+
+# -------------------------------------------------------------------------
+# Métricas resumen
+# -------------------------------------------------------------------------
+V0_fix = float(st.session_state.get("cmp_Vb_fix", np.nan))
+V0_ais = float(st.session_state.get("cmp_Vb_ais", np.nan))
+
+uH_fix = float(U_fix_max[-1]) if len(U_fix_max) else np.nan
+uH_ais = float(U_ais_max[-1]) if len(U_ais_max) else np.nan
+
+dmax_fix = float(np.max(np.asarray(D_fix_levels, float).ravel())) if len(D_fix_levels) else np.nan
+dmax_ais = float(np.max(np.asarray(D_ais_levels, float).ravel())) if len(D_ais_levels) else np.nan
+
+pfa_fix_g = np.asarray(st.session_state.get("pfa_fix_g", []), float).ravel()
+pfa_ais_g = np.asarray(st.session_state.get("pfa_ais_g", []), float).ravel()
+pfa_fix_max = float(np.max(np.abs(pfa_fix_g))) if len(pfa_fix_g) else np.nan
+pfa_ais_max = float(np.max(np.abs(pfa_ais_g))) if len(pfa_ais_g) else np.nan
+
+T_fix = np.asarray(st.session_state.get("T_sin", []), float).ravel()
+T_ais = np.asarray(st.session_state.get("T_ais", []), float).ravel()
+lambdaT = float(T_ais[0] / T_fix[0]) if (len(T_fix) and len(T_ais) and np.isfinite(T_fix[0]) and abs(T_fix[0]) > 1e-15 and np.isfinite(T_ais[0])) else np.nan
+
+etaV = float(V0_ais / V0_fix) if (np.isfinite(V0_fix) and abs(V0_fix) > 1e-15 and np.isfinite(V0_ais)) else np.nan
+
+u_iso_max = np.nan
+u_cap = np.nan
+iso_use = np.nan
+u_ais_hist = st.session_state.get("cmp_U_ais_hist_levels", None)
+
+if u_ais_hist is not None:
+    u_ais_hist = np.asarray(u_ais_hist, float)
+    if u_ais_hist.ndim == 2 and u_ais_hist.shape[0] >= 1:
+        u_iso_max = float(np.max(np.abs(u_ais_hist[0, :])))
+
+for key in ("D_M", "u_cap", "u_capacidad", "u_cap_ais"):
+    val = st.session_state.get(key, None)
+    if val is not None:
+        try:
+            u_cap = float(val)
+            break
+        except Exception:
+            pass
+
+if np.isfinite(u_iso_max) and np.isfinite(u_cap) and abs(u_cap) > 1e-15:
+    iso_use = float(u_iso_max / u_cap)
 
 chg_V  = _pct_red(V0_fix, V0_ais)
 chg_uH = _pct_red(abs(uH_fix), abs(uH_ais))
@@ -5807,8 +5738,10 @@ with colA:
         st.caption(tr("b11_tag_shear").format(tag=tagV))
 
         _plot_story_shear_compare(
-            V_fix_max, V_fix_min if isV_maxmin else None,
-            V_ais_max, V_ais_min if isV_maxmin else None,
+            V_fix_max,
+            V_fix_min if isV_maxmin else None,
+            V_ais_max,
+            V_ais_min if isV_maxmin else None,
             y_levels=y_levels,
             title=tr("b11_hdr_V"),
             n_pisos_ref=n_pisos,
@@ -5822,8 +5755,10 @@ with colB:
         st.caption(tr("b11_tag_disp").format(tag=tagU))
 
         _plot_profile_compare(
-            U_fix_max, U_fix_min if (isU_maxmin and (U_fix_min is not None)) else None,
-            U_ais_max, U_ais_min if (isU_maxmin and (U_ais_min is not None)) else None,
+            U_fix_max,
+            U_fix_min if isU_maxmin else None,
+            U_ais_max,
+            U_ais_min if isU_maxmin else None,
             y_levels=y_levels,
             title=tr("b11_hdr_U"),
             n_pisos_ref=n_pisos,
@@ -5831,80 +5766,52 @@ with colB:
             mode_tag=modeU_tag
         )
 
-# ========================= 3) DERIVAS (ETABS: solo +) =========================
+# ========================= 3) DERIVAS =========================
 with colC:
     with st.container(border=True):
         st.subheader(tr("b11_hdr_D"), help=tr("b11_help_d"))
         st.caption(tr("b11_tag_drift").format(tag=tagD))
 
-        _plot_drift_compare_symmetric(
-            D_fix_levels, D_ais_levels,
-            y_levels=y_levels,
+        _plot_drift_compare_positive(
+            D_fix_levels,
+            D_ais_levels,
+            y_levels=y_plot_d,
             title=tr("b11_hdr_D"),
             n_pisos_ref=n_pisos,
             xlabel=tr("b11_xlabel_D"),
-            mode_tag=f"{tagD} | + only"
+            mode_tag=tagD
         )
 
-# ========================= 4) RESUMEN FINAL (LIMPIO) =========================
+# ========================= 4) RESUMEN FINAL =========================
 with colD:
     with st.container(border=True):
         st.subheader(tr("b11_hdr_S"))
 
-        # -------------------------------------------------------------
-        # 1) Reducción de cortante
-        # -------------------------------------------------------------
+        lang_now = st.session_state.get("lang", "en")
         shear_reduction = chg_V if np.isfinite(chg_V) else np.nan
 
-        # -------------------------------------------------------------
-        # 2) Estado de demanda del aislador
-        # -------------------------------------------------------------
         if np.isfinite(iso_use):
             if iso_use <= 0.80:
-                iso_status = "Acceptable" if st.session_state.get("lang", "en") == "en" else "Aceptable"
+                iso_status = "Acceptable" if lang_now == "en" else "Aceptable"
             elif iso_use <= 1.00:
-                iso_status = "Near limit" if st.session_state.get("lang", "en") == "en" else "Cerca del límite"
+                iso_status = "Near limit" if lang_now == "en" else "Cerca del límite"
             else:
-                iso_status = "High demand" if st.session_state.get("lang", "en") == "en" else "Alta demanda"
+                iso_status = "High demand" if lang_now == "en" else "Alta demanda"
         else:
             iso_status = "—"
 
-        # -------------------------------------------------------------
-        # 3) Interpretación final
-        # -------------------------------------------------------------
-        lang_now = st.session_state.get("lang", "en")
-
         if np.isfinite(etaV) and np.isfinite(iso_use):
             if etaV <= 0.30 and iso_use <= 0.80:
-                final_msg = (
-                    "Effective and feasible isolation"
-                    if lang_now == "en" else
-                    "Aislamiento efectivo y viable"
-                )
+                final_msg = "Effective and feasible isolation" if lang_now == "en" else "Aislamiento efectivo y viable"
             elif etaV <= 0.30 and iso_use > 0.80:
-                final_msg = (
-                    "Effective, but with high isolation demand"
-                    if lang_now == "en" else
-                    "Efectivo, pero con alta demanda en el aislamiento"
-                )
+                final_msg = "Effective, but with high isolation demand" if lang_now == "en" else "Efectivo, pero con alta demanda en el aislamiento"
             elif etaV > 0.30:
-                final_msg = (
-                    "Limited benefit for this configuration"
-                    if lang_now == "en" else
-                    "Beneficio limitado para esta configuración"
-                )
+                final_msg = "Limited benefit for this configuration" if lang_now == "en" else "Beneficio limitado para esta configuración"
             else:
-                final_msg = (
-                    "Check isolation performance"
-                    if lang_now == "en" else
-                    "Revisar desempeño del aislamiento"
-                )
+                final_msg = "Check isolation performance" if lang_now == "en" else "Revisar desempeño del aislamiento"
         else:
             final_msg = "—"
 
-        # -------------------------------------------------------------
-        # Métricas principales (solo 3)
-        # -------------------------------------------------------------
         st.metric(
             "Base shear reduction" if lang_now == "en" else "Reducción de cortante basal",
             f"{shear_reduction:.1f} %" if np.isfinite(shear_reduction) else "—"
@@ -5918,22 +5825,49 @@ with colD:
         st.markdown(f"**{'Interpretation' if lang_now == 'en' else 'Interpretación'}**")
         st.info(final_msg)
 
-        # -------------------------------------------------------------
-        # Tabla corta debajo
-        # -------------------------------------------------------------
         st.markdown("#### " + ("Key values" if lang_now == "en" else "Valores clave"))
 
         df_final = pd.DataFrame({
             "Indicator" if lang_now == "en" else "Indicador": [
-                "Base shear reduction" if lang_now == "en" else "Reducción de cortante basal",
-                "Isolation demand ratio (u/u_cap)" if lang_now == "en" else "Relación de demanda del aislamiento (u/u_cap)",
-                "Max isolator displacement [m]" if lang_now == "en" else "Desplazamiento máximo del aislador [m]",
+                tr("b11_vbase"),
+                tr("b11_roof_u"),
+                tr("b11_drift_max"),
+                tr("b11_pfa_max"),
+                tr("b11_lambdaT"),
+                tr("b11_etaV"),
+                tr("b11_iso_use"),
+                tr("b11_u_iso_max"),
             ],
-            "Value" if lang_now == "en" else "Valor": [
-                f"{shear_reduction:.2f} %" if np.isfinite(shear_reduction) else "—",
-                f"{iso_use:.3f}" if np.isfinite(iso_use) else "—",
-                f"{u_iso_max:.4f}" if (u_iso_max is not None and np.isfinite(float(u_iso_max))) else "—",
-            ]
+            tr("b11_fix") if lang_now == "en" else tr("b11_fix"): [
+                _fmt(V0_fix, 4),
+                _fmt(uH_fix, 4),
+                _fmt(dmax_fix * 100.0, 3) + " %" if np.isfinite(dmax_fix) else "—",
+                _fmt(pfa_fix_max, 4),
+                _fmt(T_fix[0], 4) if len(T_fix) else "—",
+                "—",
+                "—",
+                "—",
+            ],
+            tr("b11_ais") if lang_now == "en" else tr("b11_ais"): [
+                _fmt(V0_ais, 4),
+                _fmt(uH_ais, 4),
+                _fmt(dmax_ais * 100.0, 3) + " %" if np.isfinite(dmax_ais) else "—",
+                _fmt(pfa_ais_max, 4),
+                _fmt(T_ais[0], 4) if len(T_ais) else "—",
+                _fmt(etaV, 4),
+                _fmt(iso_use, 4),
+                _fmt(u_iso_max, 4),
+            ],
+            "Change" if lang_now == "en" else "Cambio": [
+                f"{chg_V:.2f} %" if np.isfinite(chg_V) else "—",
+                f"{chg_uH:.2f} %" if np.isfinite(chg_uH) else "—",
+                f"{chg_d:.2f} %" if np.isfinite(chg_d) else "—",
+                f"{chg_p:.2f} %" if np.isfinite(chg_p) else "—",
+                _fmt(lambdaT, 4),
+                _fmt(etaV, 4),
+                _fmt(iso_use, 4),
+                _fmt(u_iso_max, 4),
+            ],
         })
 
         st.dataframe(df_final, hide_index=True, use_container_width=True)
