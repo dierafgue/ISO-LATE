@@ -4203,7 +4203,10 @@ if metodo == tr("b8_method_rsa"):
     st.session_state["cmp_V_fix_story_min"] = V_fix_min
     st.session_state["cmp_V_ais_story_max"] = V_ais_max
     st.session_state["cmp_V_ais_story_min"] = V_ais_min
-    st.session_state["cmp_tag_shear"]       = "RSA inelástico (SRSS) ±"
+    st.session_state["cmp_tag_shear"] = (
+        "Inelastic RSA (SRSS) ±" if st.session_state.get("lang", "en") == "en"
+        else "RSA inelástico (SRSS) ±"
+    )
     st.session_state["cmp_Vb_fix"]          = float(V_fix_max[0]) if len(V_fix_max) else np.nan
     st.session_state["cmp_Vb_ais"]          = float(V_ais_max[0]) if len(V_ais_max) else np.nan
 
@@ -4720,7 +4723,10 @@ if metodo == tr("b9_method_rsa"):
 
     st.session_state["cmp_U_fix_levels"] = np.asarray(u_fix_plot, float).ravel()
     st.session_state["cmp_U_ais_levels"] = np.asarray(u_ais_plot, float).ravel()
-    st.session_state["cmp_tag_disp"]     = "RSA inelástico (SRSS)"
+    st.session_state["cmp_tag_disp"] = (
+        "Inelastic RSA (SRSS)" if st.session_state.get("lang", "en") == "en"
+        else "RSA inelástico (SRSS)"
+    )
 
 # =============================================================================
 # THA (solo Max/Min)
@@ -5264,7 +5270,10 @@ with colR:
 # Guardar para Bloque 11
 st.session_state["cmp_drift_fix"] = np.asarray(drift_fix, float).ravel()
 st.session_state["cmp_drift_ais"] = np.asarray(drift_ais, float).ravel()
-st.session_state["cmp_tag_drift"] = "NEC24"
+st.session_state["cmp_tag_drift"] = (
+    "NEC-24" if st.session_state.get("lang", "en") == "en"
+    else "NEC24"
+)
 
 st.session_state["cmp_drift_fix_levels"] = np.asarray(drift_fix_plot, float).ravel()
 st.session_state["cmp_drift_ais_levels"] = np.asarray(drift_ais_plot, float).ravel()
@@ -5832,35 +5841,33 @@ with colD:
                 tr("b11_vbase"),
                 tr("b11_roof_u"),
                 tr("b11_drift_max"),
-                tr("b11_lambdaT"),
-                tr("b11_etaV"),
                 tr("b11_iso_use"),
             ],
             tr("b11_fix"): [
                 _fmt(V0_fix, 4),
                 _fmt(uH_fix, 4),
                 _fmt(dmax_fix * 100.0, 3) + " %" if np.isfinite(dmax_fix) else "—",
-                _fmt(T_fix[0], 4) if len(T_fix) else "—",
-                "—",
                 "—",
             ],
             tr("b11_ais"): [
                 _fmt(V0_ais, 4),
                 _fmt(uH_ais, 4),
                 _fmt(dmax_ais * 100.0, 3) + " %" if np.isfinite(dmax_ais) else "—",
-                _fmt(T_ais[0], 4) if len(T_ais) else "—",
-                _fmt(etaV, 4),
                 _fmt(iso_use, 4),
             ],
             "Change" if lang_now == "en" else "Cambio": [
                 f"{chg_V:.2f} %" if np.isfinite(chg_V) else "—",
                 f"{chg_uH:.2f} %" if np.isfinite(chg_uH) else "—",
                 f"{chg_d:.2f} %" if np.isfinite(chg_d) else "—",
-                _fmt(lambdaT, 4),
-                _fmt(etaV, 4),
                 _fmt(iso_use, 4),
             ],
         })
+
+        st.dataframe(df_final, hide_index=True, use_container_width=True)
+
+        st.caption(
+            f"{tr('b11_lambdaT')}: {_fmt(lambdaT, 4)}   |   {tr('b11_etaV')}: {_fmt(etaV, 4)}"
+        )
 
         st.dataframe(df_final, hide_index=True, use_container_width=True)
 
