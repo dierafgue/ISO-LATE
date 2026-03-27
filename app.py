@@ -1412,7 +1412,7 @@ T["en"].update({
     "b3_placeholder": "(placeholder)",
     "b3_elastic": "Elastic",
     "b3_inelastic": "Inelastic",
-    "b3_sds_sd1": "SDS = {SDS:.3f} g, SD1 = {SD1:.3f} g·s",
+    "b3_sds_sd1": "SDS = {SDS:.3f} g, SD1 = {SD1:.3f} g·s, Ie = {Ie:.2f}",
     "b3_coeffs": "Coefficients: Fa={Fa:.2f}, Fd={Fd:.2f}, Fs={Fs:.2f}",
 
     "b3_rec_load": "Seismic record",
@@ -1514,7 +1514,7 @@ T["es"].update({
     "b3_placeholder": "(placeholder)",
     "b3_elastic": "Elástico",
     "b3_inelastic": "Inelástico",
-    "b3_sds_sd1": "SDS = {SDS:.3f} g, SD1 = {SD1:.3f} g·s",
+    "b3_sds_sd1": "SDS = {SDS:.3f} g, SD1 = {SD1:.3f} g·s, Ie = {Ie:.2f}",
     "b3_coeffs": "Coeficientes: Fa={Fa:.2f}, Fd={Fd:.2f}, Fs={Fs:.2f}",
 
     "b3_rec_load": "Registro sísmico",
@@ -1672,9 +1672,10 @@ with col_left:
     with st.container(border=True):
         st.markdown(f"### 🧩 {tr('b3_nec_params')}")
 
-        if not geom_ok:
+         if not geom_ok:
             st.info(tr("b3_need_model_nec"))
             z, zona_sismica, tipo_suelo, R, Ie = 0.47, "IV", "C", 8.0, 1.0
+            categoria = "II"
             region_ecuador = tr("b3_region_sierra")
             r_nec = 1.0
         else:
@@ -1688,9 +1689,6 @@ with col_left:
             with c2:
                 R  = st.number_input(tr("b3_R"), 1.0, 10.0, 8.0, 0.1, key="nec_R", help=tr("h_b3_R"))
                 
-                # ---------------------------------------------------------
-                # ✅ Categoría de riesgo → Ie automático (NEC-24)
-                # ---------------------------------------------------------
                 categoria = st.selectbox(
                     tr("b3_risk_cat"),
                     ["I", "II", "III", "IV"],
@@ -1707,9 +1705,7 @@ with col_left:
                 }
                 
                 Ie = IE_MAP[categoria]
-                
-                st.caption(f"Ie = {Ie:.2f}")
-
+                                
                 region_ecuador = st.selectbox(
                     tr("b3_region"),
                     [tr("b3_region_costa"), tr("b3_region_sierra")],
@@ -1726,6 +1722,7 @@ with col_left:
                 "suelo": str(tipo_suelo),
                 "R": float(R),
                 "Ie": float(Ie),
+                "categoria": str(categoria),
                 "region": str(region_ecuador),
                 "r": float(r_nec),
             }
@@ -1745,7 +1742,7 @@ with col_left:
             fig, ax = plt.subplots(figsize=(6.0, NEC24_FIG_H))
             fig.patch.set_facecolor(BG)
             ax.set_facecolor(BG)
-            ax.plot(T_spec, Sa_elast, lw=1.2, alpha=0.5, label=tr("b3_placeholder"))
+            ax.plot(T_spec, Sa_elast, lw=0.75, alpha=0.5, label=tr("b3_placeholder"))
             ax.set_xlabel(tr("b3_T"), color=COLOR_TEXT)
             ax.set_ylabel(tr("b3_Sa"), color=COLOR_TEXT)
             ax.tick_params(colors=COLOR_TEXT)
@@ -1771,15 +1768,15 @@ with col_left:
             st.session_state["SD1"] = float(SD1)
             st.session_state["r_nec"] = float(r_nec)
 
-            st.caption(tr("b3_sds_sd1").format(SDS=SDS, SD1=SD1))
-
+            st.caption(tr("b3_sds_sd1").format(SDS=SDS, SD1=SD1, Ie=Ie))
+            
             colA, colB = st.columns([1.3,1])
             
             with colA:
                 st.caption(tr("b3_coeffs").format(Fa=Fa, Fd=Fd, Fs=Fs))
             
             with colB:
-                nec24_xlsx_bytes = build_nec24_excel_bytes(T_spec, Sa_elast, Sa_inelas)
+                nec24_xlsx_bytes = build_nec24_excel_bytes(T_spec, Sa_elast_plot, Sa_inelas_plot)
                 st.download_button(
                     label=tr("b3_nec_dl_btn"),
                     data=nec24_xlsx_bytes,
@@ -1793,8 +1790,8 @@ with col_left:
             fig, ax = plt.subplots(figsize=(6.0, NEC24_FIG_H))
             fig.patch.set_facecolor(BG)
             ax.set_facecolor(BG)
-            ax.plot(T_spec, Sa_elast, lw=2.0, label=tr("b3_elastic"))
-            ax.plot(T_spec, Sa_inelas, "--", lw=1.8, label=f"{tr('b3_inelastic')} (R={R:g})")
+            ax.plot(T_spec, Sa_elast_plot, lw=1.0, label=f"{tr('b3_elastic')} (×Ie)")
+            ax.plot(T_spec, Sa_inelast_pot, "--", lw=1.0, label=f"{tr('b3_inelastic')} (R={R:g}, ×Ie)")
             ax.set_xlabel(tr("b3_T"), color=COLOR_TEXT)
             ax.set_ylabel(tr("b3_Sa"), color=COLOR_TEXT)
             ax.tick_params(colors=COLOR_TEXT)
