@@ -2128,8 +2128,10 @@ with st.container(border=True):
             else:
                 axS.plot(T_rs, 0*T_rs, lw=0.50, alpha=0.35, label=tr("b3_need_rec_plot"))
 
-            axS.axvspan(float(T_rs[mask].min()), float(T_rs[mask].max()),
-                        color="black", alpha=0.06, lw=0)
+            # Líneas de referencia del escalado
+            axS.axvline(float(Tref), color="white", linestyle="--", lw=1.10, alpha=0.95)
+            axS.axvline(float(T_min), color="white", linestyle=":", lw=0.95, alpha=0.85)
+            axS.axvline(float(T_max), color="white", linestyle=":", lw=0.95, alpha=0.85)
 
             axS.set_xlabel(tr("b3_T"), color=COLOR_TEXT)
             axS.set_ylabel(tr("b3_Sa"), color=COLOR_TEXT)
