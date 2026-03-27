@@ -2963,8 +2963,8 @@ def modal_participating_mass_percent(M, Vn):
     for i in range(Vn.shape[1]):
         phi = Vn[:, i].reshape(-1, 1)
 
-        num = float(phi.T @ M @ r.reshape(-1, 1))
-        den = float(phi.T @ M @ phi)
+        num = (phi.T @ M @ r.reshape(-1, 1)).item()
+        den = (phi.T @ M @ phi).item()
 
         if (not np.isfinite(den)) or abs(den) < 1e-14:
             m_eff = 0.0
