@@ -2111,61 +2111,83 @@ with st.container(border=True):
                 st.caption(tr("b3_ev").format(name=nombre))
 
     with colR:
-        with st.container(border=True):
-            st.markdown(f"### 📊 {tr('b3_plot_scale')}")
+    with st.container(border=True):
+        st.markdown(f"### 📊 {tr('b3_plot_scale')}")
 
-            figS, axS = plt.subplots(figsize=(11.8, 4.93))
-            figS.set_dpi(240)
-            figS.patch.set_facecolor(BG)
-            axS.set_facecolor(BG)
+        figS, axS = plt.subplots(figsize=(11.8, 4.93))
+        figS.set_dpi(240)
+        figS.patch.set_facecolor(BG)
+        axS.set_facecolor(BG)
 
-            axS.plot(T_rs, Sa_obj, lw=1.00, label=tr("b3_nec_obj"))
+        axS.plot(T_rs, Sa_obj, lw=1.00, label=tr("b3_nec_obj"))
 
-            if rs_ok and (Sa_reg is not None):
-                axS.plot(T_rs, Sa_reg, lw=0.55, alpha=0.95, label=tr("b3_reg_un"))
-                if escalar_nec:
-                    axS.plot(T_rs, Sa_reg_scaled, lw=0.75, label=tr("b3_reg_sc").format(SF=SF))
-            else:
-                axS.plot(T_rs, 0*T_rs, lw=0.50, alpha=0.35, label=tr("b3_need_rec_plot"))
+        if rs_ok and (Sa_reg is not None):
+            axS.plot(T_rs, Sa_reg, lw=0.55, alpha=0.95, label=tr("b3_reg_un"))
+            if escalar_nec:
+                axS.plot(T_rs, Sa_reg_scaled, lw=0.75, label=tr("b3_reg_sc").format(SF=SF))
+        else:
+            axS.plot(T_rs, 0*T_rs, lw=0.50, alpha=0.35, label=tr("b3_need_rec_plot"))
 
-                # Líneas de referencia
-                axS.axvline(float(Tref), color=COLOR_TEXT, linestyle="--", lw=1.10, alpha=0.95)
-                axS.axvline(float(T_min), color=COLOR_TEXT, linestyle=":", lw=0.95, alpha=0.85)
-                axS.axvline(float(T_max), color=COLOR_TEXT, linestyle=":", lw=0.95, alpha=0.85)
-                
-                # -----------------------------------------------------------------
-                # ✅ Etiquetas dentro del gráfico
-                # -----------------------------------------------------------------
-                ymax = axS.get_ylim()[1]
-                
-                axS.text(Tref, 0.92*ymax, f"Tobj\n{Tref:.2f}s",
-                         ha="center", va="top",
-                         fontsize=9, color=COLOR_TEXT)
-                
-                axS.text(T_min, 0.82*ymax, f"Tmin\n{T_min:.2f}s",
-                         ha="center", va="top",
-                         fontsize=8, color=COLOR_TEXT)
-                
-                axS.text(T_max, 0.82*ymax, f"Tmax\n{T_max:.2f}s",
-                         ha="center", va="top",
-                         fontsize=8, color=COLOR_TEXT)
+        # -----------------------------------------------------------------
+        # ✅ Líneas de referencia del escalado
+        # -----------------------------------------------------------------
+        axS.axvline(float(Tref), color=COLOR_TEXT, linestyle="--", lw=1.10, alpha=0.95)
+        axS.axvline(float(T_min), color=COLOR_TEXT, linestyle=":", lw=0.95, alpha=0.85)
+        axS.axvline(float(T_max), color=COLOR_TEXT, linestyle=":", lw=0.95, alpha=0.85)
 
-            axS.set_xlabel(tr("b3_T"), color=COLOR_TEXT)
-            axS.set_ylabel(tr("b3_Sa"), color=COLOR_TEXT)
-            axS.tick_params(colors=COLOR_TEXT)
-            axS.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
-            axS.spines["top"].set_visible(False)
-            axS.spines["right"].set_visible(False)
+        # -----------------------------------------------------------------
+        # ✅ Etiquetas dentro del gráfico
+        # -----------------------------------------------------------------
+        y0, y1 = axS.get_ylim()
+        ymax = float(y1)
 
-            leg = axS.legend(framealpha=0.95, fontsize=10)
-            leg.get_frame().set_facecolor(BG)
-            leg.get_frame().set_edgecolor(COLOR_GRID)
-            for tt in leg.get_texts():
-                tt.set_color(COLOR_TEXT)
+        bbox_style = dict(
+            boxstyle="round,pad=0.20",
+            fc=BG,
+            ec=COLOR_GRID,
+            alpha=0.90
+        )
 
-            figS.subplots_adjust(left=0.06, right=0.995, top=0.90, bottom=0.18)
-            st.pyplot(figS, use_container_width=True)
+        axS.text(
+            float(Tref), 0.96 * ymax,
+            f"Tobj\n{Tref:.2f} s",
+            ha="center", va="top",
+            fontsize=9, color=COLOR_TEXT,
+            bbox=bbox_style
+        )
 
+        axS.text(
+            float(T_min), 0.86 * ymax,
+            f"Tmin\n{T_min:.2f} s",
+            ha="center", va="top",
+            fontsize=8, color=COLOR_TEXT,
+            bbox=bbox_style
+        )
+
+        axS.text(
+            float(T_max), 0.86 * ymax,
+            f"Tmax\n{T_max:.2f} s",
+            ha="center", va="top",
+            fontsize=8, color=COLOR_TEXT,
+            bbox=bbox_style
+        )
+
+        axS.set_xlabel(tr("b3_T"), color=COLOR_TEXT)
+        axS.set_ylabel(tr("b3_Sa"), color=COLOR_TEXT)
+        axS.tick_params(colors=COLOR_TEXT)
+        axS.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
+        axS.spines["top"].set_visible(False)
+        axS.spines["right"].set_visible(False)
+
+        leg = axS.legend(framealpha=0.95, fontsize=10)
+        leg.get_frame().set_facecolor(BG)
+        leg.get_frame().set_edgecolor(COLOR_GRID)
+        for tt in leg.get_texts():
+            tt.set_color(COLOR_TEXT)
+
+        figS.subplots_adjust(left=0.06, right=0.995, top=0.90, bottom=0.18)
+        st.pyplot(figS, use_container_width=True)
+        
     if rs_ok:
         st.session_state["SF_nec24"] = float(SF)
         st.session_state["T_rs"] = np.asarray(T_rs, dtype=float)
