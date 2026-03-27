@@ -1484,10 +1484,10 @@ T["en"].update({
     "b3_fit_ok": "Compatible",
     "b3_fit_mid": "Acceptable",
     "b3_fit_bad": "Not recommended",
-    "b3_fit_msg_ok": "The record is compatible with the NEC-24 target spectrum.",
-    "b3_fit_msg_mid": "The record shows moderate differences with the NEC-24 target spectrum.",
-    "b3_fit_msg_bad": "The record is not sufficiently compatible with the NEC-24 target spectrum.",
-    "b3_fit_note": "Use records with spectral shape reasonably close to NEC-24. Very large scale factors may indicate poor compatibility.",
+    "b3_fit_msg_ok": "The record is considered compatible because the scale factor is within the practical acceptance range 0.50 ≤ SF ≤ 2.00.",
+    "b3_fit_msg_mid": "The record requires a scale factor outside the practical acceptance range 0.50 ≤ SF ≤ 2.00. Use it with caution.",
+    "b3_fit_msg_bad": "The record is not recommended because the scale factor is far outside the practical acceptance range 0.50 ≤ SF ≤ 2.00.",
+    "b3_fit_note": "Practical criterion: prefer records with 0.50 ≤ SF ≤ 2.00. Large deviations usually indicate low spectral compatibility.",
 })
 
 T["es"].update({
@@ -1585,10 +1585,10 @@ T["es"].update({
     "b3_fit_ok": "Compatible",
     "b3_fit_mid": "Aceptable",
     "b3_fit_bad": "No recomendable",
-    "b3_fit_msg_ok": "El registro es compatible con el espectro objetivo NEC-24.",
-    "b3_fit_msg_mid": "El registro presenta diferencias moderadas con el espectro objetivo NEC-24.",
-    "b3_fit_msg_bad": "El registro no es suficientemente compatible con el espectro objetivo NEC-24.",
-    "b3_fit_note": "Se recomienda usar registros con forma espectral razonablemente cercana a la NEC-24. Factores de escala muy altos pueden indicar baja compatibilidad.",
+    "b3_fit_msg_ok": "El registro se considera compatible porque el factor de escala está dentro del rango práctico de aceptación 0.50 ≤ SF ≤ 2.00.",
+    "b3_fit_msg_mid": "El registro requiere un factor de escala fuera del rango práctico de aceptación 0.50 ≤ SF ≤ 2.00. Úselo con cautela.",
+    "b3_fit_msg_bad": "El registro no es recomendable porque el factor de escala está muy fuera del rango práctico de aceptación 0.50 ≤ SF ≤ 2.00.",
+    "b3_fit_note": "Criterio práctico: se prefieren registros con 0.50 ≤ SF ≤ 2.00. Desviaciones grandes suelen indicar baja compatibilidad espectral.",
 })
 
 # -------------------------------------------------------------------------
@@ -2097,11 +2097,15 @@ with st.container(border=True):
 
             with c_in:
                 if rs_ok:
-                    if SF < 1.50:
+                    # -------------------------------------------------------------
+                    # ✅ Validador práctico de escalamiento:
+                    #    rango preferido: 0.50 <= SF <= 2.00
+                    # -------------------------------------------------------------
+                    if 0.50 <= SF <= 2.00:
                         fit_state = tr("b3_fit_ok")
                         fit_msg = tr("b3_fit_msg_ok")
                         st.success(f"**{tr('b3_fit_hdr')}: {fit_state}**\n\n{fit_msg}")
-                    elif SF <= 3.00:
+                    elif 0.33 <= SF < 0.50 or 2.00 < SF <= 3.00:
                         fit_state = tr("b3_fit_mid")
                         fit_msg = tr("b3_fit_msg_mid")
                         st.warning(f"**{tr('b3_fit_hdr')}: {fit_state}**\n\n{fit_msg}")
@@ -2109,7 +2113,7 @@ with st.container(border=True):
                         fit_state = tr("b3_fit_bad")
                         fit_msg = tr("b3_fit_msg_bad")
                         st.error(f"**{tr('b3_fit_hdr')}: {fit_state}**\n\n{fit_msg}")
-
+            
                     st.caption(tr("b3_fit_note"))
 
             with c_out:
