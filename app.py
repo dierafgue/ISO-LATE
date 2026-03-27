@@ -1473,7 +1473,7 @@ T["en"].update({
     "b3_dl_opt_proc": "Filtered + baseline-corrected",
     "b3_dl_opt_final": "Final used in analysis",
     "b3_nec_dl_btn": "Download NEC-24 Excel",
-    "b3_nec_dl_help": "Exports 3 columns: period, elastic (×Ie), inelastic (×Ie).",
+    "b3_nec_dl_help": "Exports 3 columns: period, elastic, inelastic (×Ie).",
 
     "b3_region": "Region of Ecuador",
     "b3_region_costa": "Coast",
@@ -1574,7 +1574,7 @@ T["es"].update({
     "b3_dl_opt_proc": "Filtrado + corregido (línea base)",
     "b3_dl_opt_final": "Final usado en el análisis",
     "b3_nec_dl_btn": "Descargar NEC-24 Excel",
-    "b3_nec_dl_help": "Exporta 3 columnas: periodo, elastico (×Ie), inelastico (×Ie).",
+    "b3_nec_dl_help": "Exporta 3 columnas: periodo, elastico, inelastico (×Ie).",
 
     "b3_region": "Región del Ecuador",
     "b3_region_costa": "Costa",
@@ -1765,7 +1765,7 @@ with col_left:
 
             st.caption(tr("b3_sds_sd1").format(SDS=SDS, SD1=SD1, Ie=Ie))
 
-            Sa_elast_plot  = np.asarray(Sa_elast, dtype=float).ravel() * float(Ie)
+            Sa_elast_plot  = np.asarray(Sa_elast, dtype=float).ravel()
             Sa_inelas_plot = np.asarray(Sa_inelas, dtype=float).ravel() * float(Ie)
 
             colA, colB = st.columns([1.3, 1.0])
@@ -1788,7 +1788,7 @@ with col_left:
             fig, ax = plt.subplots(figsize=(6.0, NEC24_FIG_H))
             fig.patch.set_facecolor(BG)
             ax.set_facecolor(BG)
-            ax.plot(T_spec, Sa_elast_plot, lw=1.0, label=f"{tr('b3_elastic')} (×Ie)")
+            ax.plot(T_spec, Sa_elast_plot, lw=1.0, label=f"{tr("b3_elastic"))
             ax.plot(T_spec, Sa_inelas_plot, "--", lw=1.0, label=f"{tr('b3_inelastic')} (R={R:g}, ×Ie)")
             ax.set_xlabel(tr("b3_T"), color=COLOR_TEXT)
             ax.set_ylabel(tr("b3_Sa"), color=COLOR_TEXT)
