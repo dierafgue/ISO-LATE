@@ -2864,6 +2864,9 @@ T["en"].update({
     "b5_fixed_base_lbl": "Fixed base",
     "b5_fixed_model_lbl": "Condensed FIXED model",
     "b5_iso_model_lbl": "Condensed ISOLATED model",
+
+    "b5_mpart": "Mpart [%]",
+    "b5_macc": "Macc [%]",
 })
 
 T["es"].update({
@@ -2916,11 +2919,73 @@ T["es"].update({
     "b5_fixed_base_lbl": "Base fija",
     "b5_fixed_model_lbl": "Modelo Condensado FIJO",
     "b5_iso_model_lbl": "Modelo Condensado AISLADO",
+
+    "b5_mpart": "Mpart [%]",
+    "b5_macc": "Macc [%]",
 })
 
 # ✅ CLAVE: compartir T para que funciones_usuario.tr() funcione
 st.session_state["T"] = T
 
+# -------------------------------------------------------------------------
+# ✅ Helper: masa modal participante por modo [%]
+# -------------------------------------------------------------------------
+def modal_participating_mass_percent(M, Vn):
+    """
+    Calcula el porcentaje de masa modal participante por modo, usando:
+        Gamma_r = (phi_r^T M 1) / (phi_r^T M phi_r)
+        M*_r    = (phi_r^T M 1)^2 / (phi_r^T M phi_r)
+        %M_r    = 100 * M*_r / (1^T M 1)
+
+    Parámetros
+    ----------
+    M : array_like, shape (n, n)
+        Matriz de masas.
+    Vn : array_like, shape (n, m)
+        Matriz modal; cada columna es un modo.
+
+    Retorna
+    -------
+    mpart_pct : ndarray, shape (m,)
+        Porcentaje de masa participante por modo.
+    """
+    M = np.asarray(M, dtype=float)
+    Vn = np.asarray(Vn, dtype=float)
+
+    n = M.shape[0]
+    r = np.ones(n, dtype=float)
+
+    m_total = float(r.T @ M @ r)
+    if not np.isfinite(m_total) or abs(m_total) < 1e-14:
+        return np.zeros(Vn.shape[1], dtype=float)
+
+    mpart_pct = []
+    for i in range(Vn.shape[1]):
+        phi = Vn[:, i].reshape(-1, 1)
+
+        num = float(phi.T @ M @ r.reshape(-1, 1))
+        den = float(phi.T @ M @ phi)
+
+        if (not np.isfinite(den)) or abs(den) < 1e-14:
+            m_eff = 0.0
+        else:
+            m_eff = (num ** 2) / den
+
+        pct = 100.0 * m_eff / m_total
+        mpart_pct.append(pct)
+
+    return np.asarray(mpart_pct, dtype=float)
+
+# -------------------------------------------------------------------------
+# ✅ Helper: masa modal acumulada [%]
+# -------------------------------------------------------------------------
+def modal_cumulative_mass_percent(mpart_pct):
+    """
+    Retorna la masa modal acumulada en porcentaje.
+    """
+    mpart_pct = np.asarray(mpart_pct, dtype=float)
+    return np.cumsum(mpart_pct)
+    
 # -------------------------------------------------------------------------
 # Header
 # -------------------------------------------------------------------------
@@ -3138,6 +3203,13 @@ niveles_ais = np.insert(pisos_y, 0, 0.0)
 w_fix, T_fix, f_fix, Vn_fix = modal_props(np.asarray(K_fix, float), np.asarray(M_fix, float))
 w_ais, T_ais, f_ais, Vn_ais = modal_props(K_cond_ais, M_cond_ais)
 
+mpart_fix = modal_participating_mass_percent(np.asarray(M_fix, float), Vn_fix)
+mpart_ais = modal_participating_mass_percent(np.asarray(M_cond_ais, float), Vn_ais)
+
+# ✅ acumulada
+macc_fix = modal_cumulative_mass_percent(mpart_fix)
+macc_ais = modal_cumulative_mass_percent(mpart_ais)
+
 # ✅ Guardar en session_state
 st.session_state["w_sin"] = w_fix
 st.session_state["T_sin"] = T_fix
@@ -3146,6 +3218,12 @@ st.session_state["v_norm_sin"] = Vn_fix
 st.session_state["w_ais"] = w_ais
 st.session_state["T_ais"] = T_ais
 st.session_state["v_norm_ais"] = Vn_ais
+
+st.session_state["mpart_fix"] = mpart_fix
+st.session_state["macc_fix"] = macc_fix
+
+st.session_state["mpart_ais"] = mpart_ais
+st.session_state["macc_ais"] = macc_ais
 
 n_modos_fix = int(Vn_fix.shape[1])
 n_modos_ais = int(Vn_ais.shape[1])
@@ -3199,6 +3277,8 @@ with colL:
             tr("b5_mode"): np.arange(1, len(f_fix) + 1),
             tr("b5_f"): np.round(f_fix, 5),
             tr("b5_T"): np.round(T_fix, 5),
+            tr("b5_mpart"): np.round(mpart_fix, 3),
+            tr("b5_macc"): np.round(macc_fix, 3),
         })
         st.dataframe(tabla_fix, hide_index=True, use_container_width=True, height=170)
 
@@ -3219,6 +3299,8 @@ with colR:
             tr("b5_mode"): np.arange(1, len(f_ais) + 1),
             tr("b5_f"): np.round(f_ais, 5),
             tr("b5_T"): np.round(T_ais, 5),
+            tr("b5_mpart"): np.round(mpart_ais, 3),
+            tr("b5_macc"): np.round(macc_ais, 3),
         })
         st.dataframe(tabla_ais, hide_index=True, use_container_width=True, height=170)
 
