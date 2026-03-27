@@ -1981,6 +1981,63 @@ st.markdown("---")
 with st.container(border=True):
     st.subheader(f"📈 {tr('b3_scaling_hdr')}")
 
+    # -------------------------------------------------------------------------
+    # Helpers locales para escalado tipo PEER
+    # -------------------------------------------------------------------------
+    def weighted_lsq_scale_factor(sa_reg, sa_obj, w):
+        sa_reg = np.asarray(sa_reg, dtype=float).ravel()
+        sa_obj = np.asarray(sa_obj, dtype=float).ravel()
+        w      = np.asarray(w, dtype=float).ravel()
+
+        ok = (
+            np.isfinite(sa_reg) & np.isfinite(sa_obj) & np.isfinite(w) &
+            (sa_reg >= 0) & (sa_obj >= 0) & (w > 0)
+        )
+        if np.count_nonzero(ok) < 3:
+            return 1.0
+
+        x = sa_reg[ok]
+        y = sa_obj[ok]
+        ww = w[ok]
+
+        den = np.sum(ww * x * x)
+        if den <= 0:
+            return 1.0
+
+        sf = np.sum(ww * x * y) / den
+        if (not np.isfinite(sf)) or (sf <= 0):
+            return 1.0
+        return float(sf)
+
+    def weighted_mse(sa_reg, sa_obj, w):
+        sa_reg = np.asarray(sa_reg, dtype=float).ravel()
+        sa_obj = np.asarray(sa_obj, dtype=float).ravel()
+        w      = np.asarray(w, dtype=float).ravel()
+
+        ok = (
+            np.isfinite(sa_reg) & np.isfinite(sa_obj) & np.isfinite(w) &
+            (w > 0)
+        )
+        if np.count_nonzero(ok) == 0:
+            return np.nan
+
+        e2 = (sa_reg[ok] - sa_obj[ok]) ** 2
+        ww = w[ok]
+        den = np.sum(ww)
+        if den <= 0:
+            return np.nan
+        return float(np.sum(ww * e2) / den)
+
+    def peer_box_weights(T, T_obj, Tmin_fac=0.80, Tmax_fac=1.20):
+        T = np.asarray(T, dtype=float).ravel()
+        Tmin = max(0.05, float(Tmin_fac) * float(T_obj))
+        Tmax = min(5.00, float(Tmax_fac) * float(T_obj))
+
+        w = np.zeros_like(T, dtype=float)
+        m = (T >= Tmin) & (T <= Tmax)
+        w[m] = 1.0
+        return w, Tmin, Tmax
+
     colL, colR = st.columns([1.10, 1.90], gap="large")
 
     if geom_ok:
@@ -2014,34 +2071,82 @@ with st.container(border=True):
                     help=tr("b3_scale_help")
                 )
 
-                # usar hasta los 3 primeros modos disponibles de la estructura fija
-                T_fix_vec = np.asarray(st.session_state.get("T_sin", []), dtype=float).ravel()
-                T_fix_vec = T_fix_vec[np.isfinite(T_fix_vec)]
-                T_fix_vec = T_fix_vec[T_fix_vec > 0]
-
-                if len(T_fix_vec) == 0:
-                    Tref = 1.0
-                    T_min = 0.50
-                    T_max = 1.50
-                else:
-                    nmod_scale = min(3, len(T_fix_vec))
-                    T_sel = T_fix_vec[:nmod_scale]
-
-                    Tref = float(T_sel[0])
-                    Tref = max(0.05, min(10.0, Tref))
-
-                    T_low = float(np.min(T_sel))
-                    T_high = float(np.max(T_sel))
-
-                    T_min = max(0.05, 0.80 * T_low)
-                    T_max = min(5.00, 1.20 * T_high)
-
                 xi = st.number_input(
                     tr("b3_xi"),
                     0.01, 0.30, 0.05, 0.01,
                     key="xi_rs",
                     disabled=(not geom_ok) or (not rs_ok),
                     help=tr("b3_xi_help")
+                )
+
+                # -----------------------------------------------------------------
+                # ✅ PERÍODO OBJETIVO TIPO PEER:
+                #    centro = Tobj
+                #    ventana = [0.80*Tobj, 1.20*Tobj]
+                # -----------------------------------------------------------------
+                T_fix_vec = np.asarray(st.session_state.get("T_sin", []), dtype=float).ravel()
+                T_fix_vec = T_fix_vec[np.isfinite(T_fix_vec)]
+                T_fix_vec = T_fix_vec[T_fix_vec > 0]
+
+                Tref_auto = float(T_fix_vec[0]) if len(T_fix_vec) > 0 else 1.0
+                Tref_auto = max(0.05, min(5.0, Tref_auto))
+
+                use_auto_tref = st.checkbox(
+                    "Use fundamental period as target period" if st.session_state.lang == "en" else "Usar período fundamental como período objetivo",
+                    value=True,
+                    key="b3_use_auto_tref",
+                    disabled=(not geom_ok)
+                )
+
+                if use_auto_tref:
+                    Tobj = Tref_auto
+                    st.caption(
+                        (
+                            f"Target period = T1 = {Tobj:.3f} s"
+                            if st.session_state.lang == "en"
+                            else f"Período objetivo = T1 = {Tobj:.3f} s"
+                        )
+                    )
+                else:
+                    Tobj = st.number_input(
+                        "Target period (sec)" if st.session_state.lang == "en" else "Período objetivo (s)",
+                        min_value=0.05,
+                        max_value=5.00,
+                        value=float(Tref_auto),
+                        step=0.01,
+                        key="b3_tobj_manual",
+                        disabled=(not geom_ok)
+                    )
+
+                Tmin_fac = st.number_input(
+                    "Lower factor" if st.session_state.lang == "en" else "Factor inferior",
+                    min_value=0.10,
+                    max_value=1.00,
+                    value=0.80,
+                    step=0.01,
+                    key="b3_tmin_fac",
+                    disabled=(not geom_ok)
+                )
+
+                Tmax_fac = st.number_input(
+                    "Upper factor" if st.session_state.lang == "en" else "Factor superior",
+                    min_value=1.00,
+                    max_value=3.00,
+                    value=1.20,
+                    step=0.01,
+                    key="b3_tmax_fac",
+                    disabled=(not geom_ok)
+                )
+
+                T_min = max(0.05, float(Tmin_fac) * float(Tobj))
+                T_max = min(5.00, float(Tmax_fac) * float(Tobj))
+
+                st.caption(
+                    (
+                        f"Scaling window: {T_min:.3f} s – {T_max:.3f} s"
+                        if st.session_state.lang == "en"
+                        else f"Ventana de escalado: {T_min:.3f} s – {T_max:.3f} s"
+                    )
                 )
 
             if rs_ok:
@@ -2056,17 +2161,29 @@ with st.container(border=True):
                 Sa_reg = compute_Sa_piecewise(ag_base, dt, T_rs, xi=float(xi))
                 Sa_obj = np.interp(T_rs, T_spec_nec, Sa_obj_base) * float(Ie_nec)
 
-                mask = (T_rs >= T_min) & (T_rs <= T_max)
-                if np.count_nonzero(mask) < 5:
-                    mask = (T_rs >= max(0.05, 0.80 * float(Tref))) & (T_rs <= min(5.0, 1.20 * float(Tref)))
+                # -----------------------------------------------------------------
+                # ✅ Pesos tipo PEER: 1 dentro de la ventana, 0 fuera
+                # -----------------------------------------------------------------
+                W_scale, T_min, T_max = peer_box_weights(
+                    T_rs, Tobj=float(Tobj), Tmin_fac=float(Tmin_fac), Tmax_fac=float(Tmax_fac)
+                )
 
-                SF = lsq_scale_factor(Sa_reg[mask], Sa_obj[mask]) if escalar_nec else 1.0
+                mask = W_scale > 0
+                if np.count_nonzero(mask) < 5:
+                    W_scale = np.where((T_rs >= max(0.05, 0.80 * float(Tobj))) &
+                                       (T_rs <= min(5.0, 1.20 * float(Tobj))), 1.0, 0.0)
+                    mask = W_scale > 0
+
+                SF = weighted_lsq_scale_factor(Sa_reg, Sa_obj, W_scale) if escalar_nec else 1.0
 
                 if (not np.isfinite(SF)) or (SF <= 0):
                     SF = 1.0
 
                 Sa_reg_scaled = Sa_reg * SF
                 ag_scaled = ag_base * SF
+
+                mse_before = weighted_mse(Sa_reg, Sa_obj, W_scale)
+                mse_after  = weighted_mse(Sa_reg_scaled, Sa_obj, W_scale)
 
                 PGA0 = float(np.max(np.abs(ag_base)) / G_STD)
                 PGA1 = float(np.max(np.abs(ag_scaled)) / G_STD)
@@ -2075,8 +2192,11 @@ with st.container(border=True):
                 Sa_obj = np.interp(T_rs, T_spec_nec, Sa_inel_nec) * float(Ie_nec)
                 Sa_reg = None
                 Sa_reg_scaled = None
-                mask = (T_rs >= 0.2) & (T_rs <= 1.0)
+                W_scale, T_min, T_max = peer_box_weights(T_rs, Tobj=1.0, Tmin_fac=0.80, Tmax_fac=1.20)
+                mask = W_scale > 0
                 SF = 1.0
+                mse_before = np.nan
+                mse_after = np.nan
                 PGA0 = PGA1 = 0.0
                 nombre = "—"
                 ag_scaled = None
@@ -2108,6 +2228,18 @@ with st.container(border=True):
                 with b:
                     st.metric(tr("b3_pga_s"), f"{PGA1:.3f}")
 
+                c1, c2 = st.columns(2)
+                with c1:
+                    st.metric("Tmin", f"{T_min:.3f} s")
+                with c2:
+                    st.metric("Tmax", f"{T_max:.3f} s")
+
+                d1, d2 = st.columns(2)
+                with d1:
+                    st.metric("MSE unscaled", "—" if not np.isfinite(mse_before) else f"{mse_before:.5f}")
+                with d2:
+                    st.metric("MSE scaled", "—" if not np.isfinite(mse_after) else f"{mse_after:.5f}")
+
                 st.caption(tr("b3_ev").format(name=nombre))
 
     with colR:
@@ -2128,8 +2260,11 @@ with st.container(border=True):
             else:
                 axS.plot(T_rs, 0*T_rs, lw=0.50, alpha=0.35, label=tr("b3_need_rec_plot"))
 
-            axS.axvspan(float(T_rs[mask].min()), float(T_rs[mask].max()),
-                        color="black", alpha=0.06, lw=0)
+            # -----------------------------------------------------------------
+            # ✅ Ventana tipo PEER
+            # -----------------------------------------------------------------
+            axS.axvline(float(Tobj), color="gray", lw=1.0, ls="--", alpha=0.8)
+            axS.axvspan(float(T_min), float(T_max), color="black", alpha=0.06, lw=0)
 
             axS.set_xlabel(tr("b3_T"), color=COLOR_TEXT)
             axS.set_ylabel(tr("b3_Sa"), color=COLOR_TEXT)
@@ -2154,6 +2289,14 @@ with st.container(border=True):
         st.session_state["Sa_reg_scaled"] = np.asarray(Sa_reg_scaled, dtype=float)
         st.session_state["Sa_obj_nec"] = np.asarray(Sa_obj, dtype=float)
         st.session_state["scale_nec24_on"] = bool(escalar_nec)
+
+        # ✅ guardar parámetros PEER-like
+        st.session_state["scale_Tobj"] = float(Tobj)
+        st.session_state["scale_Tmin"] = float(T_min)
+        st.session_state["scale_Tmax"] = float(T_max)
+        st.session_state["scale_weights"] = np.asarray(W_scale, dtype=float)
+        st.session_state["scale_mse_before"] = float(mse_before) if np.isfinite(mse_before) else np.nan
+        st.session_state["scale_mse_after"]  = float(mse_after) if np.isfinite(mse_after) else np.nan
 
         ag_final = ag_scaled if escalar_nec else st.session_state["rs_ag_base"]
         t_final = np.linspace(0.0, float(st.session_state["rs_dt"]) * (len(ag_final) - 1), len(ag_final))
