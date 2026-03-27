@@ -1485,6 +1485,9 @@ T["en"].update({
     "b3_fit_msg_mid": "The record shows moderate differences with the NEC-24 target spectrum.",
     "b3_fit_msg_bad": "The record is not sufficiently compatible with the NEC-24 target spectrum.",
     "b3_fit_note": "Use records with spectral shape reasonably close to NEC-24. Very large scale factors may indicate poor compatibility.",
+
+    "b3_risk_cat": "Risk category",
+    "h_b3_risk_cat": "Defines importance factor Ie according to NEC-24.",
 })
 
 T["es"].update({
@@ -1584,6 +1587,9 @@ T["es"].update({
     "b3_fit_msg_mid": "El registro presenta diferencias moderadas con el espectro objetivo NEC-24.",
     "b3_fit_msg_bad": "El registro no es suficientemente compatible con el espectro objetivo NEC-24.",
     "b3_fit_note": "Se recomienda usar registros con forma espectral razonablemente cercana a la NEC-24. Factores de escala muy altos pueden indicar baja compatibilidad.",
+
+    "b3_risk_cat": "Categoría de riesgo",
+    "h_b3_risk_cat": "Define el factor de importancia Ie según la NEC-24.",
 })
 
 # -------------------------------------------------------------------------
@@ -1681,7 +1687,28 @@ with col_left:
 
             with c2:
                 R  = st.number_input(tr("b3_R"), 1.0, 10.0, 8.0, 0.1, key="nec_R", help=tr("h_b3_R"))
-                Ie = st.number_input(tr("b3_Ie"), 0.5, 2.0, 1.0, 0.1, key="nec_Ie", help=tr("h_b3_Ie"))
+                
+                # ---------------------------------------------------------
+                # ✅ Categoría de riesgo → Ie automático (NEC-24)
+                # ---------------------------------------------------------
+                categoria = st.selectbox(
+                    tr("b3_risk_cat"),
+                    ["I", "II", "III", "IV"],
+                    index=1,
+                    key="nec_risk_cat",
+                    help=tr("h_b3_risk_cat")
+                )
+                
+                IE_MAP = {
+                    "I": 1.00,
+                    "II": 1.00,
+                    "III": 1.25,
+                    "IV": 1.50,
+                }
+                
+                Ie = IE_MAP[categoria]
+                
+                st.caption(f"Ie = {Ie:.2f}")
 
                 region_ecuador = st.selectbox(
                     tr("b3_region"),
