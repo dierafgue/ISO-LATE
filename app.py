@@ -2055,7 +2055,10 @@ with st.container(border=True):
 
                 mask = (T_rs >= T_min) & (T_rs <= T_max)
                 if np.count_nonzero(mask) < 5:
-                    mask = (T_rs >= max(0.05, 0.80 * float(Tref))) & (T_rs <= min(5.0, 1.20 * float(Tref)))
+                    mask = (
+                        (T_rs >= max(0.05, 0.80 * float(Tref))) &
+                        (T_rs <= min(5.0, 1.20 * float(Tref)))
+                    )
 
                 SF = lsq_scale_factor(Sa_reg[mask], Sa_obj[mask]) if escalar_nec else 1.0
 
@@ -2067,6 +2070,7 @@ with st.container(border=True):
 
                 PGA0 = float(np.max(np.abs(ag_base)) / G_STD)
                 PGA1 = float(np.max(np.abs(ag_scaled)) / G_STD)
+
             else:
                 T_rs = make_T_rs_piecewise(0.05, 5.0)
                 Sa_obj = np.interp(T_rs, T_spec_nec, Sa_inel_nec) * float(Ie_nec)
@@ -2111,83 +2115,83 @@ with st.container(border=True):
                 st.caption(tr("b3_ev").format(name=nombre))
 
     with colR:
-    with st.container(border=True):
-        st.markdown(f"### 📊 {tr('b3_plot_scale')}")
+        with st.container(border=True):
+            st.markdown(f"### 📊 {tr('b3_plot_scale')}")
 
-        figS, axS = plt.subplots(figsize=(11.8, 4.93))
-        figS.set_dpi(240)
-        figS.patch.set_facecolor(BG)
-        axS.set_facecolor(BG)
+            figS, axS = plt.subplots(figsize=(11.8, 4.93))
+            figS.set_dpi(240)
+            figS.patch.set_facecolor(BG)
+            axS.set_facecolor(BG)
 
-        axS.plot(T_rs, Sa_obj, lw=1.00, label=tr("b3_nec_obj"))
+            axS.plot(T_rs, Sa_obj, lw=1.00, label=tr("b3_nec_obj"))
 
-        if rs_ok and (Sa_reg is not None):
-            axS.plot(T_rs, Sa_reg, lw=0.55, alpha=0.95, label=tr("b3_reg_un"))
-            if escalar_nec:
-                axS.plot(T_rs, Sa_reg_scaled, lw=0.75, label=tr("b3_reg_sc").format(SF=SF))
-        else:
-            axS.plot(T_rs, 0*T_rs, lw=0.50, alpha=0.35, label=tr("b3_need_rec_plot"))
+            if rs_ok and (Sa_reg is not None):
+                axS.plot(T_rs, Sa_reg, lw=0.55, alpha=0.95, label=tr("b3_reg_un"))
+                if escalar_nec:
+                    axS.plot(T_rs, Sa_reg_scaled, lw=0.75, label=tr("b3_reg_sc").format(SF=SF))
+            else:
+                axS.plot(T_rs, 0*T_rs, lw=0.50, alpha=0.35, label=tr("b3_need_rec_plot"))
 
-        # -----------------------------------------------------------------
-        # ✅ Líneas de referencia del escalado
-        # -----------------------------------------------------------------
-        axS.axvline(float(Tref), color=COLOR_TEXT, linestyle="--", lw=1.10, alpha=0.95)
-        axS.axvline(float(T_min), color=COLOR_TEXT, linestyle=":", lw=0.95, alpha=0.85)
-        axS.axvline(float(T_max), color=COLOR_TEXT, linestyle=":", lw=0.95, alpha=0.85)
+            # -----------------------------------------------------------------
+            # ✅ Líneas de referencia del escalado
+            # -----------------------------------------------------------------
+            axS.axvline(float(Tref), color=COLOR_TEXT, linestyle="--", lw=1.10, alpha=0.95)
+            axS.axvline(float(T_min), color=COLOR_TEXT, linestyle=":", lw=0.95, alpha=0.85)
+            axS.axvline(float(T_max), color=COLOR_TEXT, linestyle=":", lw=0.95, alpha=0.85)
 
-        # -----------------------------------------------------------------
-        # ✅ Etiquetas dentro del gráfico
-        # -----------------------------------------------------------------
-        y0, y1 = axS.get_ylim()
-        ymax = float(y1)
+            # -----------------------------------------------------------------
+            # ✅ Etiquetas dentro del gráfico
+            # -----------------------------------------------------------------
+            y0, y1 = axS.get_ylim()
+            ymax = float(y1)
 
-        bbox_style = dict(
-            boxstyle="round,pad=0.20",
-            fc=BG,
-            ec=COLOR_GRID,
-            alpha=0.90
-        )
+            bbox_style = dict(
+                boxstyle="round,pad=0.20",
+                fc=BG,
+                ec=COLOR_GRID,
+                alpha=0.90
+            )
 
-        axS.text(
-            float(Tref), 0.96 * ymax,
-            f"Tobj\n{Tref:.2f} s",
-            ha="center", va="top",
-            fontsize=9, color=COLOR_TEXT,
-            bbox=bbox_style
-        )
+            axS.text(
+                float(Tref), 0.96 * ymax,
+                f"Tobj\n{Tref:.2f} s",
+                ha="center", va="top",
+                fontsize=9, color=COLOR_TEXT,
+                bbox=bbox_style
+            )
 
-        axS.text(
-            float(T_min), 0.86 * ymax,
-            f"Tmin\n{T_min:.2f} s",
-            ha="center", va="top",
-            fontsize=8, color=COLOR_TEXT,
-            bbox=bbox_style
-        )
+            axS.text(
+                float(T_min), 0.86 * ymax,
+                f"Tmin\n{T_min:.2f} s",
+                ha="center", va="top",
+                fontsize=8, color=COLOR_TEXT,
+                bbox=bbox_style
+            )
 
-        axS.text(
-            float(T_max), 0.86 * ymax,
-            f"Tmax\n{T_max:.2f} s",
-            ha="center", va="top",
-            fontsize=8, color=COLOR_TEXT,
-            bbox=bbox_style
-        )
+            axS.text(
+                float(T_max), 0.86 * ymax,
+                f"Tmax\n{T_max:.2f} s",
+                ha="center", va="top",
+                fontsize=8, color=COLOR_TEXT,
+                bbox=bbox_style
+            )
 
-        axS.set_xlabel(tr("b3_T"), color=COLOR_TEXT)
-        axS.set_ylabel(tr("b3_Sa"), color=COLOR_TEXT)
-        axS.tick_params(colors=COLOR_TEXT)
-        axS.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
-        axS.spines["top"].set_visible(False)
-        axS.spines["right"].set_visible(False)
+            axS.set_xlabel(tr("b3_T"), color=COLOR_TEXT)
+            axS.set_ylabel(tr("b3_Sa"), color=COLOR_TEXT)
+            axS.tick_params(colors=COLOR_TEXT)
+            axS.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
+            axS.spines["top"].set_visible(False)
+            axS.spines["right"].set_visible(False)
 
-        leg = axS.legend(framealpha=0.95, fontsize=10)
-        leg.get_frame().set_facecolor(BG)
-        leg.get_frame().set_edgecolor(COLOR_GRID)
-        for tt in leg.get_texts():
-            tt.set_color(COLOR_TEXT)
+            leg = axS.legend(framealpha=0.95, fontsize=10)
+            leg.get_frame().set_facecolor(BG)
+            leg.get_frame().set_edgecolor(COLOR_GRID)
+            for tt in leg.get_texts():
+                tt.set_color(COLOR_TEXT)
 
-        figS.subplots_adjust(left=0.06, right=0.995, top=0.90, bottom=0.18)
-        st.pyplot(figS, use_container_width=True)
-        
+            figS.subplots_adjust(left=0.06, right=0.995, top=0.90, bottom=0.18)
+            st.pyplot(figS, use_container_width=True)
+
     if rs_ok:
         st.session_state["SF_nec24"] = float(SF)
         st.session_state["T_rs"] = np.asarray(T_rs, dtype=float)
@@ -2197,10 +2201,18 @@ with st.container(border=True):
         st.session_state["scale_nec24_on"] = bool(escalar_nec)
 
         ag_final = ag_scaled if escalar_nec else st.session_state["rs_ag_base"]
-        t_final = np.linspace(0.0, float(st.session_state["rs_dt"]) * (len(ag_final) - 1), len(ag_final))
+        t_final = np.linspace(
+            0.0,
+            float(st.session_state["rs_dt"]) * (len(ag_final) - 1),
+            len(ag_final)
+        )
 
         # historial final que realmente entra al análisis
-        out_final = procesar_registro(np.asarray(ag_final, dtype=float).ravel(), float(st.session_state["rs_dt"]), aplicar_proc=False)
+        out_final = procesar_registro(
+            np.asarray(ag_final, dtype=float).ravel(),
+            float(st.session_state["rs_dt"]),
+            aplicar_proc=False
+        )
         vel_final = np.asarray(out_final["vel_orig"], dtype=float).ravel()
         disp_final = np.asarray(out_final["disp_orig"], dtype=float).ravel()
 
@@ -2211,7 +2223,7 @@ with st.container(border=True):
         st.session_state["rs_ag_final"] = np.asarray(ag_final, dtype=float).ravel()
         st.session_state["rs_vel_final"] = np.asarray(vel_final, dtype=float).ravel()
         st.session_state["rs_disp_final"] = np.asarray(disp_final, dtype=float).ravel()
-
+        
 # =============================================================================
 # DESCARGA FINAL DEL REGISTRO (3 OPCIONES)
 # =============================================================================
