@@ -1538,10 +1538,10 @@ T["es"].update({
     "b3_proc_lab": "Filtrado + corregido",
     "b3_default_note": "Registro RENAC (Ecuador) — sismo 16-04-2016, estación Pedernales.",
 
-    "b3_scaling_hdr": "Espectros y escalamiento",
+    "b3_scaling_hdr": "Espectros y ",
     "b3_par_res": "Parámetros + Resultados",
     "b3_need_model_scale": "⚙️ Primero genera el **modelo estructural** (Sección 2).",
-    "b3_need_rec_scale": "📁 Cargue o seleccione un registro para habilitar el escalamiento.",
+    "b3_need_rec_scale": "📁 Cargue o seleccione un registro para habilitar el .",
 
     "b3_scale_on": "Escalar a NEC-24",
     "b3_scale_help": "Escala el registro sísmico para ajustarlo solo al espectro inelástico objetivo NEC-24 dentro del rango de períodos seleccionado.",
@@ -1554,7 +1554,7 @@ T["es"].update({
     "b3_pga_s": "PGA escalado [g]",
     "b3_ev": "Evento: **{name}**",
 
-    "b3_plot_scale": "Espectro objetivo y escalamiento",
+    "b3_plot_scale": "Espectro objetivo y ",
     "b3_nec_obj": "Objetivo inelástico NEC-24 (×Ie)",
     "b3_reg_un": "Registro (sin escala)",
     "b3_reg_sc": "Registro escalado (SF={SF:.3f})",
@@ -1981,76 +1981,8 @@ st.markdown("---")
 with st.container(border=True):
     st.subheader(f"📈 {tr('b3_scaling_hdr')}")
 
-    # -------------------------------------------------------------------------
-    # Helpers locales para escalado tipo PEER simplificado
-    # -------------------------------------------------------------------------
-    def weighted_lsq_scale_factor(sa_reg, sa_obj, w):
-        sa_reg = np.asarray(sa_reg, dtype=float).ravel()
-        sa_obj = np.asarray(sa_obj, dtype=float).ravel()
-        w      = np.asarray(w, dtype=float).ravel()
-
-        ok = (
-            np.isfinite(sa_reg) & np.isfinite(sa_obj) & np.isfinite(w) &
-            (sa_reg >= 0.0) & (sa_obj >= 0.0) & (w > 0.0)
-        )
-        if np.count_nonzero(ok) < 3:
-            return 1.0
-
-        x = sa_reg[ok]
-        y = sa_obj[ok]
-        ww = w[ok]
-
-        den = np.sum(ww * x * x)
-        if den <= 0.0:
-            return 1.0
-
-        sf = np.sum(ww * x * y) / den
-        if (not np.isfinite(sf)) or (sf <= 0.0):
-            return 1.0
-
-        return float(sf)
-
-    def weighted_mse(sa_reg, sa_obj, w):
-        sa_reg = np.asarray(sa_reg, dtype=float).ravel()
-        sa_obj = np.asarray(sa_obj, dtype=float).ravel()
-        w      = np.asarray(w, dtype=float).ravel()
-
-        ok = (
-            np.isfinite(sa_reg) & np.isfinite(sa_obj) & np.isfinite(w) &
-            (w > 0.0)
-        )
-        if np.count_nonzero(ok) == 0:
-            return np.nan
-
-        e2 = (sa_reg[ok] - sa_obj[ok]) ** 2
-        ww = w[ok]
-        den = np.sum(ww)
-        if den <= 0.0:
-            return np.nan
-
-        return float(np.sum(ww * e2) / den)
-
-    def peer_box_weights(T, Tobj, Tmin_fac=0.80, Tmax_fac=1.20):
-        T = np.asarray(T, dtype=float).ravel()
-
-        Tobj = float(Tobj)
-        Tmin_fac = float(Tmin_fac)
-        Tmax_fac = float(Tmax_fac)
-
-        Tmin = max(0.05, Tmin_fac * Tobj)
-        Tmax = min(5.00, Tmax_fac * Tobj)
-
-        w = np.zeros_like(T, dtype=float)
-        m = (T >= Tmin) & (T <= Tmax)
-        w[m] = 1.0
-
-        return w, float(Tmin), float(Tmax)
-
     colL, colR = st.columns([1.10, 1.90], gap="large")
 
-    # -------------------------------------------------------------------------
-    # Espectro NEC disponible / fallback
-    # -------------------------------------------------------------------------
     if geom_ok:
         T_spec_nec   = np.asarray(T_spec, dtype=float).ravel()
         Sa_elast_nec = np.asarray(Sa_elast, dtype=float).ravel()
@@ -2082,144 +2014,56 @@ with st.container(border=True):
                     help=tr("b3_scale_help")
                 )
 
+                # -----------------------------------------------------------------
+                # ✅ Período objetivo único (tipo PEER simplificado)
+                #    Por defecto: primer modo de la estructura fija
+                # -----------------------------------------------------------------
+                T_fix_vec = np.asarray(st.session_state.get("T_sin", []), dtype=float).ravel()
+                T_fix_vec = T_fix_vec[np.isfinite(T_fix_vec)]
+                T_fix_vec = T_fix_vec[T_fix_vec > 0]
+
+                if len(T_fix_vec) == 0:
+                    Tref = 1.0
+                else:
+                    Tref = float(T_fix_vec[0])
+
+                Tref = max(0.05, min(10.0, Tref))
+
+                # ✅ Ventana centrada en el período objetivo
+                T_min = max(0.05, 0.80 * Tref)
+                T_max = min(5.00, 1.20 * Tref)
+
                 xi = st.number_input(
                     tr("b3_xi"),
-                    min_value=0.01,
-                    max_value=0.30,
-                    value=0.05,
-                    step=0.01,
+                    0.01, 0.30, 0.05, 0.01,
                     key="xi_rs",
                     disabled=(not geom_ok) or (not rs_ok),
                     help=tr("b3_xi_help")
                 )
 
-                # -----------------------------------------------------------------
-                # Período objetivo: por defecto el primer modo de la estructura fija
-                # -----------------------------------------------------------------
-                T_fix_vec = np.asarray(st.session_state.get("T_sin", []), dtype=float).ravel()
-                T_fix_vec = T_fix_vec[np.isfinite(T_fix_vec)]
-                T_fix_vec = T_fix_vec[T_fix_vec > 0.0]
-
-                Tref_auto = float(T_fix_vec[0]) if len(T_fix_vec) > 0 else 1.0
-                Tref_auto = max(0.05, min(5.00, Tref_auto))
-
-                lbl_auto = (
-                    "Use fundamental period as target period"
-                    if st.session_state.lang == "en"
-                    else "Usar período fundamental como período objetivo"
-                )
-                lbl_tobj = (
-                    "Target period (s)"
-                    if st.session_state.lang == "en"
-                    else "Período objetivo (s)"
-                )
-                lbl_tmin = (
-                    "Lower factor"
-                    if st.session_state.lang == "en"
-                    else "Factor inferior"
-                )
-                lbl_tmax = (
-                    "Upper factor"
-                    if st.session_state.lang == "en"
-                    else "Factor superior"
-                )
-
-                use_auto_tref = st.checkbox(
-                    lbl_auto,
-                    value=True,
-                    key="b3_use_auto_tref",
-                    disabled=(not geom_ok)
-                )
-
-                if use_auto_tref:
-                    Tobj = float(Tref_auto)
-                    st.caption(
-                        f"Target period = T1 = {Tobj:.3f} s"
-                        if st.session_state.lang == "en"
-                        else f"Período objetivo = T1 = {Tobj:.3f} s"
-                    )
-                else:
-                    Tobj = st.number_input(
-                        lbl_tobj,
-                        min_value=0.05,
-                        max_value=5.00,
-                        value=float(Tref_auto),
-                        step=0.01,
-                        key="b3_tobj_manual",
-                        disabled=(not geom_ok)
-                    )
-
-                Tmin_fac = st.number_input(
-                    lbl_tmin,
-                    min_value=0.10,
-                    max_value=1.00,
-                    value=0.80,
-                    step=0.01,
-                    key="b3_tmin_fac",
-                    disabled=(not geom_ok)
-                )
-
-                Tmax_fac = st.number_input(
-                    lbl_tmax,
-                    min_value=1.00,
-                    max_value=3.00,
-                    value=1.20,
-                    step=0.01,
-                    key="b3_tmax_fac",
-                    disabled=(not geom_ok)
-                )
-
-                T_min = max(0.05, float(Tmin_fac) * float(Tobj))
-                T_max = min(5.00, float(Tmax_fac) * float(Tobj))
-
-                st.caption(
-                    f"Scaling window: {T_min:.3f} s – {T_max:.3f} s"
-                    if st.session_state.lang == "en"
-                    else f"Ventana de escalado: {T_min:.3f} s – {T_max:.3f} s"
-                )
-
-            # -----------------------------------------------------------------
-            # Cálculo de espectros y factor de escala
-            # -----------------------------------------------------------------
             if rs_ok:
                 nombre  = st.session_state.get("rs_nombre", "Registro")
                 dt      = float(st.session_state["rs_dt"])
                 ag_base = np.asarray(st.session_state["rs_ag_base"], dtype=float).ravel()
 
                 # ✅ SOLO espectro inelástico
-                Sa_obj_base = np.asarray(Sa_inel_nec, dtype=float).ravel()
+                Sa_obj_base = Sa_inel_nec
 
                 T_rs = make_T_rs_piecewise(0.05, 5.0)
                 Sa_reg = compute_Sa_piecewise(ag_base, dt, T_rs, xi=float(xi))
                 Sa_obj = np.interp(T_rs, T_spec_nec, Sa_obj_base) * float(Ie_nec)
 
-                W_scale, T_min, T_max = peer_box_weights(
-                    T_rs,
-                    Tobj=float(Tobj),
-                    Tmin_fac=float(Tmin_fac),
-                    Tmax_fac=float(Tmax_fac)
-                )
-
-                mask = W_scale > 0.0
+                mask = (T_rs >= T_min) & (T_rs <= T_max)
                 if np.count_nonzero(mask) < 5:
-                    W_scale = np.where(
-                        (T_rs >= max(0.05, 0.80 * float(Tobj))) &
-                        (T_rs <= min(5.0, 1.20 * float(Tobj))),
-                        1.0,
-                        0.0
-                    )
-                    mask = W_scale > 0.0
+                    mask = (T_rs >= max(0.05, 0.80 * float(Tref))) & (T_rs <= min(5.0, 1.20 * float(Tref)))
 
-                SF = weighted_lsq_scale_factor(Sa_reg, Sa_obj, W_scale) if escalar_nec else 1.0
+                SF = lsq_scale_factor(Sa_reg[mask], Sa_obj[mask]) if escalar_nec else 1.0
 
-                if (not np.isfinite(SF)) or (SF <= 0.0):
+                if (not np.isfinite(SF)) or (SF <= 0):
                     SF = 1.0
 
                 Sa_reg_scaled = Sa_reg * SF
                 ag_scaled = ag_base * SF
-
-                mse_before = weighted_mse(Sa_reg, Sa_obj, W_scale)
-                mse_after  = weighted_mse(Sa_reg_scaled, Sa_obj, W_scale)
 
                 PGA0 = float(np.max(np.abs(ag_base)) / G_STD)
                 PGA1 = float(np.max(np.abs(ag_scaled)) / G_STD)
@@ -2228,13 +2072,12 @@ with st.container(border=True):
                 Sa_obj = np.interp(T_rs, T_spec_nec, Sa_inel_nec) * float(Ie_nec)
                 Sa_reg = None
                 Sa_reg_scaled = None
-                W_scale, T_min, T_max = peer_box_weights(T_rs, Tobj=1.0, Tmin_fac=0.80, Tmax_fac=1.20)
-                mask = W_scale > 0.0
+                Tref = 1.0
+                T_min = max(0.05, 0.80 * Tref)
+                T_max = min(5.0, 1.20 * Tref)
+                mask = (T_rs >= T_min) & (T_rs <= T_max)
                 SF = 1.0
-                mse_before = np.nan
-                mse_after = np.nan
-                PGA0 = 0.0
-                PGA1 = 0.0
+                PGA0 = PGA1 = 0.0
                 nombre = "—"
                 ag_scaled = None
 
@@ -2265,18 +2108,6 @@ with st.container(border=True):
                 with b:
                     st.metric(tr("b3_pga_s"), f"{PGA1:.3f}")
 
-                c1, c2 = st.columns(2)
-                with c1:
-                    st.metric("Tmin", f"{T_min:.3f} s")
-                with c2:
-                    st.metric("Tmax", f"{T_max:.3f} s")
-
-                d1, d2 = st.columns(2)
-                with d1:
-                    st.metric("MSE unscaled", "—" if not np.isfinite(mse_before) else f"{mse_before:.5f}")
-                with d2:
-                    st.metric("MSE scaled", "—" if not np.isfinite(mse_after) else f"{mse_after:.5f}")
-
                 st.caption(tr("b3_ev").format(name=nombre))
 
     with colR:
@@ -2295,11 +2126,10 @@ with st.container(border=True):
                 if escalar_nec:
                     axS.plot(T_rs, Sa_reg_scaled, lw=0.75, label=tr("b3_reg_sc").format(SF=SF))
             else:
-                axS.plot(T_rs, 0.0 * T_rs, lw=0.50, alpha=0.35, label=tr("b3_need_rec_plot"))
+                axS.plot(T_rs, 0*T_rs, lw=0.50, alpha=0.35, label=tr("b3_need_rec_plot"))
 
-            # banda + línea central del período objetivo
-            axS.axvline(float(Tobj if 'Tobj' in locals() else 1.0), color="gray", lw=1.0, ls="--", alpha=0.85)
-            axS.axvspan(float(T_min), float(T_max), color="black", alpha=0.06, lw=0)
+            axS.axvspan(float(T_rs[mask].min()), float(T_rs[mask].max()),
+                        color="black", alpha=0.06, lw=0)
 
             axS.set_xlabel(tr("b3_T"), color=COLOR_TEXT)
             axS.set_ylabel(tr("b3_Sa"), color=COLOR_TEXT)
@@ -2317,9 +2147,6 @@ with st.container(border=True):
             figS.subplots_adjust(left=0.06, right=0.995, top=0.90, bottom=0.18)
             st.pyplot(figS, use_container_width=True)
 
-    # -------------------------------------------------------------------------
-    # Guardar resultados para el análisis posterior
-    # -------------------------------------------------------------------------
     if rs_ok:
         st.session_state["SF_nec24"] = float(SF)
         st.session_state["T_rs"] = np.asarray(T_rs, dtype=float)
@@ -2328,26 +2155,11 @@ with st.container(border=True):
         st.session_state["Sa_obj_nec"] = np.asarray(Sa_obj, dtype=float)
         st.session_state["scale_nec24_on"] = bool(escalar_nec)
 
-        st.session_state["scale_Tobj"] = float(Tobj)
-        st.session_state["scale_Tmin"] = float(T_min)
-        st.session_state["scale_Tmax"] = float(T_max)
-        st.session_state["scale_weights"] = np.asarray(W_scale, dtype=float)
-        st.session_state["scale_mse_before"] = float(mse_before) if np.isfinite(mse_before) else np.nan
-        st.session_state["scale_mse_after"] = float(mse_after) if np.isfinite(mse_after) else np.nan
-
-        ag_final = ag_scaled if escalar_nec else np.asarray(st.session_state["rs_ag_base"], dtype=float).ravel()
-        t_final = np.linspace(
-            0.0,
-            float(st.session_state["rs_dt"]) * (len(ag_final) - 1),
-            len(ag_final)
-        )
+        ag_final = ag_scaled if escalar_nec else st.session_state["rs_ag_base"]
+        t_final = np.linspace(0.0, float(st.session_state["rs_dt"]) * (len(ag_final) - 1), len(ag_final))
 
         # historial final que realmente entra al análisis
-        out_final = procesar_registro(
-            np.asarray(ag_final, dtype=float).ravel(),
-            float(st.session_state["rs_dt"]),
-            aplicar_proc=False
-        )
+        out_final = procesar_registro(np.asarray(ag_final, dtype=float).ravel(), float(st.session_state["rs_dt"]), aplicar_proc=False)
         vel_final = np.asarray(out_final["vel_orig"], dtype=float).ravel()
         disp_final = np.asarray(out_final["disp_orig"], dtype=float).ravel()
 
