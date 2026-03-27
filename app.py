@@ -2128,10 +2128,27 @@ with st.container(border=True):
             else:
                 axS.plot(T_rs, 0*T_rs, lw=0.50, alpha=0.35, label=tr("b3_need_rec_plot"))
 
-            # Líneas de referencia del escalado
-            axS.axvline(float(Tref), color="white", linestyle="--", lw=1.10, alpha=0.95)
-            axS.axvline(float(T_min), color="white", linestyle=":", lw=0.95, alpha=0.85)
-            axS.axvline(float(T_max), color="white", linestyle=":", lw=0.95, alpha=0.85)
+                # Líneas de referencia
+                axS.axvline(float(Tref), color=COLOR_TEXT, linestyle="--", lw=1.10, alpha=0.95)
+                axS.axvline(float(T_min), color=COLOR_TEXT, linestyle=":", lw=0.95, alpha=0.85)
+                axS.axvline(float(T_max), color=COLOR_TEXT, linestyle=":", lw=0.95, alpha=0.85)
+                
+                # -----------------------------------------------------------------
+                # ✅ Etiquetas dentro del gráfico
+                # -----------------------------------------------------------------
+                ymax = axS.get_ylim()[1]
+                
+                axS.text(Tref, 0.92*ymax, f"Tobj\n{Tref:.2f}s",
+                         ha="center", va="top",
+                         fontsize=9, color=COLOR_TEXT)
+                
+                axS.text(T_min, 0.82*ymax, f"Tmin\n{T_min:.2f}s",
+                         ha="center", va="top",
+                         fontsize=8, color=COLOR_TEXT)
+                
+                axS.text(T_max, 0.82*ymax, f"Tmax\n{T_max:.2f}s",
+                         ha="center", va="top",
+                         fontsize=8, color=COLOR_TEXT)
 
             axS.set_xlabel(tr("b3_T"), color=COLOR_TEXT)
             axS.set_ylabel(tr("b3_Sa"), color=COLOR_TEXT)
