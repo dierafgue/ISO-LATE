@@ -1788,7 +1788,7 @@ with col_left:
             fig, ax = plt.subplots(figsize=(6.0, NEC24_FIG_H))
             fig.patch.set_facecolor(BG)
             ax.set_facecolor(BG)
-            ax.plot(T_spec, Sa_elast_plot, lw=1.0, label=f"{tr("b3_elastic"))
+            ax.plot(T_spec, Sa_elast_plot, lw=1.0, label=tr("b3_elastic"))
             ax.plot(T_spec, Sa_inelas_plot, "--", lw=1.0, label=f"{tr('b3_inelastic')} (R={R:g}, ×Ie)")
             ax.set_xlabel(tr("b3_T"), color=COLOR_TEXT)
             ax.set_ylabel(tr("b3_Sa"), color=COLOR_TEXT)
