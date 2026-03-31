@@ -3728,8 +3728,7 @@ with col_right:
         fig.patch.set_facecolor(BG)
         ax.set_facecolor(BG)
 
-        # ✅ usar fuerza histérica individual para comparar con ETABS
-        ax.plot(u_iso, Fhyst_hist_1, color=COLOR_LINE1, lw=0.8)
+        ax.plot(u_iso, Fiso_hist_1, color=COLOR_LINE1, lw=0.8)
 
         ax.set_xlabel(tr("b7_xlabel_u0"), color=COLOR_TEXT)
         ax.set_ylabel(tr("b7_ylabel_Fiso"), color=COLOR_TEXT)
