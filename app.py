@@ -3456,6 +3456,14 @@ def get_fun(name):
     return f
 
 # -------------------------------------------------------------------------
+# ✅ Funciones auxiliares
+# -------------------------------------------------------------------------
+newmark_nl_base_bilinear = get_fun("newmark_nl_base_bilinear")
+rayleigh_from_w = get_fun("rayleigh_from_w")
+pick_two_w = get_fun("pick_two_w")
+modal_w = get_fun("modal_w")
+
+# -------------------------------------------------------------------------
 # ✅ Textos EN/ES
 # -------------------------------------------------------------------------
 T["en"].update({
@@ -3522,14 +3530,6 @@ COLOR_GUIDE    = "#7A8498"
 LEG_FACE       = "#3A4050"
 LEG_EDGE       = "#A7B1C5"
 COLOR_LINE1    = "#C79BFF"
-
-# -----------------------------------------------------------------
-# ✅ Funciones auxiliares
-# -----------------------------------------------------------------
-newmark_nl_base_bilinear = get_fun("newmark_nl_base_bilinear")
-rayleigh_from_w = get_fun("rayleigh_from_w")
-pick_two_w = get_fun("pick_two_w")
-modal_w = get_fun("modal_w")
 
 # -----------------------------------------------------------------
 # ✅ VALIDACIÓN DE VARIABLES NECESARIAS
@@ -3641,8 +3641,16 @@ with col_right:
     with st.container(border=True):
         st.subheader(f"🟣 {tr('b7_right_hdr')}")
 
-        dt   = float(st.session_state["dt"])
-        ag_g = np.asarray(st.session_state["ag_filt"], dtype=float).ravel()
+        dt = float(st.session_state["dt"])
+
+        # -----------------------------------------------------------------
+        # ✅ OJO CON UNIDADES:
+        # newmark_nl_base_bilinear espera ag_g en "g" porque internamente
+        # multiplica por 9.80665. En session_state["ag_filt"] lo tienes en m/s².
+        # Por eso aquí lo convertimos a g antes de llamarlo.
+        # -----------------------------------------------------------------
+        ag_mps2 = np.asarray(st.session_state["ag_filt"], dtype=float).ravel()
+        ag_g = ag_mps2 / 9.8066500000
 
         M_ais = np.array(st.session_state["M_cond_ais"], dtype=float)
         K_ais = np.array(st.session_state["K_cond_ais"], dtype=float)
@@ -3651,10 +3659,9 @@ with col_right:
         n_aisladores = max(n_aisladores, 1)
 
         # -----------------------------------------------------------------
-        # ✅ IMPORTANTE:
-        # K_cond_ais ya incluye la rigidez efectiva lineal total del aislador
-        # en K[0,0]. Para el análisis no lineal bilineal no debemos contarla
-        # dos veces. Por eso la retiramos antes de llamar al integrador NL.
+        # ✅ K_cond_ais ya incluye la rigidez efectiva lineal total del aislador
+        # en K[0,0]. Para el análisis no lineal bilineal, esa parte se retira
+        # para no contar dos veces el aislador.
         # -----------------------------------------------------------------
         keff_1ais = float(st.session_state["res_aislador"]["keff_1ais"])
         k_iso_total = keff_1ais * n_aisladores
@@ -3662,15 +3669,15 @@ with col_right:
         K_used = np.array(K_ais, copy=True)
         K_used[0, 0] -= k_iso_total
 
+        # defensivo
         if K_used[0, 0] < 0:
             K_used[0, 0] = 0.0
 
         st.caption(tr("b7_warn_k"))
 
         # -----------------------------------------------------------------
-        # ✅ Amortiguamiento estructural solamente
-        # El aislador no se mete aquí como Rayleigh; entra por c_iso
-        # dentro del modelo bilineal no lineal.
+        # ✅ Amortiguamiento estructural solamente.
+        # El amortiguamiento del aislador entra por c_iso dentro del modelo NL.
         # -----------------------------------------------------------------
         C_used = np.zeros_like(M_ais)
 
@@ -3688,21 +3695,19 @@ with col_right:
             st.caption(tr("b7_warn_ray"))
 
         # -----------------------------------------------------------------
-        # ✅ Propiedades NO lineales del sistema total de aisladores
-        # Como el GDL 0 representa la base completa, el integrador no lineal
-        # debe recibir propiedades totales.
-        # Luego, para graficar un aislador individual, dividimos fuerza total
-        # entre N. El desplazamiento es el mismo para todos por diafragma rígido.
+        # ✅ Propiedades totales del sistema de aisladores para el solver NL
+        # El GDL 0 representa la base completa.
+        # Luego se divide fuerza entre N para graficar 1 aislador individual.
         # -----------------------------------------------------------------
-        k0_1   = float(st.session_state["k_inicial_1ais"])
-        kp_1   = float(st.session_state["k_post_1ais"])
-        Fy_1   = float(st.session_state["yield_1ais"])
-        c_1    = float(st.session_state["c_1ais"])
+        k0_1 = float(st.session_state["k_inicial_1ais"])
+        kp_1 = float(st.session_state["k_post_1ais"])
+        Fy_1 = float(st.session_state["yield_1ais"])
+        c_1  = float(st.session_state["c_1ais"])
 
-        k0_tot   = k0_1 * n_aisladores
-        kp_tot   = kp_1 * n_aisladores
-        Fy_tot   = Fy_1 * n_aisladores
-        c_iso_tot = c_1 * n_aisladores
+        k0_tot    = k0_1 * n_aisladores
+        kp_tot    = kp_1 * n_aisladores
+        Fy_tot    = Fy_1 * n_aisladores
+        c_iso_tot = c_1  * n_aisladores
 
         U_nl, V_nl, A_nl, Fiso_hist_tot, Fhyst_hist_tot, Ehyst = newmark_nl_base_bilinear(
             M=M_ais,
@@ -3721,18 +3726,22 @@ with col_right:
         )
 
         # -----------------------------------------------------------------
-        # ✅ Histéresis de UN aislador individual
+        # ✅ Histéresis de un aislador individual
         # -----------------------------------------------------------------
         u_iso = np.asarray(U_nl[0, :], dtype=float).ravel()
         Fiso_hist_1 = np.asarray(Fiso_hist_tot, dtype=float).ravel() / n_aisladores
         Fhyst_hist_1 = np.asarray(Fhyst_hist_tot, dtype=float).ravel() / n_aisladores
 
         st.session_state["U_nl"] = U_nl
+        st.session_state["V_nl"] = V_nl
+        st.session_state["A_nl"] = A_nl
+
         st.session_state["Fiso_hist_total"] = np.asarray(Fiso_hist_tot, dtype=float).ravel()
         st.session_state["Fhyst_hist_total"] = np.asarray(Fhyst_hist_tot, dtype=float).ravel()
+
         st.session_state["Fiso_hist_1ais"] = Fiso_hist_1
         st.session_state["Fhyst_hist_1ais"] = Fhyst_hist_1
-        st.session_state["Ehyst"] = Ehyst
+        st.session_state["Ehyst"] = np.asarray(Ehyst, dtype=float).ravel()
 
         fig, ax = plt.subplots(figsize=(FIG_W, FIG_H))
         fig.patch.set_facecolor(BG)
@@ -3751,7 +3760,7 @@ with col_right:
         fig.tight_layout()
         st.pyplot(fig, use_container_width=True)
         plt.close(fig)
-
+        
 # =============================================================================
 # === BLOQUE 8: CORTANTES POR PISO (RSA INELÁSTICO vs THA MAX/MIN) ============
 # =============================================================================
