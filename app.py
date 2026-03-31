@@ -3437,7 +3437,26 @@ import matplotlib.pyplot as plt
 import matplotlib.patheffects as pe
 
 # -------------------------------------------------------------------------
-# ✅ Textos EN/ES (solo para este bloque) + HELPERS
+# ✅ DEFENSIVO: si no existen T / tr, no revienta
+# -------------------------------------------------------------------------
+if "T" not in globals():
+    T = {"es": {}, "en": {}}
+
+if "tr" not in globals():
+    def tr(k: str) -> str:
+        return k
+
+# -------------------------------------------------------------------------
+# ✅ Helper para tomar funciones desde globals o session_state
+# -------------------------------------------------------------------------
+def get_fun(name):
+    f = st.session_state.get(name, None)
+    if f is None and name in globals():
+        f = globals()[name]
+    return f
+
+# -------------------------------------------------------------------------
+# ✅ Textos EN/ES
 # -------------------------------------------------------------------------
 T["en"].update({
     "b7_title": "NEC-24 spectrum + isolator hysteresis",
@@ -3446,17 +3465,20 @@ T["en"].update({
     "b7_missing_fun": "Function `newmark_nl_base_bilinear` was not found.",
 
     # Left side
-    "b7_left_hdr": "NEC-24 inelastic spectrum + points (FIXED vs ISOLATED)",
-    "b7_inelastic": "Inelastic spectrum (R={R:g})",
+    "b7_left_hdr": "NEC-24 design spectrum + points (FIXED vs ISOLATED)",
+    "b7_design": "Design spectrum",
     "b7_fixed_mark": "FIXED: T₁={T:.3f}s | Sa={Sa:.3f}g",
     "b7_iso_mark": "ISOLATED: T₁={T:.3f}s | Sa={Sa:.3f}g",
     "b7_xlabel_T": "Period T [s]",
     "b7_ylabel_Sa": "Sa [g]",
 
     # Right side
-    "b7_right_hdr": "Real isolator hysteresis (bilinear)",
+    "b7_right_hdr": "Real isolator hysteresis (individual bilinear)",
     "b7_xlabel_u0": "Base displacement u₀ [m]",
     "b7_ylabel_Fiso": "Isolator force [Tf]",
+
+    "b7_warn_ray": "Rayleigh helper functions were not found. Structural damping was set to zero in this block.",
+    "b7_warn_k": "The linear effective isolator stiffness was removed from K[0,0] to avoid double-counting in the nonlinear hysteresis analysis.",
 })
 
 T["es"].update({
@@ -3466,17 +3488,20 @@ T["es"].update({
     "b7_missing_fun": "⚠️ No se encontró la función `newmark_nl_base_bilinear`.",
 
     # Left side
-    "b7_left_hdr": "Espectro inelástico NEC-24 + puntos (FIJA vs AISLADA)",
-    "b7_inelastic": "Espectro inelástico (R={R:g})",
+    "b7_left_hdr": "Espectro de diseño NEC-24 + puntos (FIJA vs AISLADA)",
+    "b7_design": "Espectro de diseño",
     "b7_fixed_mark": "FIJA: T₁={T:.3f}s | Sa={Sa:.3f}g",
     "b7_iso_mark": "AISLADA: T₁={T:.3f}s | Sa={Sa:.3f}g",
     "b7_xlabel_T": "Período T [s]",
     "b7_ylabel_Sa": "Sa [g]",
 
     # Right side
-    "b7_right_hdr": "Histéresis real del aislador (bilineal)",
+    "b7_right_hdr": "Histéresis real del aislador (bilineal individual)",
     "b7_xlabel_u0": "Desplazamiento base u₀ [m]",
-    "b7_ylabel_Fiso": "Fuerza aislador [Tf]",
+    "b7_ylabel_Fiso": "Fuerza del aislador [Tf]",
+
+    "b7_warn_ray": "No se encontraron las funciones auxiliares de Rayleigh. En este bloque se tomó amortiguamiento estructural nulo.",
+    "b7_warn_k": "Se retiró la rigidez efectiva lineal del aislador de K[0,0] para evitar doble conteo en la histéresis no lineal.",
 })
 
 # -------------------------------------------------------------------------
@@ -3490,7 +3515,7 @@ COLOR_TEXT = "#E8EDF2"
 COLOR_GRID = "#5B657A"
 HALO = [pe.withStroke(linewidth=2.4, foreground=BG), pe.Normal()]
 
-COLOR_INELAST  = "#F2A6A0"
+COLOR_DESIGN   = "#F2A6A0"
 COLOR_MARK_FIX = "#FFE6A3"
 COLOR_MARK_AIS = "#77DD77"
 COLOR_GUIDE    = "#7A8498"
@@ -3499,12 +3524,19 @@ LEG_EDGE       = "#A7B1C5"
 COLOR_LINE1    = "#C79BFF"
 
 # -----------------------------------------------------------------
+# ✅ Funciones auxiliares
+# -----------------------------------------------------------------
+newmark_nl_base_bilinear = get_fun("newmark_nl_base_bilinear")
+rayleigh_from_w = get_fun("rayleigh_from_w")
+pick_two_w = get_fun("pick_two_w")
+modal_w = get_fun("modal_w")
+
+# -----------------------------------------------------------------
 # ✅ VALIDACIÓN DE VARIABLES NECESARIAS
 # -----------------------------------------------------------------
 required = [
     "rs_T_spec",
-    "rs_Sa_inelas",
-    "nec24_params",
+    "rs_Sa_design",
     "T_sin",
     "T_ais",
     "M_cond_ais",
@@ -3522,7 +3554,7 @@ if missing:
     st.warning(tr("b7_missing_vars").format(keys=", ".join(missing)))
     st.stop()
 
-if "newmark_nl_base_bilinear" not in globals():
+if newmark_nl_base_bilinear is None:
     st.warning(tr("b7_missing_fun"))
     st.stop()
 
@@ -3533,35 +3565,33 @@ col_left, col_right = st.columns([1, 1], gap="large")
 FIG_W, FIG_H = 7.2, 4.8
 
 # =============================================================================
-# IZQUIERDA: ESPECTRO NEC INELÁSTICO + MARCADORES
+# IZQUIERDA: ESPECTRO DE DISEÑO NEC + MARCADORES
 # =============================================================================
 with col_left:
     with st.container(border=True):
         st.subheader(f"📈 {tr('b7_left_hdr')}")
 
-        T_plot  = np.asarray(st.session_state["rs_T_spec"], dtype=float).ravel()
-        Sa_inel = np.asarray(st.session_state["rs_Sa_inelas"], dtype=float).ravel()
+        T_plot = np.asarray(st.session_state["rs_T_spec"], dtype=float).ravel()
+        Sa_design = np.asarray(st.session_state["rs_Sa_design"], dtype=float).ravel()
 
-        R_spec  = float(st.session_state["nec24_params"]["R"])
         T_final = float(T_plot[-1])
 
         T1_fix = float(np.asarray(st.session_state["T_sin"], dtype=float).ravel()[0])
         T1_ais = float(np.asarray(st.session_state["T_ais"], dtype=float).ravel()[0])
 
-        # ✅ Ambos puntos evaluados SOLO en el espectro inelástico
-        Sa_Tfix = float(np.interp(T1_fix, T_plot, Sa_inel))
-        Sa_Tais = float(np.interp(T1_ais, T_plot, Sa_inel))
+        Sa_Tfix = float(np.interp(T1_fix, T_plot, Sa_design))
+        Sa_Tais = float(np.interp(T1_ais, T_plot, Sa_design))
 
         fig, ax = plt.subplots(figsize=(FIG_W, FIG_H))
         fig.patch.set_facecolor(BG)
         ax.set_facecolor(BG)
 
         ax.plot(
-            T_plot, Sa_inel,
+            T_plot, Sa_design,
             lw=2.4,
-            color=COLOR_INELAST,
+            color=COLOR_DESIGN,
             linestyle="--",
-            label=tr("b7_inelastic").format(R=R_spec)
+            label=tr("b7_design")
         )
 
         # FIJA
@@ -3602,53 +3632,113 @@ with col_left:
 
         fig.tight_layout()
         st.pyplot(fig, use_container_width=True)
+        plt.close(fig)
 
 # =============================================================================
-# DERECHA: HISTÉRESIS REAL (solo gráfico, sin nota)
+# DERECHA: HISTÉRESIS REAL DEL AISLADOR INDIVIDUAL
 # =============================================================================
 with col_right:
     with st.container(border=True):
         st.subheader(f"🟣 {tr('b7_right_hdr')}")
 
-        dt     = float(st.session_state["dt"])
-        ag_g   = np.asarray(st.session_state["ag_filt"], dtype=float).ravel()
+        dt   = float(st.session_state["dt"])
+        ag_g = np.asarray(st.session_state["ag_filt"], dtype=float).ravel()
 
-        M_ais  = np.array(st.session_state["M_cond_ais"], dtype=float)
-        K_ais  = np.array(st.session_state["K_cond_ais"], dtype=float)
+        M_ais = np.array(st.session_state["M_cond_ais"], dtype=float)
+        K_ais = np.array(st.session_state["K_cond_ais"], dtype=float)
 
-        # ✅ Mantengo la misma lógica: sin Rayleigh global aquí
+        n_aisladores = int(st.session_state.get("n_aisladores", 1))
+        n_aisladores = max(n_aisladores, 1)
+
+        # -----------------------------------------------------------------
+        # ✅ IMPORTANTE:
+        # K_cond_ais ya incluye la rigidez efectiva lineal total del aislador
+        # en K[0,0]. Para el análisis no lineal bilineal no debemos contarla
+        # dos veces. Por eso la retiramos antes de llamar al integrador NL.
+        # -----------------------------------------------------------------
+        keff_1ais = float(st.session_state["res_aislador"]["keff_1ais"])
+        k_iso_total = keff_1ais * n_aisladores
+
+        K_used = np.array(K_ais, copy=True)
+        K_used[0, 0] -= k_iso_total
+
+        if K_used[0, 0] < 0:
+            K_used[0, 0] = 0.0
+
+        st.caption(tr("b7_warn_k"))
+
+        # -----------------------------------------------------------------
+        # ✅ Amortiguamiento estructural solamente
+        # El aislador no se mete aquí como Rayleigh; entra por c_iso
+        # dentro del modelo bilineal no lineal.
+        # -----------------------------------------------------------------
         C_used = np.zeros_like(M_ais)
 
-        k0    = float(st.session_state["k_inicial_1ais"])
-        kp    = float(st.session_state["k_post_1ais"])
-        Fy    = float(st.session_state["yield_1ais"])
-        c_iso = float(st.session_state["c_1ais"])
+        if (rayleigh_from_w is not None) and (pick_two_w is not None) and (modal_w is not None):
+            try:
+                zeta = float(st.session_state.get("zeta_modal", 0.05))
+                w_ais = modal_w(K_used, M_ais)
+                wR_ais = pick_two_w(w_ais, wmin=1e-6)
+                alpha_ais, beta_ais = rayleigh_from_w(wR_ais, zeta)
+                C_used = alpha_ais * M_ais + beta_ais * K_used
+            except Exception:
+                C_used = np.zeros_like(M_ais)
+                st.caption(tr("b7_warn_ray"))
+        else:
+            st.caption(tr("b7_warn_ray"))
 
-        U_nl, V_nl, A_nl, Fiso_hist, Fhyst_hist, Ehyst = newmark_nl_base_bilinear(
+        # -----------------------------------------------------------------
+        # ✅ Propiedades NO lineales del sistema total de aisladores
+        # Como el GDL 0 representa la base completa, el integrador no lineal
+        # debe recibir propiedades totales.
+        # Luego, para graficar un aislador individual, dividimos fuerza total
+        # entre N. El desplazamiento es el mismo para todos por diafragma rígido.
+        # -----------------------------------------------------------------
+        k0_1   = float(st.session_state["k_inicial_1ais"])
+        kp_1   = float(st.session_state["k_post_1ais"])
+        Fy_1   = float(st.session_state["yield_1ais"])
+        c_1    = float(st.session_state["c_1ais"])
+
+        k0_tot   = k0_1 * n_aisladores
+        kp_tot   = kp_1 * n_aisladores
+        Fy_tot   = Fy_1 * n_aisladores
+        c_iso_tot = c_1 * n_aisladores
+
+        U_nl, V_nl, A_nl, Fiso_hist_tot, Fhyst_hist_tot, Ehyst = newmark_nl_base_bilinear(
             M=M_ais,
             C=C_used,
-            K=K_ais,
+            K=K_used,
             dt=dt,
             ag_g=ag_g,
-            k0=k0,
-            kp=kp,
-            Fy=Fy,
-            c_iso=c_iso,
+            k0=k0_tot,
+            kp=kp_tot,
+            Fy=Fy_tot,
+            c_iso=c_iso_tot,
             gamma=0.5,
             beta=0.25,
             newton_tol=1e-7,
             newton_maxit=30
         )
 
-        st.session_state["U_nl"]      = U_nl
-        st.session_state["Fiso_hist"] = Fiso_hist
-        st.session_state["Ehyst"]     = Ehyst
+        # -----------------------------------------------------------------
+        # ✅ Histéresis de UN aislador individual
+        # -----------------------------------------------------------------
+        u_iso = np.asarray(U_nl[0, :], dtype=float).ravel()
+        Fiso_hist_1 = np.asarray(Fiso_hist_tot, dtype=float).ravel() / n_aisladores
+        Fhyst_hist_1 = np.asarray(Fhyst_hist_tot, dtype=float).ravel() / n_aisladores
+
+        st.session_state["U_nl"] = U_nl
+        st.session_state["Fiso_hist_total"] = np.asarray(Fiso_hist_tot, dtype=float).ravel()
+        st.session_state["Fhyst_hist_total"] = np.asarray(Fhyst_hist_tot, dtype=float).ravel()
+        st.session_state["Fiso_hist_1ais"] = Fiso_hist_1
+        st.session_state["Fhyst_hist_1ais"] = Fhyst_hist_1
+        st.session_state["Ehyst"] = Ehyst
 
         fig, ax = plt.subplots(figsize=(FIG_W, FIG_H))
         fig.patch.set_facecolor(BG)
         ax.set_facecolor(BG)
 
-        ax.plot(U_nl[0, :], Fiso_hist, color=COLOR_LINE1, lw=0.3)
+        ax.plot(u_iso, Fiso_hist_1, color=COLOR_LINE1, lw=0.8)
 
         ax.set_xlabel(tr("b7_xlabel_u0"), color=COLOR_TEXT)
         ax.set_ylabel(tr("b7_ylabel_Fiso"), color=COLOR_TEXT)
@@ -3660,8 +3750,7 @@ with col_right:
 
         fig.tight_layout()
         st.pyplot(fig, use_container_width=True)
-
-#st.success(tr("b7_ready"))
+        plt.close(fig)
 
 # =============================================================================
 # === BLOQUE 8: CORTANTES POR PISO (RSA INELÁSTICO vs THA MAX/MIN) ============
