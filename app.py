@@ -2007,7 +2007,7 @@ import pandas as pd
 import streamlit as st
 from numpy.linalg import inv, eig
 import math
-from funciones_usuario import _km_key, _compute_checks, _beta_from_bilinear_cycle
+from funciones_usuario import _km_key
 
 # -------------------------------------------------------------------------
 # ✅ Textos EN/ES (solo para este bloque) + HELPERS
@@ -2069,18 +2069,18 @@ T["en"].update({
     "b4_T": "T [s]",
 
     # ✅ Checks labels + helpers
-    "b4_chk_hdr": "Quick checks",
-    "b4_chk_dy_lt_DM": "δy < D_M",
-    "h_b4_chk_dy_lt_DM": "Yield displacement must be smaller than maximum displacement demand (otherwise the isolator behaves too stiff).",
-    "b4_chk_ke_gt_kp": "Ke > Kp",
-    "h_b4_chk_ke_gt_kp": "Bilinear behavior requires initial stiffness greater than post-yield stiffness.",
-    "b4_chk_beta_ok": "β reasonable",
-    "h_b4_chk_beta_ok": "Equivalent damping should be within a practical range for LRB (typical 2%–50% depending on design assumptions).",
-    "b4_chk_beta_match": "β (design) ≈ β (cycle)",
-    "h_b4_chk_beta_match": "Checks consistency between the β used in design and the β estimated from the bilinear hysteresis energy.",
-
+    "b4_chk_hdr": "Simplified NEC-24 verification",
+    
     # ✅ Warning text prefix
     "b4_warn_hdr": "Period objective warning",
+
+    "b4_box_Tm": "Effective period 𝐓ₘ",
+    "b4_box_betaM": "Effective damping βₘ",
+    "b4_box_DM": "Maximum displacement 𝐃ₘ",
+    "b4_box_dy": "Yield displacement δᵧ",
+    "b4_box_DL": "Lead core diameter 𝐃ₗ",
+    "b4_box_DB": "Rubber diameter 𝐃ᵦ",
+    "b4_box_tr": "Total rubber thickness 𝐭ᵣ",
 })
 
 T["es"].update({
@@ -2140,18 +2140,18 @@ T["es"].update({
     "b4_T": "T [s]",
 
     # ✅ Checks labels + helpers
-    "b4_chk_hdr": "Chequeos rápidos",
-    "b4_chk_dy_lt_DM": "δy < D_M",
-    "h_b4_chk_dy_lt_DM": "El desplazamiento de fluencia debe ser menor que la demanda máxima (caso contrario el aislador se comporta demasiado rígido).",
-    "b4_chk_ke_gt_kp": "Ke > Kp",
-    "h_b4_chk_ke_gt_kp": "El modelo bilineal requiere rigidez inicial mayor que la rigidez postfluencia.",
-    "b4_chk_beta_ok": "β razonable",
-    "h_b4_chk_beta_ok": "El amortiguamiento equivalente debe estar en un rango práctico para LRB (típico 2%–50% según supuestos).",
-    "b4_chk_beta_match": "β (diseño) ≈ β (ciclo)",
-    "h_b4_chk_beta_match": "Verifica consistencia entre el β usado en el diseño y el β estimado desde la energía del ciclo bilineal.",
-
+    "b4_chk_hdr": "Verificación simplificada NEC-24",
+    
     # ✅ Warning text prefix
     "b4_warn_hdr": "Advertencia de período objetivo",
+
+    "b4_box_Tm": "Período efectivo 𝐓ₘ",
+    "b4_box_betaM": "Amortiguamiento efectivo βₘ",
+    "b4_box_DM": "Desplazamiento máximo 𝐃ₘ",
+    "b4_box_dy": "Desplazamiento de fluencia δᵧ",
+    "b4_box_DL": "Diámetro del núcleo de plomo 𝐃ₗ",
+    "b4_box_DB": "Diámetro del aislador 𝐃ᵦ",
+    "b4_box_tr": "Espesor total de caucho 𝐭ᵣ",
 })
 
 # -------------------------------------------------------------------------
@@ -2309,37 +2309,32 @@ with col_izq:
     # Panel checks (✔ / ❌)
     # =========================
     with c_chk:
-        with st.container(border=True):
-            st.markdown(f"**{tr('b4_chk_hdr')}**")
+    with st.container(border=True):
+        st.markdown(f"**{tr('b4_chk_hdr')}**")
 
-            if "res_aislador" in st.session_state:
-                checks = _compute_checks(st.session_state["res_aislador"])
+        if "res_aislador" in st.session_state:
+            res_chk = st.session_state["res_aislador"]
 
-                def check_line(cond, text, help_text):
-                    icon = "✔️" if cond else "❌"
-                    icon_color = "#3DDC84" if cond else "#FF4B4B"
-                    st.markdown(
-                        f"""
-                        <div title="{help_text}" style="
-                            margin-bottom:4px;
-                            font-size:0.95rem;
-                            font-weight:500;
-                            color:#000000;">
-                            <span style="color:{icon_color};">{icon}</span> {text}
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
+            Tfb = float(np.asarray(st.session_state.get("T_sin", [np.nan]), dtype=float).ravel()[0])
+            tipo_suelo_chk = st.session_state.get("nec24_params", {}).get("suelo", None)
+            alturas_chk = st.session_state.get("alturas", None)
 
-                check_line(checks["ok_dy"], tr("b4_chk_dy_lt_DM"), tr("h_b4_chk_dy_lt_DM"))
-                check_line(checks["ok_k"],  tr("b4_chk_ke_gt_kp"), tr("h_b4_chk_ke_gt_kp"))
-                check_line(checks["ok_b"],  tr("b4_chk_beta_ok"),  tr("h_b4_chk_beta_ok"))
-                check_line(checks["ok_match"], tr("b4_chk_beta_match"), tr("h_b4_chk_beta_match"))
+            df_chk = _compute_checks_nec(
+                res_chk,
+                tipo_suelo=tipo_suelo_chk,
+                Tfb=Tfb,
+                alturas=alturas_chk,
+            )
 
-                st.caption(f"β_design = {checks['beta']:.3f}   |   β_cycle ≈ {checks['beta_cycle']:.3f}")
-            else:
-                st.caption("—")
-
+            st.dataframe(
+                df_chk,
+                hide_index=True,
+                use_container_width=True,
+                height=min(35 * (len(df_chk) + 1), 260),
+            )
+        else:
+            st.caption("—")
+            
     # =========================
     # Botón cálculo (con rerun para actualizar checks inmediato)
     # =========================
@@ -2428,16 +2423,33 @@ with col_izq:
     # =========================
     if "res_aislador" in st.session_state:
         r = st.session_state["res_aislador"]
-
-        # ✅ Totales para comparación con ETABS
+    
+        # ✅ Valores principales
+        T_M = float(r["T_M"])
+        beta_M_pct = 100.0 * float(r["beta_M"])
+    
         keff_1ais = float(r["keff_1ais"])
+        c_1ais = float(r["c_1ais"])
+        k_ini_1ais = float(r["k_inicial_1ais"])
+        k_post_1ais = float(r["k_post_1ais"])
+        fy_1ais = float(r["yield_1ais"])
+    
+        ratio_post = float(k_post_1ais / k_ini_1ais) if k_ini_1ais > 0 else np.nan
+    
+        D_M = float(r["D_M"])
+        delta_y = float(r["delta_y"])
+        D_L = float(r["D_L"])
+        D_B = float(r["D_B"])
+        t_r = float(r["t_r"])
+    
+        # ✅ Totales para comparación con ETABS
         N_iso = int(st.session_state.get("n_aisladores", 0))
         keff_total = keff_1ais * N_iso
-
-        # guardar para usar en Bloque 5/6
+    
+        # ✅ guardar para usar en Bloque 5/6
         st.session_state["keff_1ais"] = float(keff_1ais)
         st.session_state["keff_total"] = float(keff_total)
-
+    
         st.markdown(f"""
         <div style="
             background-color:#1E2331;
@@ -2447,18 +2459,29 @@ with col_izq:
             border:1px solid #3A4050;
             font-family:Consolas, monospace;
             margin-top:10px;">
-        <b>{tr("b4_box_hdr")}</b><br>
-
+        <b>{tr("b4_box_hdr")}</b><br><br>
+    
+        𝐓ₘ : {T_M:.3f} s<br>
+        βₘ : {beta_M_pct:.2f} %<br>
+        Dₘ : {D_M:.4f} m<br>
+        δᵧ : {delta_y:.4f} m<br>
+        <br>
+    
         {tr("b4_box_keff")} : {keff_1ais:.3f} Tonf/m<br>
         {tr("b4_box_n")} : {N_iso:d}<br>
         {tr("b4_box_keffN")} : {keff_total:.3f} Tonf/m<br>
         <br>
-
-        {tr("b4_box_ceq")} : {r["c_1ais"]:.3f} Tonf·s/m<br>
-        {tr("b4_box_ke")} : {r["k_inicial_1ais"]:.3f} Tonf/m<br>
-        {tr("b4_box_kp")} : {r["k_post_1ais"]:.3f} Tonf/m<br>
-        {tr("b4_box_fy")} : {r["yield_1ais"]:.3f} Tonf<br>
-        {tr("b4_box_r")} : {r["k_post_1ais"] / r["k_inicial_1ais"]:.3f}
+    
+        {tr("b4_box_ceq")} : {c_1ais:.3f} Tonf·s/m<br>
+        {tr("b4_box_ke")} : {k_ini_1ais:.3f} Tonf/m<br>
+        {tr("b4_box_kp")} : {k_post_1ais:.3f} Tonf/m<br>
+        {tr("b4_box_fy")} : {fy_1ais:.3f} Tonf<br>
+        {tr("b4_box_r")} : {ratio_post:.3f}<br>
+        <br>
+    
+        {tr("b4_box_DL")} : {D_L:.4f} m<br>
+        {tr("b4_box_DB")} : {D_B:.4f} m<br>
+        {tr("b4_box_tr")} : {t_r:.4f} m
         </div>
         """, unsafe_allow_html=True)
 
