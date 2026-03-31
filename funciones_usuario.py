@@ -2385,15 +2385,15 @@ def nec24_espectro(z: float, zona: str, suelo: str, R: float, r: float = 1.0,
 
     return T, Sa_elast, Sa_inelas, SDS, SD1, Fa, Fd, Fs
 
-def detectar_fuente(texto: str) -> str:
-    t = (texto or "").lower()
-    if ("pacific earthquake engineering research" in t) or ("peer strong motion" in t) or ("ngawest" in t) or (".at2" in t):
-        return "PEER NGA"
-    if ("red nacional de acelerógrafos" in t) or ("renac" in t) or ("igepn" in t):
-        return "RENAC (IG-EPN)"
-    if ("instituto geofísico" in t) and ("pucp" not in t):
-        return "IGP"
-    return "Desconocido"
+# def detectar_fuente(texto: str) -> str:
+#     t = (texto or "").lower()
+#     if ("pacific earthquake engineering research" in t) or ("peer strong motion" in t) or ("ngawest" in t) or (".at2" in t):
+#         return "PEER NGA"
+#     if ("red nacional de acelerógrafos" in t) or ("renac" in t) or ("igepn" in t):
+#         return "RENAC (IG-EPN)"
+#     if ("instituto geofísico" in t) and ("pucp" not in t):
+#         return "IGP"
+#     return "Desconocido"
 
 
 def leer_archivo_bytes_a_texto(file_bytes: bytes) -> str:
@@ -2401,39 +2401,39 @@ def leer_archivo_bytes_a_texto(file_bytes: bytes) -> str:
     return file_bytes.decode(enc, errors="ignore")
 
 
-def cargar_ejemplo_desde_carpeta(filename: str = "EJEMPLO.txt", base_dir: str | None = None):
-    """
-    Devuelve: nombre, unidad, dt, ag_mps2, fuente, texto_crudo
-    Requiere que exista detectar_formato_y_extraer(texto) en tu proyecto (NO se define aquí).
-    """
-    if base_dir is None:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(base_dir, filename)
+# def cargar_ejemplo_desde_carpeta(filename: str = "EJEMPLO.txt", base_dir: str | None = None):
+#     """
+#     Devuelve: nombre, unidad, dt, ag_mps2, fuente, texto_crudo
+#     Requiere que exista detectar_formato_y_extraer(texto) en tu proyecto (NO se define aquí).
+#     """
+#     if base_dir is None:
+#         base_dir = os.path.dirname(os.path.abspath(__file__))
+#     path = os.path.join(base_dir, filename)
 
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"No se encontró {filename} en: {base_dir}")
+#     if not os.path.exists(path):
+#         raise FileNotFoundError(f"No se encontró {filename} en: {base_dir}")
 
-    with open(path, "rb") as f:
-        raw = f.read()
+#     with open(path, "rb") as f:
+#         raw = f.read()
 
-    texto = leer_archivo_bytes_a_texto(raw)
-    fuente = detectar_fuente(texto)
+#     texto = leer_archivo_bytes_a_texto(raw)
+#     fuente = detectar_fuente(texto)
 
-    # detecta formato (tu función existente)
-    nombre, unidad, dt, ag = detectar_formato_y_extraer(texto)  # noqa: F821
-    ag = np.asarray(ag, dtype=float).ravel()
-    dt = float(dt)
+#     # detecta formato (tu función existente)
+#     nombre, unidad, dt, ag = detectar_formato_y_extraer(texto)  # noqa: F821
+#     ag = np.asarray(ag, dtype=float).ravel()
+#     dt = float(dt)
 
-    if unidad == "cm/s²":
-        ag_mps2 = ag / 100.0
-    elif unidad == "g":
-        ag_mps2 = ag * G_STD
-    elif unidad == "m/s²":
-        ag_mps2 = ag
-    else:
-        raise ValueError(f"Unidad no reconocida: {unidad}")
+#     if unidad == "cm/s²":
+#         ag_mps2 = ag / 100.0
+#     elif unidad == "g":
+#         ag_mps2 = ag * G_STD
+#     elif unidad == "m/s²":
+#         ag_mps2 = ag
+#     else:
+#         raise ValueError(f"Unidad no reconocida: {unidad}")
 
-    return str(nombre), str(unidad), dt, np.asarray(ag_mps2, float), str(fuente), texto
+#     return str(nombre), str(unidad), dt, np.asarray(ag_mps2, float), str(fuente), texto
 
 def procesar_registro(ag_mps2: np.ndarray, dt: float, aplicar_proc: bool):
     """
@@ -2556,38 +2556,38 @@ def response_spectrum_newmark(ag_mps2: np.ndarray, dt: float, T: np.ndarray, xi:
     return Sa_g
 
 
-def lsq_scale_factor(Sa_reg: np.ndarray, Sa_target: np.ndarray):
-    """
-    Factor de escala por mínimos cuadrados en espacio logarítmico.
-    Más robusto que el LSQ lineal simple y evita sobreescalado excesivo.
-    """
-    Sa_reg = np.asarray(Sa_reg, dtype=float).ravel()
-    Sa_target = np.asarray(Sa_target, dtype=float).ravel()
+# def lsq_scale_factor(Sa_reg: np.ndarray, Sa_target: np.ndarray):
+#     """
+#     Factor de escala por mínimos cuadrados en espacio logarítmico.
+#     Más robusto que el LSQ lineal simple y evita sobreescalado excesivo.
+#     """
+#     Sa_reg = np.asarray(Sa_reg, dtype=float).ravel()
+#     Sa_target = np.asarray(Sa_target, dtype=float).ravel()
 
-    eps = 1e-12
-    ok = (
-        np.isfinite(Sa_reg) & np.isfinite(Sa_target) &
-        (Sa_reg > eps) & (Sa_target > eps)
-    )
+#     eps = 1e-12
+#     ok = (
+#         np.isfinite(Sa_reg) & np.isfinite(Sa_target) &
+#         (Sa_reg > eps) & (Sa_target > eps)
+#     )
 
-    if np.count_nonzero(ok) < 3:
-        return 1.0
+#     if np.count_nonzero(ok) < 3:
+#         return 1.0
 
-    log_ratio = np.log(Sa_target[ok]) - np.log(Sa_reg[ok])
-    SF = float(np.exp(np.mean(log_ratio)))
+#     log_ratio = np.log(Sa_target[ok]) - np.log(Sa_reg[ok])
+#     SF = float(np.exp(np.mean(log_ratio)))
 
-    if (not np.isfinite(SF)) or (SF <= 0):
-        return 1.0
+#     if (not np.isfinite(SF)) or (SF <= 0):
+#         return 1.0
 
-    return SF
+#     return SF
 
-def make_T_rs_piecewise(Tmin: float = 0.05, Tmax: float = 5.0):
-    Tmax = float(max(Tmin + 1e-6, Tmax))
-    T0 = np.linspace(Tmin, min(0.35, Tmax), 420)
-    T1 = np.linspace(min(0.35, Tmax), min(0.50, Tmax), 180)
-    T2 = np.linspace(min(0.50, Tmax), min(2.00, Tmax), 200)
-    T3 = np.linspace(min(2.00, Tmax), Tmax, 140)
-    return np.unique(np.concatenate([T0, T1, T2, T3]))
+# def make_T_rs_piecewise(Tmin: float = 0.05, Tmax: float = 5.0):
+#     Tmax = float(max(Tmin + 1e-6, Tmax))
+#     T0 = np.linspace(Tmin, min(0.35, Tmax), 420)
+#     T1 = np.linspace(min(0.35, Tmax), min(0.50, Tmax), 180)
+#     T2 = np.linspace(min(0.50, Tmax), min(2.00, Tmax), 200)
+#     T3 = np.linspace(min(2.00, Tmax), Tmax, 140)
+#     return np.unique(np.concatenate([T0, T1, T2, T3]))
 
 def decimate_adaptive(ag: np.ndarray, dt: float, dt_target: float):
     dt = float(dt)
@@ -2599,40 +2599,40 @@ def decimate_adaptive(ag: np.ndarray, dt: float, dt_target: float):
     return ag[::dec], dt * dec, dec
 
 
-def compute_Sa_piecewise(ag_base: np.ndarray, dt: float, T_rs: np.ndarray, xi: float):
-    """
-    MISMA IDEA que tu versión: calcula Sa por tramos con dt_target distinto.
-    (sin cache aquí; el cache lo haces en app.py si quieres)
-    """
-    T_rs = np.asarray(T_rs, dtype=float).ravel()
-    Sa = np.zeros_like(T_rs, dtype=float)
+# def compute_Sa_piecewise(ag_base: np.ndarray, dt: float, T_rs: np.ndarray, xi: float):
+#     """
+#     MISMA IDEA que tu versión: calcula Sa por tramos con dt_target distinto.
+#     (sin cache aquí; el cache lo haces en app.py si quieres)
+#     """
+#     T_rs = np.asarray(T_rs, dtype=float).ravel()
+#     Sa = np.zeros_like(T_rs, dtype=float)
 
-    m0 = (T_rs <= 0.25)
-    m1 = (T_rs > 0.25) & (T_rs <= 0.50)
-    m2 = (T_rs > 0.50) & (T_rs <= 2.00)
-    m3 = (T_rs > 2.00)
+#     m0 = (T_rs <= 0.25)
+#     m1 = (T_rs > 0.25) & (T_rs <= 0.50)
+#     m2 = (T_rs > 0.50) & (T_rs <= 2.00)
+#     m3 = (T_rs > 2.00)
 
-    if np.any(m0):
-        dt_t0 = max(float(dt), 0.005)
-        ag0, dt0, _ = decimate_adaptive(ag_base, dt, dt_target=dt_t0)
-        Sa[m0] = response_spectrum_newmark(ag0, float(dt0), T_rs[m0], xi=float(xi))
+#     if np.any(m0):
+#         dt_t0 = max(float(dt), 0.005)
+#         ag0, dt0, _ = decimate_adaptive(ag_base, dt, dt_target=dt_t0)
+#         Sa[m0] = response_spectrum_newmark(ag0, float(dt0), T_rs[m0], xi=float(xi))
 
-    if np.any(m1):
-        dt_t1 = max(float(dt), 0.010)
-        ag1, dt1, _ = decimate_adaptive(ag_base, dt, dt_target=dt_t1)
-        Sa[m1] = response_spectrum_newmark(ag1, float(dt1), T_rs[m1], xi=float(xi))
+#     if np.any(m1):
+#         dt_t1 = max(float(dt), 0.010)
+#         ag1, dt1, _ = decimate_adaptive(ag_base, dt, dt_target=dt_t1)
+#         Sa[m1] = response_spectrum_newmark(ag1, float(dt1), T_rs[m1], xi=float(xi))
 
-    if np.any(m2):
-        dt_t2 = max(float(dt), 0.020)
-        ag2, dt2, _ = decimate_adaptive(ag_base, dt, dt_target=dt_t2)
-        Sa[m2] = response_spectrum_newmark(ag2, float(dt2), T_rs[m2], xi=float(xi))
+#     if np.any(m2):
+#         dt_t2 = max(float(dt), 0.020)
+#         ag2, dt2, _ = decimate_adaptive(ag_base, dt, dt_target=dt_t2)
+#         Sa[m2] = response_spectrum_newmark(ag2, float(dt2), T_rs[m2], xi=float(xi))
 
-    if np.any(m3):
-        dt_t3 = max(float(dt), 0.035)
-        ag3, dt3, _ = decimate_adaptive(ag_base, dt, dt_target=dt_t3)
-        Sa[m3] = response_spectrum_newmark(ag3, float(dt3), T_rs[m3], xi=float(xi))
+#     if np.any(m3):
+#         dt_t3 = max(float(dt), 0.035)
+#         ag3, dt3, _ = decimate_adaptive(ag_base, dt, dt_target=dt_t3)
+#         Sa[m3] = response_spectrum_newmark(ag3, float(dt3), T_rs[m3], xi=float(xi))
 
-    return Sa
+#     return Sa
 
 # =============================================================================
 # === BLOQUE 4 HELPERS: cache modal key + checks bilinear beta ================
