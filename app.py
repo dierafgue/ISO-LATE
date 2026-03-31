@@ -2321,11 +2321,10 @@ with col_izq:
     
                 df_chk = _compute_checks_nec(
                     res_chk,
-                    tipo_suelo=tipo_suelo_chk,
-                    Tfb=Tfb,
-                    alturas=alturas_chk,
+                    SDS=st.session_state.get("SDS"),
+                    SD1=st.session_state.get("SD1"),
                 )
-    
+                    
                 st.dataframe(
                     df_chk,
                     hide_index=True,
