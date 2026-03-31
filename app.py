@@ -3484,9 +3484,6 @@ T["en"].update({
     "b7_right_hdr": "Real isolator hysteresis (individual bilinear)",
     "b7_xlabel_u0": "Base displacement u₀ [m]",
     "b7_ylabel_Fiso": "Isolator force [Tf]",
-
-    "b7_warn_ray": "Rayleigh helper functions were not found. Structural damping was set to zero in this block.",
-    "b7_warn_k": "The linear effective isolator stiffness was removed from K[0,0] to avoid double-counting in the nonlinear hysteresis analysis.",
 })
 
 T["es"].update({
@@ -3507,9 +3504,6 @@ T["es"].update({
     "b7_right_hdr": "Histéresis real del aislador (bilineal individual)",
     "b7_xlabel_u0": "Desplazamiento base u₀ [m]",
     "b7_ylabel_Fiso": "Fuerza del aislador [Tf]",
-
-    "b7_warn_ray": "No se encontraron las funciones auxiliares de Rayleigh. En este bloque se tomó amortiguamiento estructural nulo.",
-    "b7_warn_k": "Se retiró la rigidez efectiva lineal del aislador de K[0,0] para evitar doble conteo en la histéresis no lineal.",
 })
 
 # -------------------------------------------------------------------------
@@ -3644,10 +3638,7 @@ with col_right:
         dt = float(st.session_state["dt"])
 
         # -----------------------------------------------------------------
-        # ✅ OJO CON UNIDADES:
-        # newmark_nl_base_bilinear espera ag_g en "g" porque internamente
-        # multiplica por 9.80665. En session_state["ag_filt"] lo tienes en m/s².
-        # Por eso aquí lo convertimos a g antes de llamarlo.
+        # ✅ newmark_nl_base_bilinear espera ag_g en g
         # -----------------------------------------------------------------
         ag_mps2 = np.asarray(st.session_state["ag_filt"], dtype=float).ravel()
         ag_g = ag_mps2 / 9.8066500000
@@ -3659,9 +3650,7 @@ with col_right:
         n_aisladores = max(n_aisladores, 1)
 
         # -----------------------------------------------------------------
-        # ✅ K_cond_ais ya incluye la rigidez efectiva lineal total del aislador
-        # en K[0,0]. Para el análisis no lineal bilineal, esa parte se retira
-        # para no contar dos veces el aislador.
+        # ✅ Retirar keff total del aislador para evitar doble conteo
         # -----------------------------------------------------------------
         keff_1ais = float(st.session_state["res_aislador"]["keff_1ais"])
         k_iso_total = keff_1ais * n_aisladores
@@ -3669,15 +3658,11 @@ with col_right:
         K_used = np.array(K_ais, copy=True)
         K_used[0, 0] -= k_iso_total
 
-        # defensivo
         if K_used[0, 0] < 0:
             K_used[0, 0] = 0.0
 
-        st.caption(tr("b7_warn_k"))
-
         # -----------------------------------------------------------------
-        # ✅ Amortiguamiento estructural solamente.
-        # El amortiguamiento del aislador entra por c_iso dentro del modelo NL.
+        # ✅ Amortiguamiento estructural solamente
         # -----------------------------------------------------------------
         C_used = np.zeros_like(M_ais)
 
@@ -3690,14 +3675,9 @@ with col_right:
                 C_used = alpha_ais * M_ais + beta_ais * K_used
             except Exception:
                 C_used = np.zeros_like(M_ais)
-                st.caption(tr("b7_warn_ray"))
-        else:
-            st.caption(tr("b7_warn_ray"))
 
         # -----------------------------------------------------------------
-        # ✅ Propiedades totales del sistema de aisladores para el solver NL
-        # El GDL 0 representa la base completa.
-        # Luego se divide fuerza entre N para graficar 1 aislador individual.
+        # ✅ Propiedades TOTALES para el solver no lineal
         # -----------------------------------------------------------------
         k0_1 = float(st.session_state["k_inicial_1ais"])
         kp_1 = float(st.session_state["k_post_1ais"])
@@ -3727,6 +3707,7 @@ with col_right:
 
         # -----------------------------------------------------------------
         # ✅ Histéresis de un aislador individual
+        # Para comparar con ETABS link vs link, conviene usar la parte histérica
         # -----------------------------------------------------------------
         u_iso = np.asarray(U_nl[0, :], dtype=float).ravel()
         Fiso_hist_1 = np.asarray(Fiso_hist_tot, dtype=float).ravel() / n_aisladores
@@ -3747,7 +3728,8 @@ with col_right:
         fig.patch.set_facecolor(BG)
         ax.set_facecolor(BG)
 
-        ax.plot(u_iso, Fiso_hist_1, color=COLOR_LINE1, lw=0.8)
+        # ✅ usar fuerza histérica individual para comparar con ETABS
+        ax.plot(u_iso, Fhyst_hist_1, color=COLOR_LINE1, lw=0.8)
 
         ax.set_xlabel(tr("b7_xlabel_u0"), color=COLOR_TEXT)
         ax.set_ylabel(tr("b7_ylabel_Fiso"), color=COLOR_TEXT)
