@@ -2007,7 +2007,7 @@ import pandas as pd
 import streamlit as st
 from numpy.linalg import inv, eig
 import math
-from funciones_usuario import _km_key, diseno_aislador_LRB, _compute_checks_nec, set_style_arctic_dark, plot_ciclo_histeretico_lrb
+from funciones_usuario import _km_key, diseno_aislador_LRB, set_style_arctic_dark, plot_ciclo_histeretico_lrb
 
 # -------------------------------------------------------------------------
 # ✅ Textos EN/ES (solo para este bloque) + HELPERS
