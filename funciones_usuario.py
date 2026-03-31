@@ -2660,36 +2660,89 @@ def _beta_from_bilinear_cycle(Fy: float, dy: float, D: float, Keff: float) -> fl
     beta = Ed / (2.0 * math.pi * Keff * (D**2))
     return max(0.0, beta)
 
-def _compute_checks(resultados_ais: dict) -> dict:
-    Ke   = float(resultados_ais["k_inicial_1ais"])
-    Kp   = float(resultados_ais["k_post_1ais"])
-    Fy   = float(resultados_ais["yield_1ais"])
-    dy   = float(resultados_ais.get("delta_y", np.nan))     # ✅ dy REAL (yield)
-    Dm   = float(resultados_ais["D_M"])
-    beta = float(resultados_ais.get("beta_M", np.nan))
-    Keff = float(resultados_ais.get("keff_1ais", np.nan))
+def _compute_checks_nec(resultados_ais: dict, *, tipo_suelo=None, Tfb=None, alturas=None) -> pd.DataFrame:
+    """
+    Devuelve una tabla simplificada de verificación NEC-24.
+    Columnas:
+      - Criterio
+      - Límite NEC
+      - Valor calculado
+      - Cumple
+    """
 
-    ok_dy = np.isfinite(dy) and (dy > 0) and (Dm > dy)
-    ok_k  = (Ke > Kp > 0)
-    ok_b  = np.isfinite(beta) and (0.02 <= beta <= 0.50)
+    T_M = float(resultados_ais.get("T_M", np.nan))
+    beta_M = float(resultados_ais.get("beta_M", np.nan))
 
-    beta_cycle = _beta_from_bilinear_cycle(
-        Fy=Fy,
-        dy=dy if np.isfinite(dy) else 0.0,
-        D=Dm,
-        Keff=Keff
-    )
-    ok_match = np.isfinite(beta) and np.isfinite(beta_cycle) and (abs(beta - beta_cycle) <= 0.10)
+    # altura total
+    H_total = np.nan
+    n_pisos = np.nan
 
-    return {
-        "ok_dy": ok_dy,
-        "ok_k": ok_k,
-        "ok_b": ok_b,
-        "ok_match": ok_match,
-        "beta": beta,
-        "beta_cycle": beta_cycle,
-        "dy": dy,
-    }
+    if alturas is not None:
+        h = np.asarray(alturas, dtype=float).ravel()
+        h = h[np.isfinite(h)]
+        if len(h) > 0:
+            H_total = float(np.max(h))
+            n_pisos = int(len(h))
+
+    rows = []
+
+    # 1) Suelo permitido para análisis estático lineal: A, B, C, D
+    if tipo_suelo is not None:
+        suelo_ok = str(tipo_suelo).upper() in ["A", "B", "C", "D"]
+        rows.append({
+            "Criterio": "Tipo de suelo",
+            "Límite NEC": "A, B, C o D",
+            "Valor calculado": f"{str(tipo_suelo).upper()}",
+            "Cumple": "✔️" if suelo_ok else "❌",
+        })
+
+    # 2) TM <= 5.0 s
+    if np.isfinite(T_M):
+        rows.append({
+            "Criterio": "Período efectivo del sistema aislado",
+            "Límite NEC": "T_M ≤ 5.0 s",
+            "Valor calculado": f"{T_M:.3f} s",
+            "Cumple": "✔️" if (T_M <= 5.0) else "❌",
+        })
+
+    # 3) beta_M <= 30%
+    if np.isfinite(beta_M):
+        rows.append({
+            "Criterio": "Amortiguamiento efectivo",
+            "Límite NEC": "β_M ≤ 30%",
+            "Valor calculado": f"{100.0 * beta_M:.2f} %",
+            "Cumple": "✔️" if (beta_M <= 0.30) else "❌",
+        })
+
+    # 4) T_M > 3 T_fb
+    if np.isfinite(T_M) and (Tfb is not None) and np.isfinite(Tfb) and (Tfb > 0):
+        rows.append({
+            "Criterio": "Desacople dinámico",
+            "Límite NEC": "T_M > 3·T_fb",
+            "Valor calculado": f"T_M = {T_M:.3f} s | 3·T_fb = {3.0*Tfb:.3f} s",
+            "Cumple": "✔️" if (T_M > 3.0 * Tfb) else "❌",
+        })
+
+    # 5) Altura / número de pisos
+    if np.isfinite(H_total) and np.isfinite(n_pisos):
+        ok_altura = (H_total <= 20.0)
+        ok_pisos = (n_pisos <= 4)
+
+        rows.append({
+            "Criterio": "Altura de superestructura",
+            "Límite NEC": "H ≤ 20 m",
+            "Valor calculado": f"{H_total:.3f} m",
+            "Cumple": "✔️" if ok_altura else "❌",
+        })
+
+        rows.append({
+            "Criterio": "Número de pisos",
+            "Límite NEC": "≤ 4 pisos",
+            "Valor calculado": f"{n_pisos:d}",
+            "Cumple": "✔️" if ok_pisos else "❌",
+        })
+
+    return pd.DataFrame(rows)
 
 # =============================================================================
 # ========= BLOQUE 5 HELPERS: MODAL + ESQUEMAS OPTIMIZADO PARA HASTA 30 PISOS ==
