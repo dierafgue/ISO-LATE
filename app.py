@@ -2054,10 +2054,6 @@ T["en"].update({
     "b4_box_fy":   "Yield force 𝐅ᵧ",
     "b4_box_r":    "Stiffness ratio 𝐫 = 𝐊ₚ/𝐊ₑ",
 
-    # ✅ EXTRA: Totales para ETABS
-    "b4_box_n":     "Number of isolators 𝐍",
-    "b4_box_keffN": "Total effective stiffness 𝐍·𝐊ₑ𝑓𝑓",
-
     # ✅ Hysteresis texts
     "b4_hyst_title": "Bilinear hysteretic cycle – LRB isolator",
     "b4_hyst_xlabel": "Displacement Δ (m)",
@@ -2079,11 +2075,6 @@ T["en"].update({
     "b4_box_DB": "Rubber diameter 𝐃ᵦ",
     "b4_box_tr": "Total rubber thickness 𝐭ᵣ",
 
-    "b4_box_checks_hdr": "Consistency checks",
-    "b4_box_chk_tm": "Tₘ available",
-    "b4_box_chk_beta": "βₘ available",
-    "b4_box_chk_dm": "Dₘ available",
-    "b4_box_chk_km": "Kₘ available",
     "b4_box_chk_dy": "δᵧ < Dₘ",
     "b4_box_chk_k": "Kₑ > Kₚ",
     "b4_box_yes": "Yes",
@@ -2132,10 +2123,6 @@ T["es"].update({
     "b4_box_fy":   "Fuerza de fluencia 𝐅ᵧ",
     "b4_box_r":    "Relación de rigideces 𝐫 = 𝐊ₚ/𝐊ₑ",
 
-    # ✅ EXTRA: Totales para ETABS
-    "b4_box_n":     "Número de aisladores 𝐍",
-    "b4_box_keffN": "Rigidez efectiva total 𝐍·𝐊ₑ𝑓𝑓",
-
     # ✅ Hysteresis texts
     "b4_hyst_title": "Ciclo histerético bilineal – Aislador LRB",
     "b4_hyst_xlabel": "Desplazamiento Δ (m)",
@@ -2157,11 +2144,6 @@ T["es"].update({
     "b4_box_DB": "Diámetro del aislador 𝐃ᵦ",
     "b4_box_tr": "Espesor total de caucho 𝐭ᵣ",
 
-    "b4_box_checks_hdr": "Verificaciones de consistencia",
-    "b4_box_chk_tm": "Tₘ disponible",
-    "b4_box_chk_beta": "βₘ disponible",
-    "b4_box_chk_dm": "Dₘ disponible",
-    "b4_box_chk_km": "Kₘ disponible",
     "b4_box_chk_dy": "δᵧ < Dₘ",
     "b4_box_chk_k": "Kₑ > Kₚ",
     "b4_box_yes": "Sí",
@@ -2413,7 +2395,6 @@ with col_izq:
         beta_M = float(r.get("beta_M", np.nan))
         beta_M_pct = 100.0 * beta_M if np.isfinite(beta_M) else np.nan
     
-        k_M = float(r.get("k_M", np.nan))
         keff_1ais = float(r.get("keff_1ais", np.nan))
         c_1ais = float(r.get("c_1ais", np.nan))
         k_ini_1ais = float(r.get("k_inicial_1ais", np.nan))
@@ -2428,24 +2409,15 @@ with col_izq:
         D_B = float(r.get("D_B", np.nan))
         t_r = float(r.get("t_r", np.nan))
     
-        # ✅ Verificaciones de consistencia
-        ok_tm = np.isfinite(T_M) and (T_M > 0)
-        ok_beta = np.isfinite(beta_M) and (beta_M >= 0)
-        ok_dm = np.isfinite(D_M) and (D_M > 0)
-        ok_km = np.isfinite(k_M) and (k_M > 0)
+        # ✅ Verificaciones mínimas útiles
         ok_dy = np.isfinite(delta_y) and np.isfinite(D_M) and (delta_y > 0) and (delta_y < D_M)
         ok_k = np.isfinite(k_ini_1ais) and np.isfinite(k_post_1ais) and (k_ini_1ais > k_post_1ais > 0)
     
         yes_txt = tr("b4_box_yes")
         no_txt = tr("b4_box_no")
     
-        # ✅ Totales para comparación con ETABS
-        N_iso = int(st.session_state.get("n_aisladores", 0))
-        keff_total = keff_1ais * N_iso if np.isfinite(keff_1ais) else np.nan
-    
         # ✅ guardar para usar en Bloque 5/6
         st.session_state["keff_1ais"] = float(keff_1ais) if np.isfinite(keff_1ais) else np.nan
-        st.session_state["keff_total"] = float(keff_total) if np.isfinite(keff_total) else np.nan
     
         st.markdown(f"""
         <div style="
@@ -2465,10 +2437,6 @@ with col_izq:
         <br>
     
         {tr("b4_box_keff")} : {keff_1ais:.3f} Tonf/m<br>
-        {tr("b4_box_n")} : {N_iso:d}<br>
-        {tr("b4_box_keffN")} : {keff_total:.3f} Tonf/m<br>
-        <br>
-    
         {tr("b4_box_ceq")} : {c_1ais:.3f} Tonf·s/m<br>
         {tr("b4_box_ke")} : {k_ini_1ais:.3f} Tonf/m<br>
         {tr("b4_box_kp")} : {k_post_1ais:.3f} Tonf/m<br>
@@ -2481,11 +2449,6 @@ with col_izq:
         {tr("b4_box_tr")} : {t_r:.4f} m<br>
         <br>
     
-        <b>{tr("b4_box_checks_hdr")}</b><br>
-        {tr("b4_box_chk_tm")} : {yes_txt if ok_tm else no_txt}<br>
-        {tr("b4_box_chk_beta")} : {yes_txt if ok_beta else no_txt}<br>
-        {tr("b4_box_chk_dm")} : {yes_txt if ok_dm else no_txt}<br>
-        {tr("b4_box_chk_km")} : {yes_txt if ok_km else no_txt}<br>
         {tr("b4_box_chk_dy")} : {yes_txt if ok_dy else no_txt}<br>
         {tr("b4_box_chk_k")} : {yes_txt if ok_k else no_txt}
         </div>
