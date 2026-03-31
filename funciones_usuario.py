@@ -3047,7 +3047,7 @@ def plot_modelo_condensado_aislado(K_cond_ais, M_cond_ais, pisos_y):
 
     fig.tight_layout()
     _freeze_axes_limits(fig)
-    return fig
+    return figA
 
 # =============================================================================
 # === BLOQUE 6 (FUNCIONES): UTILIDADES THA / NEWMARK / RAYLEIGH / EXCEL ========
