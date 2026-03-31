@@ -2401,7 +2401,11 @@ with col_izq:
         k_post_1ais = float(r.get("k_post_1ais", np.nan))
         fy_1ais = float(r.get("yield_1ais", np.nan))
     
-        ratio_post = float(k_post_1ais / k_ini_1ais) if (np.isfinite(k_ini_1ais) and k_ini_1ais > 0) else np.nan
+        ratio_post = (
+            float(k_post_1ais / k_ini_1ais)
+            if (np.isfinite(k_ini_1ais) and k_ini_1ais > 0)
+            else np.nan
+        )
     
         D_M = float(r.get("D_M", np.nan))
         delta_y = float(r.get("delta_y", np.nan))
@@ -2423,31 +2427,59 @@ with col_izq:
         <div style="
             background-color:#1E2331;
             color:#F4F6FA;
-            padding:10px;
+            padding:10px 12px;
             border-radius:10px;
             border:1px solid #3A4050;
             font-family:Consolas, monospace;
             margin-top:10px;">
-        <b>{tr("b4_box_hdr")}</b><br><br>
     
-        {tr("b4_box_Tm")} : {T_M:.3f} s<br>
-        {tr("b4_box_betaM")} : {beta_M_pct:.2f} %<br>
-        {tr("b4_box_DM")} : {D_M:.4f} m<br>
-        {tr("b4_box_dy")} : {delta_y:.4f} m<br>
+            <div style="font-weight:700; margin-bottom:10px;">
+                {tr("b4_box_hdr")}
+            </div>
     
-        {tr("b4_box_keff")} : {keff_1ais:.3f} Tonf/m<br>
-        {tr("b4_box_ceq")} : {c_1ais:.3f} Tonf·s/m<br>
-        {tr("b4_box_ke")} : {k_ini_1ais:.3f} Tonf/m<br>
-        {tr("b4_box_kp")} : {k_post_1ais:.3f} Tonf/m<br>
-        {tr("b4_box_fy")} : {fy_1ais:.3f} Tonf<br>
-        {tr("b4_box_r")} : {ratio_post:.3f}<br>
+            <div style="
+                display:flex;
+                justify-content:space-between;
+                align-items:flex-start;
+                gap:24px;
+                margin-bottom:8px;">
     
-        {tr("b4_box_DL")} : {D_L:.4f} m<br>
-        {tr("b4_box_DB")} : {D_B:.4f} m<br>
-        {tr("b4_box_tr")} : {t_r:.4f} m<br>
+                <!-- COLUMNA IZQUIERDA -->
+                <div style="
+                    flex:1.2;
+                    min-width:260px;
+                    line-height:1.40;">
+                    {tr("b4_box_Tm")} : {T_M:.3f} s<br>
+                    {tr("b4_box_betaM")} : {beta_M_pct:.2f} %<br>
+                    {tr("b4_box_DM")} : {D_M:.4f} m<br>
+                    {tr("b4_box_dy")} : {delta_y:.4f} m<br>
+                    <br>
     
-        {tr("b4_box_chk_dy")} : {yes_txt if ok_dy else no_txt}<br>
-        {tr("b4_box_chk_k")} : {yes_txt if ok_k else no_txt}
+                    {tr("b4_box_keff")} : {keff_1ais:.3f} Tonf/m<br>
+                    {tr("b4_box_ceq")} : {c_1ais:.3f} Tonf·s/m<br>
+                    <br>
+    
+                    {tr("b4_box_chk_dy")} : {yes_txt if ok_dy else no_txt}<br>
+                    {tr("b4_box_chk_k")} : {yes_txt if ok_k else no_txt}
+                </div>
+    
+                <!-- COLUMNA DERECHA -->
+                <div style="
+                    flex:1.0;
+                    min-width:240px;
+                    line-height:1.40;
+                    padding-left:6px;">
+                    {tr("b4_box_ke")} : {k_ini_1ais:.3f} Tonf/m<br>
+                    {tr("b4_box_kp")} : {k_post_1ais:.3f} Tonf/m<br>
+                    {tr("b4_box_fy")} : {fy_1ais:.3f} Tonf<br>
+                    {tr("b4_box_r")} : {ratio_post:.3f}<br>
+                    <br>
+    
+                    {tr("b4_box_DL")} : {D_L:.4f} m<br>
+                    {tr("b4_box_DB")} : {D_B:.4f} m<br>
+                    {tr("b4_box_tr")} : {t_r:.4f} m
+                </div>
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
