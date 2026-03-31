@@ -2067,9 +2067,6 @@ T["en"].update({
     "b4_mode": "Mode",
     "b4_f": "f [Hz]",
     "b4_T": "T [s]",
-
-    # ✅ Checks labels + helpers
-    "b4_chk_hdr": "Simplified NEC-24 verification",
     
     # ✅ Warning text prefix
     "b4_warn_hdr": "Period objective warning",
@@ -2081,6 +2078,16 @@ T["en"].update({
     "b4_box_DL": "Lead core diameter 𝐃ₗ",
     "b4_box_DB": "Rubber diameter 𝐃ᵦ",
     "b4_box_tr": "Total rubber thickness 𝐭ᵣ",
+
+    "b4_box_checks_hdr": "Consistency checks",
+    "b4_box_chk_tm": "Tₘ available",
+    "b4_box_chk_beta": "βₘ available",
+    "b4_box_chk_dm": "Dₘ available",
+    "b4_box_chk_km": "Kₘ available",
+    "b4_box_chk_dy": "δᵧ < Dₘ",
+    "b4_box_chk_k": "Kₑ > Kₚ",
+    "b4_box_yes": "Yes",
+    "b4_box_no": "No",
 })
 
 T["es"].update({
@@ -2138,9 +2145,6 @@ T["es"].update({
     "b4_mode": "Modo",
     "b4_f": "f [Hz]",
     "b4_T": "T [s]",
-
-    # ✅ Checks labels + helpers
-    "b4_chk_hdr": "Verificación simplificada NEC-24",
     
     # ✅ Warning text prefix
     "b4_warn_hdr": "Advertencia de período objetivo",
@@ -2152,6 +2156,16 @@ T["es"].update({
     "b4_box_DL": "Diámetro del núcleo de plomo 𝐃ₗ",
     "b4_box_DB": "Diámetro del aislador 𝐃ᵦ",
     "b4_box_tr": "Espesor total de caucho 𝐭ᵣ",
+
+    "b4_box_checks_hdr": "Verificaciones de consistencia",
+    "b4_box_chk_tm": "Tₘ disponible",
+    "b4_box_chk_beta": "βₘ disponible",
+    "b4_box_chk_dm": "Dₘ disponible",
+    "b4_box_chk_km": "Kₘ disponible",
+    "b4_box_chk_dy": "δᵧ < Dₘ",
+    "b4_box_chk_k": "Kₑ > Kₚ",
+    "b4_box_yes": "Sí",
+    "b4_box_no": "No",
 })
 
 # -------------------------------------------------------------------------
@@ -2278,7 +2292,7 @@ with col_izq:
     # =========================
     # Layout controles + checks
     # =========================
-    c_ctrl, c_chk = st.columns([1.15, 1.00], gap="large")
+    c_ctrl = st.container()
 
     with c_ctrl:
         modo = st.radio(
@@ -2290,7 +2304,7 @@ with col_izq:
         )
         modo_automatico = (modo == tr("b4_mode_auto"))
         modo_periodo_objetivo = (modo == tr("b4_mode_Tobj"))
-
+    
         T_objetivo = st.number_input(
             tr("b4_Tobj"),
             0.5, 5.0, 2.5, 0.1,
@@ -2298,42 +2312,13 @@ with col_izq:
             disabled=modo_automatico,
             help=tr("h_b4_Tobj"),
         )
-
+    
         ejecutar = st.button(
             f"⚙️ {tr('b4_run')}",
             key="btn_lrb",
             help=tr("h_b4_run"),
         )
 
-    # =========================
-    # Panel checks (✔ / ❌)
-    # =========================
-    with c_chk:
-        with st.container(border=True):
-            st.markdown(f"**{tr('b4_chk_hdr')}**")
-    
-            if "res_aislador" in st.session_state:
-                res_chk = st.session_state["res_aislador"]
-    
-                Tfb = float(np.asarray(st.session_state.get("T_sin", [np.nan]), dtype=float).ravel()[0])
-                tipo_suelo_chk = st.session_state.get("nec24_params", {}).get("suelo", None)
-                alturas_chk = st.session_state.get("alturas", None)
-    
-                df_chk = _compute_checks_nec(
-                    res_chk,
-                    SDS=st.session_state.get("SDS"),
-                    SD1=st.session_state.get("SD1"),
-                )
-                    
-                st.dataframe(
-                    df_chk,
-                    hide_index=True,
-                    use_container_width=True,
-                    height=min(35 * (len(df_chk) + 1), 260),
-                )
-            else:
-                st.caption("—")
-            
     # =========================
     # Botón cálculo (con rerun para actualizar checks inmediato)
     # =========================
@@ -2424,30 +2409,43 @@ with col_izq:
         r = st.session_state["res_aislador"]
     
         # ✅ Valores principales
-        T_M = float(r["T_M"])
-        beta_M_pct = 100.0 * float(r["beta_M"])
+        T_M = float(r.get("T_M", np.nan))
+        beta_M = float(r.get("beta_M", np.nan))
+        beta_M_pct = 100.0 * beta_M if np.isfinite(beta_M) else np.nan
     
-        keff_1ais = float(r["keff_1ais"])
-        c_1ais = float(r["c_1ais"])
-        k_ini_1ais = float(r["k_inicial_1ais"])
-        k_post_1ais = float(r["k_post_1ais"])
-        fy_1ais = float(r["yield_1ais"])
+        k_M = float(r.get("k_M", np.nan))
+        keff_1ais = float(r.get("keff_1ais", np.nan))
+        c_1ais = float(r.get("c_1ais", np.nan))
+        k_ini_1ais = float(r.get("k_inicial_1ais", np.nan))
+        k_post_1ais = float(r.get("k_post_1ais", np.nan))
+        fy_1ais = float(r.get("yield_1ais", np.nan))
     
-        ratio_post = float(k_post_1ais / k_ini_1ais) if k_ini_1ais > 0 else np.nan
+        ratio_post = float(k_post_1ais / k_ini_1ais) if (np.isfinite(k_ini_1ais) and k_ini_1ais > 0) else np.nan
     
-        D_M = float(r["D_M"])
-        delta_y = float(r["delta_y"])
-        D_L = float(r["D_L"])
-        D_B = float(r["D_B"])
-        t_r = float(r["t_r"])
+        D_M = float(r.get("D_M", np.nan))
+        delta_y = float(r.get("delta_y", np.nan))
+        D_L = float(r.get("D_L", np.nan))
+        D_B = float(r.get("D_B", np.nan))
+        t_r = float(r.get("t_r", np.nan))
+    
+        # ✅ Verificaciones de consistencia
+        ok_tm = np.isfinite(T_M) and (T_M > 0)
+        ok_beta = np.isfinite(beta_M) and (beta_M >= 0)
+        ok_dm = np.isfinite(D_M) and (D_M > 0)
+        ok_km = np.isfinite(k_M) and (k_M > 0)
+        ok_dy = np.isfinite(delta_y) and np.isfinite(D_M) and (delta_y > 0) and (delta_y < D_M)
+        ok_k = np.isfinite(k_ini_1ais) and np.isfinite(k_post_1ais) and (k_ini_1ais > k_post_1ais > 0)
+    
+        yes_txt = tr("b4_box_yes")
+        no_txt = tr("b4_box_no")
     
         # ✅ Totales para comparación con ETABS
         N_iso = int(st.session_state.get("n_aisladores", 0))
-        keff_total = keff_1ais * N_iso
+        keff_total = keff_1ais * N_iso if np.isfinite(keff_1ais) else np.nan
     
         # ✅ guardar para usar en Bloque 5/6
-        st.session_state["keff_1ais"] = float(keff_1ais)
-        st.session_state["keff_total"] = float(keff_total)
+        st.session_state["keff_1ais"] = float(keff_1ais) if np.isfinite(keff_1ais) else np.nan
+        st.session_state["keff_total"] = float(keff_total) if np.isfinite(keff_total) else np.nan
     
         st.markdown(f"""
         <div style="
@@ -2460,10 +2458,10 @@ with col_izq:
             margin-top:10px;">
         <b>{tr("b4_box_hdr")}</b><br><br>
     
-        𝐓ₘ : {T_M:.3f} s<br>
-        βₘ : {beta_M_pct:.2f} %<br>
-        Dₘ : {D_M:.4f} m<br>
-        δᵧ : {delta_y:.4f} m<br>
+        {tr("b4_box_Tm")} : {T_M:.3f} s<br>
+        {tr("b4_box_betaM")} : {beta_M_pct:.2f} %<br>
+        {tr("b4_box_DM")} : {D_M:.4f} m<br>
+        {tr("b4_box_dy")} : {delta_y:.4f} m<br>
         <br>
     
         {tr("b4_box_keff")} : {keff_1ais:.3f} Tonf/m<br>
@@ -2480,7 +2478,16 @@ with col_izq:
     
         {tr("b4_box_DL")} : {D_L:.4f} m<br>
         {tr("b4_box_DB")} : {D_B:.4f} m<br>
-        {tr("b4_box_tr")} : {t_r:.4f} m
+        {tr("b4_box_tr")} : {t_r:.4f} m<br>
+        <br>
+    
+        <b>{tr("b4_box_checks_hdr")}</b><br>
+        {tr("b4_box_chk_tm")} : {yes_txt if ok_tm else no_txt}<br>
+        {tr("b4_box_chk_beta")} : {yes_txt if ok_beta else no_txt}<br>
+        {tr("b4_box_chk_dm")} : {yes_txt if ok_dm else no_txt}<br>
+        {tr("b4_box_chk_km")} : {yes_txt if ok_km else no_txt}<br>
+        {tr("b4_box_chk_dy")} : {yes_txt if ok_dy else no_txt}<br>
+        {tr("b4_box_chk_k")} : {yes_txt if ok_k else no_txt}
         </div>
         """, unsafe_allow_html=True)
 
