@@ -2423,66 +2423,40 @@ with col_izq:
         # ✅ guardar para usar en Bloque 5/6
         st.session_state["keff_1ais"] = float(keff_1ais) if np.isfinite(keff_1ais) else np.nan
     
-        st.markdown(f"""
-        <div style="
-            background-color:#1E2331;
-            color:#F4F6FA;
-            padding:10px 12px;
-            border-radius:10px;
-            border:1px solid #3A4050;
-            font-family:Consolas, monospace;
-            margin-top:10px;">
+        with st.container(border=True):
+            st.markdown(f"**{tr('b4_box_hdr')}**")
     
-            <div style="font-weight:700; margin-bottom:10px;">
-                {tr("b4_box_hdr")}
-            </div>
+            c_prop_izq, c_prop_der = st.columns([1.25, 1.0], gap="large")
     
-            <div style="
-                display:flex;
-                justify-content:space-between;
-                align-items:flex-start;
-                gap:24px;
-                margin-bottom:8px;">
+            with c_prop_izq:
+                st.markdown(
+                    f"""
+    {tr("b4_box_Tm")} : {T_M:.3f} s  
+    {tr("b4_box_betaM")} : {beta_M_pct:.2f} %  
+    {tr("b4_box_DM")} : {D_M:.4f} m  
+    {tr("b4_box_dy")} : {delta_y:.4f} m  
     
-                <!-- COLUMNA IZQUIERDA -->
-                <div style="
-                    flex:1.2;
-                    min-width:260px;
-                    line-height:1.40;">
-                    {tr("b4_box_Tm")} : {T_M:.3f} s<br>
-                    {tr("b4_box_betaM")} : {beta_M_pct:.2f} %<br>
-                    {tr("b4_box_DM")} : {D_M:.4f} m<br>
-                    {tr("b4_box_dy")} : {delta_y:.4f} m<br>
-                    <br>
+    {tr("b4_box_keff")} : {keff_1ais:.3f} Tonf/m  
+    {tr("b4_box_ceq")} : {c_1ais:.3f} Tonf·s/m  
     
-                    {tr("b4_box_keff")} : {keff_1ais:.3f} Tonf/m<br>
-                    {tr("b4_box_ceq")} : {c_1ais:.3f} Tonf·s/m<br>
-                    <br>
+    {tr("b4_box_chk_dy")} : {yes_txt if ok_dy else no_txt}  
+    {tr("b4_box_chk_k")} : {yes_txt if ok_k else no_txt}
+                    """
+                )
     
-                    {tr("b4_box_chk_dy")} : {yes_txt if ok_dy else no_txt}<br>
-                    {tr("b4_box_chk_k")} : {yes_txt if ok_k else no_txt}
-                </div>
+            with c_prop_der:
+                st.markdown(
+                    f"""
+    {tr("b4_box_ke")} : {k_ini_1ais:.3f} Tonf/m  
+    {tr("b4_box_kp")} : {k_post_1ais:.3f} Tonf/m  
+    {tr("b4_box_fy")} : {fy_1ais:.3f} Tonf  
+    {tr("b4_box_r")} : {ratio_post:.3f}  
     
-                <!-- COLUMNA DERECHA -->
-                <div style="
-                    flex:1.0;
-                    min-width:240px;
-                    line-height:1.40;
-                    padding-left:6px;">
-                    {tr("b4_box_ke")} : {k_ini_1ais:.3f} Tonf/m<br>
-                    {tr("b4_box_kp")} : {k_post_1ais:.3f} Tonf/m<br>
-                    {tr("b4_box_fy")} : {fy_1ais:.3f} Tonf<br>
-                    {tr("b4_box_r")} : {ratio_post:.3f}<br>
-                    <br>
-    
-                    {tr("b4_box_DL")} : {D_L:.4f} m<br>
-                    {tr("b4_box_DB")} : {D_B:.4f} m<br>
-                    {tr("b4_box_tr")} : {t_r:.4f} m
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
+    {tr("b4_box_DL")} : {D_L:.4f} m  
+    {tr("b4_box_DB")} : {D_B:.4f} m  
+    {tr("b4_box_tr")} : {t_r:.4f} m
+                    """
+                )
 with col_der:
     if "res_aislador" not in st.session_state:
         st.markdown(f"### 📊 {tr('b4_plot_hdr')}")
