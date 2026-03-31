@@ -2203,7 +2203,7 @@ f_modos  = st.session_state["f_sin"]
 # -------------------------------------------------------------------------
 # ✅ Layout 2 columnas del bloque
 # -------------------------------------------------------------------------
-col_izq, col_der = st.columns([1.2, 1.8], gap="large")
+col_izq, col_der = st.columns([1.3, 1.7], gap="large")
 
 with col_izq:
     st.markdown(f"### ⚙️ {tr('b4_subtitle')}")
