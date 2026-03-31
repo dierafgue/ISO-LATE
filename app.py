@@ -1365,7 +1365,7 @@ with col_right:
         )
 
 # =============================================================================
-# ========== BLOQUE 3: NEC-24 (izq) + REGISTROS SÍSMICOS (der) ================
+# ========== BLOQUE 3: NEC-24 (izq) + REGISTRO AT2 PEER (der) =================
 # =============================================================================
 import io
 import numpy as np
@@ -1376,18 +1376,13 @@ import matplotlib.pyplot as plt
 from funciones_usuario import (
     nec24_espectro,
     leer_archivo_bytes_a_texto,
-    detectar_fuente,
-    cargar_ejemplo_desde_carpeta,
     procesar_registro,
-    make_T_rs_piecewise,
-    compute_Sa_piecewise,
-    lsq_scale_factor,
     G_STD,
     detectar_formato_y_extraer,
 )
 
 # -------------------------------------------------------------------------
-# ✅ Textos EN/ES (solo para este bloque) + HELPERS
+# ✅ Textos EN/ES (solo para este bloque)
 # -------------------------------------------------------------------------
 T["en"].update({
     "b3_title": "NEC-24 + Seismic record",
@@ -1397,15 +1392,13 @@ T["en"].update({
     "b3_z": "Seismic intensity (z)",
     "b3_zone": "Seismic zone",
     "b3_soil": "Soil type",
-    "b3_R": "Response modification factor (R)",
     "b3_Ie": "Importance factor (Ie)",
     "b3_risk_cat": "Risk category",
 
     "h_b3_z": "Design seismic intensity parameter z (NEC-24).",
     "h_b3_zone": "Seismic zoning used by NEC-24 (I to V).",
     "h_b3_soil": "Site soil class (A to E) used to compute Fa, Fd, Fs.",
-    "h_b3_R": "Reduction factor R used for inelastic spectrum.",
-    "h_b3_Ie": "Importance factor Ie applied to the target spectrum.",
+    "h_b3_Ie": "Importance factor Ie associated with the selected risk category.",
     "h_b3_risk_cat": "Defines importance factor Ie according to NEC-24.",
 
     "b3_nec_spec": "Response spectrum – NEC-24",
@@ -1414,25 +1407,32 @@ T["en"].update({
     "b3_Sa": "Sa [g]",
     "b3_placeholder": "(placeholder)",
     "b3_elastic": "Elastic",
-    "b3_inelastic": "Inelastic",
+    "b3_design_spec": "Design spectrum",
     "b3_sds_sd1": "SDS = {SDS:.3f} g, SD1 = {SD1:.3f} g·s, Ie = {Ie:.2f}",
     "b3_coeffs": "Coefficients: Fa={Fa:.2f}, Fd={Fd:.2f}, Fs={Fs:.2f}",
+    "b3_nec_dl_btn": "Download NEC-24 Excel",
+    "b3_nec_dl_help": "Exports 2 columns: period, design spectrum.",
 
-    "b3_rec_load": "Seismic record",
-    "b3_src_mode": "Record source",
-    "b3_src_upload": "Upload file",
-    "b3_src_default": "Use default example",
-    "h_b3_src_mode": "Choose whether to upload a file or use a built-in example record.",
+    "b3_region": "Region of Ecuador",
+    "b3_region_costa": "Coast",
+    "b3_region_sierra": "Highlands and Amazon",
+    "h_b3_region": "Defines exponent r for the NEC-24 descending branch.",
 
-    "b3_file": "Select an acceleration file (.txt or .at2)",
+    "b3_rec_load": "AT2 seismic record (PEER)",
+    "b3_file": "Select a PEER .at2 file",
+    "b3_file_help": "Only .at2 files already prepared by PEER are allowed in this simplified workflow.",
     "b3_proc": "Apply filtering + baseline correction",
     "h_b3_proc": "Applies: linear detrend + Butterworth bandpass + baseline correction (v and u).",
-
+    "b3_only_at2": "Only .at2 files are accepted in this section.",
+    "b3_peer_note": "Use a PEER AT2 record already selected and prepared by the user.",
     "b3_need_model_rec": "First generate the **structural model** (Section 2) to enable the record.",
+    "b3_no_file": "Upload a PEER .at2 file to continue.",
+
     "b3_event": "Event",
     "b3_dt": "Time step",
     "b3_dur": "Total duration",
     "b3_npts": "Number of points",
+    "b3_units_in": "Input units",
     "b3_reg_title": "Seismic record – {name}",
     "b3_acc": "Acceleration [m/s²]",
     "b3_vel": "Velocity [m/s]",
@@ -1440,31 +1440,7 @@ T["en"].update({
     "b3_time": "Time [s]",
     "b3_orig": "Original",
     "b3_proc_lab": "Filtered + corrected",
-    "b3_default_note": "RENAC (Ecuador) — 2016-04-16 earthquake, Pedernales station.",
 
-    "b3_scaling_hdr": "Spectra and scaling",
-    "b3_par_res": "Parameters + Results",
-    "b3_need_model_scale": "First generate the **structural model** (Section 2).",
-    "b3_need_rec_scale": "Upload or select a record to enable scaling.",
-
-    "b3_scale_on": "Scale to NEC-24",
-    "b3_scale_help": "Scales the record to match only the NEC-24 inelastic target spectrum within the selected period range.",
-
-    "b3_xi": "Damping (ξ)",
-    "b3_xi_help": "Fraction of critical damping (e.g., 0.05 = 5%).",
-
-    "b3_results": "Results",
-    "b3_pga": "PGA [g]",
-    "b3_pga_s": "Scaled PGA [g]",
-    "b3_ev": "Event: **{name}**",
-
-    "b3_plot_scale": "Target spectrum and scaling",
-    "b3_nec_obj": "NEC-24 inelastic target (×Ie)",
-    "b3_reg_un": "Record (unscaled)",
-    "b3_reg_sc": "Scaled record (SF={SF:.3f})",
-    "b3_need_rec_plot": "(Upload/select a record to see the spectrum)",
-
-    # ✅ descarga Excel
     "b3_dl_hdr": "Download record (Excel)",
     "b3_dl_pick": "Choose data to export",
     "b3_dl_btn": "Download Excel (.xlsx)",
@@ -1472,22 +1448,6 @@ T["en"].update({
     "b3_dl_opt_orig": "Original",
     "b3_dl_opt_proc": "Filtered + baseline-corrected",
     "b3_dl_opt_final": "Final used in analysis",
-    "b3_nec_dl_btn": "Download NEC-24 Excel",
-    "b3_nec_dl_help": "Exports 3 columns: period, elastic, inelastic (×Ie).",
-
-    "b3_region": "Region of Ecuador",
-    "b3_region_costa": "Coast",
-    "b3_region_sierra": "Highlands and Amazon",
-    "h_b3_region": "Defines exponent r for the NEC-24 descending branch.",
-
-    "b3_fit_hdr": "Selected record",
-    "b3_fit_ok": "Compatible",
-    "b3_fit_mid": "Acceptable",
-    "b3_fit_bad": "Not recommended",
-    "b3_fit_msg_ok": "The record is considered compatible because the scale factor is within the practical acceptance range 0.50 ≤ SF ≤ 2.00.",
-    "b3_fit_msg_mid": "The record requires a scale factor outside the practical acceptance range 0.50 ≤ SF ≤ 2.00. Use it with caution.",
-    "b3_fit_msg_bad": "The record is not recommended because the scale factor is far outside the practical acceptance range 0.50 ≤ SF ≤ 2.00.",
-    "b3_fit_note": "Practical criterion: prefer records with 0.50 ≤ SF ≤ 2.00. Large deviations usually indicate low spectral compatibility.",
 })
 
 T["es"].update({
@@ -1498,15 +1458,13 @@ T["es"].update({
     "b3_z": "Intensidad sísmica (z)",
     "b3_zone": "Zona sísmica",
     "b3_soil": "Tipo de suelo",
-    "b3_R": "Factor de reducción (R)",
     "b3_Ie": "Factor de importancia (Ie)",
     "b3_risk_cat": "Categoría de riesgo",
 
     "h_b3_z": "Parámetro de intensidad sísmica z (NEC-24).",
     "h_b3_zone": "Zonificación sísmica usada por la NEC-24 (I a V).",
     "h_b3_soil": "Clase de suelo (A a E) para calcular Fa, Fd, Fs.",
-    "h_b3_R": "Factor de reducción R usado en el espectro inelástico.",
-    "h_b3_Ie": "Factor de importancia Ie aplicado al espectro objetivo.",
+    "h_b3_Ie": "Factor de importancia Ie asociado a la categoría de riesgo seleccionada.",
     "h_b3_risk_cat": "Define el factor de importancia Ie según la NEC-24.",
 
     "b3_nec_spec": "Espectro de respuesta – NEC-24",
@@ -1515,25 +1473,32 @@ T["es"].update({
     "b3_Sa": "Sa [g]",
     "b3_placeholder": "(placeholder)",
     "b3_elastic": "Elástico",
-    "b3_inelastic": "Inelástico",
+    "b3_design_spec": "Espectro de diseño",
     "b3_sds_sd1": "SDS = {SDS:.3f} g, SD1 = {SD1:.3f} g·s, Ie = {Ie:.2f}",
     "b3_coeffs": "Coeficientes: Fa={Fa:.2f}, Fd={Fd:.2f}, Fs={Fs:.2f}",
+    "b3_nec_dl_btn": "Descargar NEC-24 Excel",
+    "b3_nec_dl_help": "Exporta 2 columnas: periodo, espectro de diseño.",
 
-    "b3_rec_load": "Registro sísmico",
-    "b3_src_mode": "Fuente del registro",
-    "b3_src_upload": "Cargar archivo",
-    "b3_src_default": "Usar ejemplo por defecto",
-    "h_b3_src_mode": "Elige si cargas un archivo o si usas un registro de ejemplo incorporado.",
+    "b3_region": "Región del Ecuador",
+    "b3_region_costa": "Costa",
+    "b3_region_sierra": "Sierra y oriente",
+    "h_b3_region": "Define el exponente r para la rama descendente del espectro NEC-24.",
 
-    "b3_file": "📁 Selecciona un archivo de aceleración (.txt o .at2)",
+    "b3_rec_load": "Registro sísmico AT2 (PEER)",
+    "b3_file": "📁 Selecciona un archivo PEER .at2",
+    "b3_file_help": "En este flujo simplificado solo se aceptan archivos .at2 ya preparados por PEER.",
     "b3_proc": "Aplicar filtrado + corrección de línea base",
     "h_b3_proc": "Aplica: detrend lineal + filtro Butterworth pasa banda + corrección de línea base (v y u).",
-
+    "b3_only_at2": "En esta sección solo se aceptan archivos .at2.",
+    "b3_peer_note": "Use un registro AT2 de PEER ya seleccionado y preparado por el usuario.",
     "b3_need_model_rec": "⚙️ Primero genera el **modelo estructural** (Sección 2) para habilitar el registro.",
+    "b3_no_file": "Cargue un archivo PEER .at2 para continuar.",
+
     "b3_event": "Evento",
     "b3_dt": "Paso de tiempo",
     "b3_dur": "Duración total",
     "b3_npts": "Número de puntos",
+    "b3_units_in": "Unidades de entrada",
     "b3_reg_title": "Registro sísmico – {name}",
     "b3_acc": "Aceleración [m/s²]",
     "b3_vel": "Velocidad [m/s]",
@@ -1541,31 +1506,7 @@ T["es"].update({
     "b3_time": "Tiempo [s]",
     "b3_orig": "Original",
     "b3_proc_lab": "Filtrado + corregido",
-    "b3_default_note": "Registro RENAC (Ecuador) — sismo 16-04-2016, estación Pedernales.",
 
-    "b3_scaling_hdr": "Espectros y escalamiento",
-    "b3_par_res": "Parámetros + Resultados",
-    "b3_need_model_scale": "⚙️ Primero genera el **modelo estructural** (Sección 2).",
-    "b3_need_rec_scale": "📁 Cargue o seleccione un registro para habilitar el escalamiento.",
-
-    "b3_scale_on": "Escalar a NEC-24",
-    "b3_scale_help": "Escala el registro sísmico para ajustarlo solo al espectro inelástico objetivo NEC-24 dentro del rango de períodos seleccionado.",
-
-    "b3_xi": "Amortiguamiento (ξ)",
-    "b3_xi_help": "Fracción de amortiguamiento crítico (ej.: 0.05 = 5%).",
-
-    "b3_results": "Resultados",
-    "b3_pga": "PGA [g]",
-    "b3_pga_s": "PGA escalado [g]",
-    "b3_ev": "Evento: **{name}**",
-
-    "b3_plot_scale": "Espectro objetivo y escalamiento",
-    "b3_nec_obj": "Objetivo inelástico NEC-24 (×Ie)",
-    "b3_reg_un": "Registro (sin escala)",
-    "b3_reg_sc": "Registro escalado (SF={SF:.3f})",
-    "b3_need_rec_plot": "(Cargue/seleccione un registro para ver el espectro)",
-
-    # ✅ descarga Excel
     "b3_dl_hdr": "Descargar registro (Excel)",
     "b3_dl_pick": "Elegir datos a exportar",
     "b3_dl_btn": "Descargar Excel (.xlsx)",
@@ -1573,32 +1514,15 @@ T["es"].update({
     "b3_dl_opt_orig": "Original",
     "b3_dl_opt_proc": "Filtrado + corregido (línea base)",
     "b3_dl_opt_final": "Final usado en el análisis",
-    "b3_nec_dl_btn": "Descargar NEC-24 Excel",
-    "b3_nec_dl_help": "Exporta 3 columnas: periodo, elastico, inelastico (×Ie).",
-
-    "b3_region": "Región del Ecuador",
-    "b3_region_costa": "Costa",
-    "b3_region_sierra": "Sierra y oriente",
-    "h_b3_region": "Define el exponente r para la rama descendente del espectro NEC-24.",
-
-    "b3_fit_hdr": "Registro seleccionado",
-    "b3_fit_ok": "Compatible",
-    "b3_fit_mid": "Aceptable",
-    "b3_fit_bad": "No recomendable",
-    "b3_fit_msg_ok": "El registro se considera compatible porque el factor de escala está dentro del rango práctico de aceptación 0.50 ≤ SF ≤ 2.00.",
-    "b3_fit_msg_mid": "El registro requiere un factor de escala fuera del rango práctico de aceptación 0.50 ≤ SF ≤ 2.00. Úselo con cautela.",
-    "b3_fit_msg_bad": "El registro no es recomendable porque el factor de escala está muy fuera del rango práctico de aceptación 0.50 ≤ SF ≤ 2.00.",
-    "b3_fit_note": "Criterio práctico: se prefieren registros con 0.50 ≤ SF ≤ 2.00. Desviaciones grandes suelen indicar baja compatibilidad espectral.",
 })
 
 # -------------------------------------------------------------------------
 # ✅ Helper: Excel NEC-24
 # -------------------------------------------------------------------------
-def build_nec24_excel_bytes(T_spec, Sa_elast, Sa_inelas):
+def build_nec24_excel_bytes(T_spec, Sa_design):
     df_nec = pd.DataFrame({
         "periodo": np.asarray(T_spec, dtype=float).ravel(),
-        "elastico": np.asarray(Sa_elast, dtype=float).ravel(),
-        "inelastico": np.asarray(Sa_inelas, dtype=float).ravel(),
+        "diseno": np.asarray(Sa_design, dtype=float).ravel(),
     })
 
     bio = io.BytesIO()
@@ -1626,33 +1550,14 @@ NEC24_FIG_H  = 3.25
 
 st.markdown(f"""
 <style>
-
 .nec24-equalizer {{
   height: {NEC24_PAD_PX}px;
 }}
 
-/* compacto descarga registro */
 .compact-download div[data-testid="stVerticalBlock"]{{ gap:0.25rem; }}
 .compact-download [data-testid="stSelectbox"]{{ padding-top:0rem !important; padding-bottom:0rem !important; }}
 .compact-download [data-testid="stDownloadButton"]{{ padding-top:0rem !important; padding-bottom:0rem !important; }}
 .compact-download button{{ padding-top:0.25rem !important; padding-bottom:0.25rem !important; }}
-
-/* botón NEC-24 pequeño */
-.nec24-download-slot {{
-  margin-top: 0.35rem;
-}}
-
-.nec24-download-slot [data-testid="stDownloadButton"] {{
-  width: 100%;
-}}
-
-.nec24-download-slot button {{
-  width: 100%;
-  min-height: 2.85rem !important;
-  padding-top: 0.25rem !important;
-  padding-bottom: 0.25rem !important;
-}}
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -1670,21 +1575,31 @@ with col_left:
 
         if not geom_ok:
             st.info(tr("b3_need_model_nec"))
-            z, zona_sismica, tipo_suelo, R, Ie = 0.47, "IV", "C", 8.0, 1.0
+            z = 0.47
+            zona_sismica = "IV"
+            tipo_suelo = "C"
             categoria = "II"
+            Ie = 1.0
             region_ecuador = tr("b3_region_sierra")
             r_nec = 1.0
         else:
             c1, c2 = st.columns(2)
 
             with c1:
-                z = st.number_input(tr("b3_z"), 0.1, 1.0, 0.47, 0.01, key="nec_z", help=tr("h_b3_z"))
-                zona_sismica = st.selectbox(tr("b3_zone"), ["I", "II", "III", "IV", "V"], index=3, key="nec_zona", help=tr("h_b3_zone"))
-                tipo_suelo   = st.selectbox(tr("b3_soil"), ["A", "B", "C", "D", "E"], index=2, key="nec_suelo", help=tr("h_b3_soil"))
+                z = st.number_input(
+                    tr("b3_z"), 0.1, 1.0, 0.47, 0.01,
+                    key="nec_z", help=tr("h_b3_z")
+                )
+                zona_sismica = st.selectbox(
+                    tr("b3_zone"), ["I", "II", "III", "IV", "V"],
+                    index=3, key="nec_zona", help=tr("h_b3_zone")
+                )
+                tipo_suelo = st.selectbox(
+                    tr("b3_soil"), ["A", "B", "C", "D", "E"],
+                    index=2, key="nec_suelo", help=tr("h_b3_soil")
+                )
 
             with c2:
-                R = st.number_input(tr("b3_R"), 1.0, 10.0, 8.0, 0.1, key="nec_R", help=tr("h_b3_R"))
-
                 categoria = st.selectbox(
                     tr("b3_risk_cat"),
                     ["I", "II", "III", "IV"],
@@ -1715,7 +1630,6 @@ with col_left:
                 "z": float(z),
                 "zona": str(zona_sismica),
                 "suelo": str(tipo_suelo),
-                "R": float(R),
                 "Ie": float(Ie),
                 "categoria": str(categoria),
                 "region": str(region_ecuador),
@@ -1731,7 +1645,6 @@ with col_left:
             st.info(tr("b3_nec_wait"))
             T_spec = np.linspace(0.0, 5.0, 120)
             Sa_elast = np.zeros_like(T_spec)
-            Sa_inelas = np.zeros_like(T_spec)
             SDS = SD1 = Fa = Fd = Fs = 0.0
 
             fig, ax = plt.subplots(figsize=(6.0, NEC24_FIG_H))
@@ -1749,24 +1662,26 @@ with col_left:
             st.markdown('<div class="nec24-equalizer"></div>', unsafe_allow_html=True)
 
         else:
-            T_spec, Sa_elast, Sa_inelas, SDS, SD1, Fa, Fd, Fs = nec24_espectro(
+            T_spec, Sa_elast, _Sa_inelas_unused, SDS, SD1, Fa, Fd, Fs = nec24_espectro(
                 z=float(z),
                 zona=str(zona_sismica),
                 suelo=str(tipo_suelo),
-                R=float(R),
+                R=1.0,
                 r=float(r_nec),
                 T_final=5.0,
                 delta_t=0.01
             )
 
+            Sa_design_plot = np.asarray(Sa_elast, dtype=float).ravel()
+
             st.session_state["SDS"] = float(SDS)
             st.session_state["SD1"] = float(SD1)
             st.session_state["r_nec"] = float(r_nec)
+            st.session_state["rs_T_spec"] = np.asarray(T_spec, dtype=float).ravel()
+            st.session_state["rs_Sa_design"] = np.asarray(Sa_design_plot, dtype=float).ravel()
+            st.session_state["rs_Ie"] = float(Ie)
 
             st.caption(tr("b3_sds_sd1").format(SDS=SDS, SD1=SD1, Ie=Ie))
-
-            Sa_elast_plot  = np.asarray(Sa_elast, dtype=float).ravel()
-            Sa_inelas_plot = np.asarray(Sa_inelas, dtype=float).ravel() * float(Ie)
 
             colA, colB = st.columns([1.3, 1.0])
 
@@ -1774,7 +1689,7 @@ with col_left:
                 st.caption(tr("b3_coeffs").format(Fa=Fa, Fd=Fd, Fs=Fs))
 
             with colB:
-                nec24_xlsx_bytes = build_nec24_excel_bytes(T_spec, Sa_elast_plot, Sa_inelas_plot)
+                nec24_xlsx_bytes = build_nec24_excel_bytes(T_spec, Sa_design_plot)
                 st.download_button(
                     label=tr("b3_nec_dl_btn"),
                     data=nec24_xlsx_bytes,
@@ -1788,33 +1703,34 @@ with col_left:
             fig, ax = plt.subplots(figsize=(6.0, NEC24_FIG_H))
             fig.patch.set_facecolor(BG)
             ax.set_facecolor(BG)
-            ax.plot(T_spec, Sa_elast_plot, lw=1.0, label=tr("b3_elastic"))
-            ax.plot(T_spec, Sa_inelas_plot, "--", lw=1.0, label=f"{tr('b3_inelastic')} (R={R:g}, ×Ie)")
+            ax.plot(T_spec, Sa_design_plot, lw=1.0, label=tr("b3_design_spec"))
             ax.set_xlabel(tr("b3_T"), color=COLOR_TEXT)
             ax.set_ylabel(tr("b3_Sa"), color=COLOR_TEXT)
             ax.tick_params(colors=COLOR_TEXT)
             ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
             ax.spines["top"].set_visible(False)
             ax.spines["right"].set_visible(False)
+
             leg = ax.legend(framealpha=0.95)
             leg.get_frame().set_facecolor(BG)
             leg.get_frame().set_edgecolor(COLOR_GRID)
             for t in leg.get_texts():
                 t.set_color(COLOR_TEXT)
-            st.pyplot(fig, use_container_width=True)
 
+            st.pyplot(fig, use_container_width=True)
             st.markdown('<div class="nec24-equalizer"></div>', unsafe_allow_html=True)
 
 # =============================================================================
-# DERECHA: Registro
+# DERECHA: REGISTRO AT2
 # =============================================================================
 with col_right:
     with st.container(border=True):
         st.markdown(f"### 〰️ {tr('b3_rec_load')}")
 
-        col_ctrl, col_graf = st.columns([1.2, 2.5], gap="large")
+        col_ctrl, col_graf = st.columns([1.15, 2.55], gap="large")
 
         nombre = None
+        unidad = None
         dt = None
         t_ag = None
         ag_orig = None
@@ -1827,48 +1743,37 @@ with col_right:
         proc_disponible = False
 
         with col_ctrl:
-            modo_src = st.radio(
-                tr("b3_src_mode"),
-                options=[tr("b3_src_upload"), tr("b3_src_default")],
-                horizontal=False,
-                disabled=not geom_ok,
-                help=tr("h_b3_src_mode"),
-                key="b3_src_mode_radio",
-            )
+            st.caption(tr("b3_peer_note"))
 
-            usar_default = (modo_src == tr("b3_src_default"))
-            uploaded = None
-            if not usar_default:
-                uploaded = st.file_uploader(
-                    tr("b3_file"),
-                    type=["txt", "at2"],
-                    disabled=not geom_ok
-                )
-            else:
-                st.caption(tr("b3_default_note"))
+            uploaded = st.file_uploader(
+                tr("b3_file"),
+                type=["at2"],
+                disabled=not geom_ok,
+                help=tr("b3_file_help"),
+                key="b3_at2_file"
+            )
 
             aplicar_proc = st.checkbox(
                 tr("b3_proc"),
                 value=False,
                 disabled=not geom_ok,
-                help=tr("h_b3_proc")
+                help=tr("h_b3_proc"),
+                key="b3_proc_check"
             )
 
             if not geom_ok:
                 st.info(tr("b3_need_model_rec"))
+            elif uploaded is None:
+                st.info(tr("b3_no_file"))
 
-        if geom_ok and (usar_default or uploaded is not None):
-            if usar_default:
-                try:
-                    nombre, unidad, dt, ag_orig, fuente, _txt = cargar_ejemplo_desde_carpeta("EJEMPLO.txt")
-                    ag_orig = np.asarray(ag_orig, dtype=float).ravel()
-                except Exception as e:
-                    st.error(f"No se pudo cargar EJEMPLO.txt: {e}")
-                    st.stop()
-            else:
+        if geom_ok and uploaded is not None:
+            if not uploaded.name.lower().endswith(".at2"):
+                st.error(tr("b3_only_at2"))
+                st.stop()
+
+            try:
                 raw = uploaded.read()
                 texto = leer_archivo_bytes_a_texto(raw)
-                _fuente = detectar_fuente(texto)
 
                 nombre, unidad, dt, ag = detectar_formato_y_extraer(texto)
                 ag = np.asarray(ag, dtype=float).ravel()
@@ -1883,6 +1788,10 @@ with col_right:
                 else:
                     st.error(f"Unidad no reconocida: {unidad}")
                     st.stop()
+
+            except Exception as e:
+                st.error(f"Error al leer el archivo AT2: {e}")
+                st.stop()
 
             out = procesar_registro(ag_orig, dt, aplicar_proc=aplicar_proc)
 
@@ -1910,15 +1819,16 @@ with col_right:
 
             with col_ctrl:
                 st.markdown(f"**{tr('b3_event')}:** {nombre}")
+                st.markdown(f"**{tr('b3_units_in')}:** {unidad}")
                 st.markdown(f"**{tr('b3_dt')}:** {dt:.4f} s")
                 st.markdown(f"**{tr('b3_dur')}:** {t_ag[-1]:.2f} s")
                 st.markdown(f"**{tr('b3_npts')}:** {len(ag_orig)}")
 
             COLOR_ORIG = "#9DBEF7"
             COLOR_PROC = "#FFD479"
-            LW_ORIG_SOLO = 0.5
-            LW_ORIG_OVER = 0.25
-            LW_PROC = 0.25
+            LW_ORIG_SOLO = 0.55
+            LW_ORIG_OVER = 0.28
+            LW_PROC = 0.28
 
             with col_graf:
                 fig, axs = plt.subplots(3, 1, figsize=(9, 11.2), sharex=True)
@@ -1933,21 +1843,32 @@ with col_right:
 
                 axs[0].plot(
                     t_ag, ag_orig,
-                    lw=(LW_ORIG_OVER if aplicar_proc else LW_ORIG_SOLO),
+                    lw=(LW_ORIG_OVER if proc_disponible else LW_ORIG_SOLO),
                     color=COLOR_ORIG,
                     label=tr("b3_orig")
                 )
                 if proc_disponible:
-                    axs[0].plot(t_ag, ag_proc, lw=LW_PROC, color=COLOR_PROC, label=tr("b3_proc_lab"))
+                    axs[0].plot(
+                        t_ag, ag_proc,
+                        lw=LW_PROC, color=COLOR_PROC, label=tr("b3_proc_lab")
+                    )
                 axs[0].set_ylabel(tr("b3_acc"), color=COLOR_TEXT)
                 axs[0].set_title(tr("b3_reg_title").format(name=nombre), color=COLOR_TEXT)
 
-                axs[1].plot(t_ag, vel_orig, lw=(LW_ORIG_OVER if aplicar_proc else LW_ORIG_SOLO), color=COLOR_ORIG)
+                axs[1].plot(
+                    t_ag, vel_orig,
+                    lw=(LW_ORIG_OVER if proc_disponible else LW_ORIG_SOLO),
+                    color=COLOR_ORIG
+                )
                 if proc_disponible:
                     axs[1].plot(t_ag, vel_proc, lw=LW_PROC, color=COLOR_PROC)
                 axs[1].set_ylabel(tr("b3_vel"), color=COLOR_TEXT)
 
-                axs[2].plot(t_ag, disp_orig, lw=(LW_ORIG_OVER if aplicar_proc else LW_ORIG_SOLO), color=COLOR_ORIG)
+                axs[2].plot(
+                    t_ag, disp_orig,
+                    lw=(LW_ORIG_OVER if proc_disponible else LW_ORIG_SOLO),
+                    color=COLOR_ORIG
+                )
                 if proc_disponible:
                     axs[2].plot(t_ag, disp_proc, lw=LW_PROC, color=COLOR_PROC)
                 axs[2].set_ylabel(tr("b3_disp"), color=COLOR_TEXT)
@@ -1962,6 +1883,9 @@ with col_right:
 
                 st.pyplot(fig, use_container_width=True)
 
+            # -------------------------------------------------------------
+            # ✅ Guardado principal en session_state
+            # -------------------------------------------------------------
             st.session_state["rs_ready"] = True
             st.session_state["rs_nombre"] = str(nombre)
             st.session_state["rs_dt"] = float(dt)
@@ -1978,262 +1902,34 @@ with col_right:
             st.session_state["rs_disp_proc"] = np.asarray(disp_proc, dtype=float).ravel() if proc_disponible else None
             st.session_state["rs_proc_on"] = bool(proc_disponible)
 
-            st.session_state["rs_T_spec"] = np.asarray(T_spec, dtype=float).ravel()
-            st.session_state["rs_Sa_elast"] = np.asarray(Sa_elast, dtype=float).ravel()
-            st.session_state["rs_Sa_inelas"] = np.asarray(Sa_inelas, dtype=float).ravel()
-            st.session_state["rs_Ie"] = float(Ie)
+            # -------------------------------------------------------------
+            # ✅ Registro final usado en el análisis
+            #    Si hay procesamiento activo, usa la señal procesada.
+            #    Si no, usa la original convertida a m/s².
+            # -------------------------------------------------------------
+            ag_final = np.asarray(ag_base, dtype=float).ravel()
 
-# =============================================================================
-# rs_ok
-# =============================================================================
-rs_ready = bool(st.session_state.get("rs_ready", False))
-req_rs = ["rs_nombre", "rs_dt", "rs_ag_base", "rs_T_spec", "rs_Sa_elast", "rs_Sa_inelas", "rs_Ie"]
-rs_ok = geom_ok and rs_ready and all(k in st.session_state for k in req_rs)
-
-# =============================================================================
-# ESCALAMIENTO
-# =============================================================================
-st.markdown("---")
-with st.container(border=True):
-    st.subheader(f"📈 {tr('b3_scaling_hdr')}")
-
-    colL, colR = st.columns([1.10, 1.90], gap="large")
-
-    if geom_ok:
-        T_spec_nec   = np.asarray(T_spec, dtype=float).ravel()
-        Sa_elast_nec = np.asarray(Sa_elast, dtype=float).ravel()
-        Sa_inel_nec  = np.asarray(Sa_inelas, dtype=float).ravel()
-        Ie_nec       = float(Ie)
-    else:
-        T_spec_nec   = np.linspace(0.0, 5.0, 120)
-        Sa_elast_nec = np.zeros_like(T_spec_nec)
-        Sa_inel_nec  = np.zeros_like(T_spec_nec)
-        Ie_nec       = 1.0
-
-    with colL:
-        with st.container(border=True):
-            st.markdown(f"### ⚙️ {tr('b3_par_res')}")
-
-            if not geom_ok:
-                st.info(tr("b3_need_model_scale"))
-            elif not rs_ok:
-                st.info(tr("b3_need_rec_scale"))
-
-            c_in, c_out = st.columns([1.10, 0.90], gap="large")
-
-            with c_in:
-                escalar_nec = st.checkbox(
-                    tr("b3_scale_on"),
-                    value=True,
-                    key="scale_nec24_rs",
-                    disabled=(not geom_ok) or (not rs_ok),
-                    help=tr("b3_scale_help")
-                )
-
-                T_fix_vec = np.asarray(st.session_state.get("T_sin", []), dtype=float).ravel()
-                T_fix_vec = T_fix_vec[np.isfinite(T_fix_vec)]
-                T_fix_vec = T_fix_vec[T_fix_vec > 0]
-
-                if len(T_fix_vec) == 0:
-                    Tref = 1.0
-                else:
-                    Tref = float(T_fix_vec[0])
-
-                Tref = max(0.05, min(10.0, Tref))
-
-                T_min = max(0.05, 0.80 * Tref)
-                T_max = min(5.00, 1.20 * Tref)
-
-                xi = st.number_input(
-                    tr("b3_xi"),
-                    0.01, 0.30, 0.05, 0.01,
-                    key="xi_rs",
-                    disabled=(not geom_ok) or (not rs_ok),
-                    help=tr("b3_xi_help")
-                )
-
-            if rs_ok:
-                nombre  = st.session_state.get("rs_nombre", "Registro")
-                dt      = float(st.session_state["rs_dt"])
-                ag_base = np.asarray(st.session_state["rs_ag_base"], dtype=float).ravel()
-
-                Sa_obj_base = Sa_inel_nec
-
-                T_rs = make_T_rs_piecewise(0.05, 5.0)
-                Sa_reg = compute_Sa_piecewise(ag_base, dt, T_rs, xi=float(xi))
-                Sa_obj = np.interp(T_rs, T_spec_nec, Sa_obj_base) * float(Ie_nec)
-
-                mask = (T_rs >= T_min) & (T_rs <= T_max)
-                if np.count_nonzero(mask) < 5:
-                    mask = (
-                        (T_rs >= max(0.05, 0.80 * float(Tref))) &
-                        (T_rs <= min(5.0, 1.20 * float(Tref)))
-                    )
-
-                SF = lsq_scale_factor(Sa_reg[mask], Sa_obj[mask]) if escalar_nec else 1.0
-
-                if (not np.isfinite(SF)) or (SF <= 0):
-                    SF = 1.0
-
-                Sa_reg_scaled = Sa_reg * SF
-                ag_scaled = ag_base * SF
-
-                PGA0 = float(np.max(np.abs(ag_base)) / G_STD)
-                PGA1 = float(np.max(np.abs(ag_scaled)) / G_STD)
-
-            else:
-                T_rs = make_T_rs_piecewise(0.05, 5.0)
-                Sa_obj = np.interp(T_rs, T_spec_nec, Sa_inel_nec) * float(Ie_nec)
-                Sa_reg = None
-                Sa_reg_scaled = None
-                Tref = 1.0
-                T_min = max(0.05, 0.80 * Tref)
-                T_max = min(5.0, 1.20 * Tref)
-                mask = (T_rs >= T_min) & (T_rs <= T_max)
-                SF = 1.0
-                PGA0 = PGA1 = 0.0
-                nombre = "—"
-                ag_scaled = None
-
-            with c_in:
-                if rs_ok:
-                    # -------------------------------------------------------------
-                    # ✅ Validador práctico de escalamiento:
-                    #    rango preferido: 0.50 <= SF <= 2.00
-                    # -------------------------------------------------------------
-                    if 0.50 <= SF <= 2.00:
-                        fit_state = tr("b3_fit_ok")
-                        fit_msg = tr("b3_fit_msg_ok")
-                        st.success(f"**{tr('b3_fit_hdr')}: {fit_state}**\n\n{fit_msg}")
-                    elif 0.33 <= SF < 0.50 or 2.00 < SF <= 3.00:
-                        fit_state = tr("b3_fit_mid")
-                        fit_msg = tr("b3_fit_msg_mid")
-                        st.warning(f"**{tr('b3_fit_hdr')}: {fit_state}**\n\n{fit_msg}")
-                    else:
-                        fit_state = tr("b3_fit_bad")
-                        fit_msg = tr("b3_fit_msg_bad")
-                        st.error(f"**{tr('b3_fit_hdr')}: {fit_state}**\n\n{fit_msg}")
-            
-                    st.caption(tr("b3_fit_note"))
-
-            with c_out:
-                st.markdown(f"#### 📌 {tr('b3_results')}")
-                st.metric("SF", f"{SF:.3f}")
-
-                a, b = st.columns(2)
-                with a:
-                    st.metric(tr("b3_pga"), f"{PGA0:.3f}")
-                with b:
-                    st.metric(tr("b3_pga_s"), f"{PGA1:.3f}")
-
-                st.caption(tr("b3_ev").format(name=nombre))
-
-    with colR:
-        with st.container(border=True):
-            st.markdown(f"### 📊 {tr('b3_plot_scale')}")
-
-            figS, axS = plt.subplots(figsize=(11.8, 4.93))
-            figS.set_dpi(240)
-            figS.patch.set_facecolor(BG)
-            axS.set_facecolor(BG)
-
-            axS.plot(T_rs, Sa_obj, lw=1.00, label=tr("b3_nec_obj"))
-
-            if rs_ok and (Sa_reg is not None):
-                axS.plot(T_rs, Sa_reg, lw=0.55, alpha=0.95, label=tr("b3_reg_un"))
-                if escalar_nec:
-                    axS.plot(T_rs, Sa_reg_scaled, lw=0.75, label=tr("b3_reg_sc").format(SF=SF))
-            else:
-                axS.plot(T_rs, 0*T_rs, lw=0.50, alpha=0.35, label=tr("b3_need_rec_plot"))
-
-            axS.axvline(float(Tref), color=COLOR_TEXT, linestyle="--", lw=1.10, alpha=0.95)
-            axS.axvline(float(T_min), color=COLOR_TEXT, linestyle=":", lw=0.95, alpha=0.85)
-            axS.axvline(float(T_max), color=COLOR_TEXT, linestyle=":", lw=0.95, alpha=0.85)
-
-            y0, y1 = axS.get_ylim()
-            ymax = float(y1)
-
-            bbox_style = dict(
-                boxstyle="round,pad=0.20",
-                fc=BG,
-                ec=COLOR_GRID,
-                alpha=0.90
+            out_final = procesar_registro(
+                ag_final,
+                float(dt),
+                aplicar_proc=False
             )
+            vel_final = np.asarray(out_final["vel_orig"], dtype=float).ravel()
+            disp_final = np.asarray(out_final["disp_orig"], dtype=float).ravel()
 
-            axS.text(
-                float(Tref), 0.96 * ymax,
-                f"Tobj\n{Tref:.2f} s",
-                ha="center", va="top",
-                fontsize=9, color=COLOR_TEXT,
-                bbox=bbox_style
-            )
+            st.session_state["ag_filt"] = np.asarray(ag_final, dtype=float).ravel()
+            st.session_state["dt"] = float(dt)
+            st.session_state["t_ag"] = np.asarray(t_ag, dtype=float).ravel()
 
-            axS.text(
-                float(T_min), 0.86 * ymax,
-                f"Tmin\n{T_min:.2f} s",
-                ha="center", va="top",
-                fontsize=8, color=COLOR_TEXT,
-                bbox=bbox_style
-            )
-
-            axS.text(
-                float(T_max), 0.86 * ymax,
-                f"Tmax\n{T_max:.2f} s",
-                ha="center", va="top",
-                fontsize=8, color=COLOR_TEXT,
-                bbox=bbox_style
-            )
-
-            axS.set_xlabel(tr("b3_T"), color=COLOR_TEXT)
-            axS.set_ylabel(tr("b3_Sa"), color=COLOR_TEXT)
-            axS.tick_params(colors=COLOR_TEXT)
-            axS.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
-            axS.spines["top"].set_visible(False)
-            axS.spines["right"].set_visible(False)
-
-            leg = axS.legend(framealpha=0.95, fontsize=10)
-            leg.get_frame().set_facecolor(BG)
-            leg.get_frame().set_edgecolor(COLOR_GRID)
-            for tt in leg.get_texts():
-                tt.set_color(COLOR_TEXT)
-
-            figS.subplots_adjust(left=0.06, right=0.995, top=0.90, bottom=0.18)
-            st.pyplot(figS, use_container_width=True)
-
-    if rs_ok:
-        st.session_state["SF_nec24"] = float(SF)
-        st.session_state["T_rs"] = np.asarray(T_rs, dtype=float)
-        st.session_state["Sa_reg"] = np.asarray(Sa_reg, dtype=float)
-        st.session_state["Sa_reg_scaled"] = np.asarray(Sa_reg_scaled, dtype=float)
-        st.session_state["Sa_obj_nec"] = np.asarray(Sa_obj, dtype=float)
-        st.session_state["scale_nec24_on"] = bool(escalar_nec)
-
-        ag_final = ag_scaled if escalar_nec else st.session_state["rs_ag_base"]
-        t_final = np.linspace(
-            0.0,
-            float(st.session_state["rs_dt"]) * (len(ag_final) - 1),
-            len(ag_final)
-        )
-
-        out_final = procesar_registro(
-            np.asarray(ag_final, dtype=float).ravel(),
-            float(st.session_state["rs_dt"]),
-            aplicar_proc=False
-        )
-        vel_final = np.asarray(out_final["vel_orig"], dtype=float).ravel()
-        disp_final = np.asarray(out_final["disp_orig"], dtype=float).ravel()
-
-        st.session_state["ag_filt"] = np.asarray(ag_final, dtype=float).ravel()
-        st.session_state["dt"] = float(st.session_state["rs_dt"])
-        st.session_state["t_ag"] = np.asarray(t_final, dtype=float).ravel()
-
-        st.session_state["rs_ag_final"] = np.asarray(ag_final, dtype=float).ravel()
-        st.session_state["rs_vel_final"] = np.asarray(vel_final, dtype=float).ravel()
-        st.session_state["rs_disp_final"] = np.asarray(disp_final, dtype=float).ravel()
+            st.session_state["rs_ag_final"] = np.asarray(ag_final, dtype=float).ravel()
+            st.session_state["rs_vel_final"] = np.asarray(vel_final, dtype=float).ravel()
+            st.session_state["rs_disp_final"] = np.asarray(disp_final, dtype=float).ravel()
 
 # =============================================================================
 # DESCARGA FINAL DEL REGISTRO (3 OPCIONES)
 # =============================================================================
+rs_ready = bool(st.session_state.get("rs_ready", False))
+
 if geom_ok and rs_ready and ("rs_t" in st.session_state):
     with col_right:
         with col_ctrl:
@@ -2241,10 +1937,8 @@ if geom_ok and rs_ready and ("rs_t" in st.session_state):
             st.caption(f"📥 **{tr('b3_dl_hdr')}**")
 
             opts = [tr("b3_dl_opt_orig")]
-
             if bool(st.session_state.get("rs_proc_on", False)):
                 opts.append(tr("b3_dl_opt_proc"))
-
             opts.append(tr("b3_dl_opt_final"))
 
             pick = st.selectbox(
@@ -2302,6 +1996,7 @@ if geom_ok and rs_ready and ("rs_t" in st.session_state):
                 key="b3_dl_btn_xlsx",
                 use_container_width=True,
             )
+
             st.markdown('</div>', unsafe_allow_html=True)
 
 # =============================================================================
