@@ -2426,7 +2426,7 @@ with col_izq:
         with st.container(border=True):
             st.markdown(f"**{tr('b4_box_hdr')}**")
     
-            c_prop_izq, c_prop_der = st.columns([1.25, 1.0], gap="large")
+            c_prop_izq, c_prop_der = st.columns([1.25, 1.0], gap="small")
     
             with c_prop_izq:
                 st.markdown(
@@ -2475,7 +2475,7 @@ with col_der:
             Ke=resultados_ais["k_inicial_1ais"],
             Kp=resultados_ais["k_post_1ais"],
             Fy=resultados_ais["yield_1ais"],
-            dy=resultados_ais["delta_y"],   # ✅ dy REAL (yield displacement)
+            dy=resultados_ais["delta_y"],
             D2=resultados_ais["D_M"],
             Keff_ref=resultados_ais["keff_1ais"],
             titulo=tr("b4_hyst_title"),
