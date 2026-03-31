@@ -2423,7 +2423,7 @@ with col_izq:
         <div style="
             background-color:#1E2331;
             color:#F4F6FA;
-            padding:15px;
+            padding:10px;
             border-radius:10px;
             border:1px solid #3A4050;
             font-family:Consolas, monospace;
@@ -2434,7 +2434,6 @@ with col_izq:
         {tr("b4_box_betaM")} : {beta_M_pct:.2f} %<br>
         {tr("b4_box_DM")} : {D_M:.4f} m<br>
         {tr("b4_box_dy")} : {delta_y:.4f} m<br>
-        <br>
     
         {tr("b4_box_keff")} : {keff_1ais:.3f} Tonf/m<br>
         {tr("b4_box_ceq")} : {c_1ais:.3f} Tonf·s/m<br>
@@ -2442,12 +2441,10 @@ with col_izq:
         {tr("b4_box_kp")} : {k_post_1ais:.3f} Tonf/m<br>
         {tr("b4_box_fy")} : {fy_1ais:.3f} Tonf<br>
         {tr("b4_box_r")} : {ratio_post:.3f}<br>
-        <br>
     
         {tr("b4_box_DL")} : {D_L:.4f} m<br>
         {tr("b4_box_DB")} : {D_B:.4f} m<br>
         {tr("b4_box_tr")} : {t_r:.4f} m<br>
-        <br>
     
         {tr("b4_box_chk_dy")} : {yes_txt if ok_dy else no_txt}<br>
         {tr("b4_box_chk_k")} : {yes_txt if ok_k else no_txt}
