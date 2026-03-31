@@ -2007,7 +2007,7 @@ import pandas as pd
 import streamlit as st
 from numpy.linalg import inv, eig
 import math
-from funciones_usuario import _km_key
+from funciones_usuario import _km_key, diseno_aislador_LRB, _compute_checks_nec, set_style_arctic_dark, plot_ciclo_histeretico_lrb
 
 # -------------------------------------------------------------------------
 # ✅ Textos EN/ES (solo para este bloque) + HELPERS
@@ -2309,31 +2309,31 @@ with col_izq:
     # Panel checks (✔ / ❌)
     # =========================
     with c_chk:
-    with st.container(border=True):
-        st.markdown(f"**{tr('b4_chk_hdr')}**")
-
-        if "res_aislador" in st.session_state:
-            res_chk = st.session_state["res_aislador"]
-
-            Tfb = float(np.asarray(st.session_state.get("T_sin", [np.nan]), dtype=float).ravel()[0])
-            tipo_suelo_chk = st.session_state.get("nec24_params", {}).get("suelo", None)
-            alturas_chk = st.session_state.get("alturas", None)
-
-            df_chk = _compute_checks_nec(
-                res_chk,
-                tipo_suelo=tipo_suelo_chk,
-                Tfb=Tfb,
-                alturas=alturas_chk,
-            )
-
-            st.dataframe(
-                df_chk,
-                hide_index=True,
-                use_container_width=True,
-                height=min(35 * (len(df_chk) + 1), 260),
-            )
-        else:
-            st.caption("—")
+        with st.container(border=True):
+            st.markdown(f"**{tr('b4_chk_hdr')}**")
+    
+            if "res_aislador" in st.session_state:
+                res_chk = st.session_state["res_aislador"]
+    
+                Tfb = float(np.asarray(st.session_state.get("T_sin", [np.nan]), dtype=float).ravel()[0])
+                tipo_suelo_chk = st.session_state.get("nec24_params", {}).get("suelo", None)
+                alturas_chk = st.session_state.get("alturas", None)
+    
+                df_chk = _compute_checks_nec(
+                    res_chk,
+                    tipo_suelo=tipo_suelo_chk,
+                    Tfb=Tfb,
+                    alturas=alturas_chk,
+                )
+    
+                st.dataframe(
+                    df_chk,
+                    hide_index=True,
+                    use_container_width=True,
+                    height=min(35 * (len(df_chk) + 1), 260),
+                )
+            else:
+                st.caption("—")
             
     # =========================
     # Botón cálculo (con rerun para actualizar checks inmediato)
