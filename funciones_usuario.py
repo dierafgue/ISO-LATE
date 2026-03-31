@@ -946,89 +946,115 @@ def newmark_nl_base_bilinear(M, C, K, dt, ag_g,
     """
     Integra en el tiempo un sistema MDOF con aislador bilineal en el DOF 0
     (Newmark-Beta + Newton-Raphson).
+
+    ag_g debe venir en unidades de g.
     """
+    M = np.asarray(M, dtype=float)
+    C = np.asarray(C, dtype=float)
+    K = np.asarray(K, dtype=float)
+
     n = M.shape[0]
-    ag = ag_g * 9.8066500000
+    ag = np.asarray(ag_g, dtype=float).ravel() * 9.8066500000
     nt = len(ag)
 
-    # Inicialización
-    U = np.zeros((n, nt))
-    V = np.zeros((n, nt))
-    A = np.zeros((n, nt))
-    U[0, 0] = u0_init
-    V[0, 0] = v0_init
+    U = np.zeros((n, nt), dtype=float)
+    V = np.zeros((n, nt), dtype=float)
+    A = np.zeros((n, nt), dtype=float)
 
-    P0 = - (M @ np.ones((n, 1))).flatten() * ag[0]
-    uy = Fy / k0
-    ue_prev = 0.0
-    F_h0, k_t0, ue_prev = _bilinear_state(U[0, 0], U[0, 0], uy, k0, kp, ue_prev)
+    U[0, 0] = float(u0_init)
+    V[0, 0] = float(v0_init)
+
+    e0 = np.zeros(n, dtype=float)
+    e0[0] = 1.0
+
+    uy = float(Fy) / float(k0)
+
+    # Estado interno convergido del paso anterior
+    ue_n = 0.0
+
+    # Estado inicial
+    F_h0, k_t0, ue0 = _bilinear_state(U[0, 0], U[0, 0], uy, k0, kp, ue_n)
     F_iso0 = F_h0 + c_iso * V[0, 0]
+
+    P0 = -(M @ np.ones(n)) * ag[0]
 
     A[:, 0] = np.linalg.solve(
         M,
-        P0 - C @ V[:, 0] - K @ U[:, 0] - F_iso0 * np.r_[1.0, np.zeros(n - 1)]
+        P0 - C @ V[:, 0] - K @ U[:, 0] - F_iso0 * e0
     )
 
+    # Constantes Newmark
     a0 = 1.0 / (beta * dt**2)
     a1 = gamma / (beta * dt)
     a2 = 1.0 / (beta * dt)
-    a3 = 1.0 / (2 * beta) - 1.0
-    a4 = gamma / beta - 1.0
-    a5 = dt * (gamma / (2 * beta) - 1.0)
+    a3 = 1.0 / (2.0 * beta) - 1.0
 
-    e0 = np.zeros(n)
-    e0[0] = 1.0
+    F_iso_hist = np.zeros(nt, dtype=float)
+    F_hyst_hist = np.zeros(nt, dtype=float)
+    E_hyst = np.zeros(nt, dtype=float)
 
-    F_iso_hist = np.zeros(nt)
-    F_hyst_hist = np.zeros(nt)
-    E_hyst = np.zeros(nt)
     F_iso_hist[0] = F_iso0
     F_hyst_hist[0] = F_h0
 
     M_eff = a0 * M + a1 * C + K
 
     for i in range(nt - 1):
+        # Predictores
         U_pred = U[:, i] + dt * V[:, i] + dt**2 * (0.5 - beta) * A[:, i]
         V_pred = V[:, i] + dt * (1.0 - gamma) * A[:, i]
-        P = - (M @ np.ones((n, 1))).flatten() * ag[i + 1]
 
-        u, v = U_pred.copy(), V_pred.copy()
+        P = -(M @ np.ones(n)) * ag[i + 1]
+
+        u = U_pred.copy()
+        v = V_pred.copy()
         a = a0 * (u - U[:, i]) - a2 * V[:, i] - a3 * A[:, i]
-        ue_iter = ue_prev
+
+        # IMPORTANTE:
+        # ue_n permanece fijo durante TODAS las iteraciones del paso.
+        # Solo se actualiza cuando el paso converge.
+        ue_conv = ue_n
 
         for _ in range(newton_maxit):
-            F_h, k_t, ue_new = _bilinear_state(u[0], U[0, i], uy, k0, kp, ue_iter)
+            F_h, k_t, ue_trial = _bilinear_state(
+                u[0], U[0, i], uy, k0, kp, ue_n
+            )
             F_iso = F_h + c_iso * v[0]
 
             R = P - (M @ a + C @ v + K @ u + F_iso * e0)
+
             Kt = K.copy()
             Kt[0, 0] += k_t
+
             Keff = M_eff.copy() + (Kt - K)
             Keff[0, 0] += c_iso * a1
 
             du = np.linalg.solve(Keff, R)
             u += du
+
             a = a0 * (u - U[:, i]) - a2 * V[:, i] - a3 * A[:, i]
-            v = V[:, i] + dt * ((1 - gamma) * A[:, i] + gamma * a)
+            v = V[:, i] + dt * ((1.0 - gamma) * A[:, i] + gamma * a)
 
             if np.linalg.norm(du, ord=np.inf) < newton_tol:
-                ue_iter = ue_new
+                ue_conv = ue_trial
                 break
-            ue_iter = ue_new
 
         U[:, i + 1] = u
         V[:, i + 1] = v
         A[:, i + 1] = a
 
-        F_h, _, ue_prev = _bilinear_state(U[0, i + 1], U[0, i], uy, k0, kp, ue_prev)
+        # Actualizar memoria SOLO al final del paso convergido
+        ue_n = ue_conv
+
+        F_h, _, _ = _bilinear_state(U[0, i + 1], U[0, i], uy, k0, kp, ue_n)
         F_iso = F_h + c_iso * V[0, i + 1]
+
         F_iso_hist[i + 1] = F_iso
         F_hyst_hist[i + 1] = F_h
+
         du0 = U[0, i + 1] - U[0, i]
         E_hyst[i + 1] = E_hyst[i] + 0.5 * (F_hyst_hist[i + 1] + F_hyst_hist[i]) * du0
 
     return U, V, A, F_iso_hist, F_hyst_hist, E_hyst
-
 
 # ===============================================================
 # === CURVA HISTÉRÉTICA BILINEAL CON MEMORIA (POSTPROCESO) =====
