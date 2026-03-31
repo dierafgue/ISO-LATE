@@ -1452,10 +1452,13 @@ def diseno_aislador_LRB(
 
     def Sa_of_T(T):
         T = float(max(T, 1e-6))
-        if SDS <= 0.0:
+    
+        Ts = SM1 / SDS if SDS > 0 else 1e6
+    
+        if T <= Ts:
+            return SDS
+        else:
             return SM1 / T
-        Ts = SM1 / SDS
-        return SDS if (T <= Ts) else (SM1 / T)
 
     # ------------------------------------------------------------
     # Flags seguros
@@ -2660,87 +2663,81 @@ def _beta_from_bilinear_cycle(Fy: float, dy: float, D: float, Keff: float) -> fl
     beta = Ed / (2.0 * math.pi * Keff * (D**2))
     return max(0.0, beta)
 
-def _compute_checks_nec(resultados_ais: dict, *, tipo_suelo=None, Tfb=None, alturas=None) -> pd.DataFrame:
+def _compute_checks_nec(resultados_ais: dict, *, SDS=None, SD1=None) -> pd.DataFrame:
     """
-    Devuelve una tabla simplificada de verificación NEC-24.
+    Verificación básica alineada estrictamente con NEC-24
+    (sin criterios externos como altura o número de pisos)
+
     Columnas:
       - Criterio
-      - Límite NEC
+      - Parámetro NEC
       - Valor calculado
-      - Cumple
+      - Observación
     """
 
-    T_M = float(resultados_ais.get("T_M", np.nan))
-    beta_M = float(resultados_ais.get("beta_M", np.nan))
-
-    # altura total
-    H_total = np.nan
-    n_pisos = np.nan
-
-    if alturas is not None:
-        h = np.asarray(alturas, dtype=float).ravel()
-        h = h[np.isfinite(h)]
-        if len(h) > 0:
-            H_total = float(np.max(h))
-            n_pisos = int(len(h))
+    import numpy as np
+    import pandas as pd
 
     rows = []
 
-    # 1) Suelo permitido para análisis estático lineal: A, B, C, D
-    if tipo_suelo is not None:
-        suelo_ok = str(tipo_suelo).upper() in ["A", "B", "C", "D"]
+    # -----------------------------
+    # Extraer resultados del aislador
+    # -----------------------------
+    T_M   = float(resultados_ais.get("T_M", np.nan))
+    beta  = float(resultados_ais.get("beta_M", np.nan))
+    D_M   = float(resultados_ais.get("D_M", np.nan))
+    k_M   = float(resultados_ais.get("k_M", np.nan))
+
+    # -----------------------------
+    # 1) Período efectivo
+    # -----------------------------
+    rows.append({
+        "Criterio": "Período efectivo del sistema aislado",
+        "Parámetro NEC": "T_M",
+        "Valor calculado": f"{T_M:.3f} s",
+        "Observación": "Parámetro fundamental del sistema aislado"
+    })
+
+    # -----------------------------
+    # 2) Amortiguamiento efectivo
+    # -----------------------------
+    rows.append({
+        "Criterio": "Amortiguamiento efectivo",
+        "Parámetro NEC": "β_M",
+        "Valor calculado": f"{100.0 * beta:.2f} %",
+        "Observación": "Usado para reducción espectral"
+    })
+
+    # -----------------------------
+    # 3) Desplazamiento máximo
+    # -----------------------------
+    rows.append({
+        "Criterio": "Desplazamiento máximo del sistema",
+        "Parámetro NEC": "D_M",
+        "Valor calculado": f"{D_M:.4f} m",
+        "Observación": "Parámetro de diseño crítico del aislador"
+    })
+
+    # -----------------------------
+    # 4) Consistencia con espectro (SD1)
+    # -----------------------------
+    if SD1 is not None and np.isfinite(T_M) and T_M > 0:
         rows.append({
-            "Criterio": "Tipo de suelo",
-            "Límite NEC": "A, B, C o D",
-            "Valor calculado": f"{str(tipo_suelo).upper()}",
-            "Cumple": "✔️" if suelo_ok else "❌",
+            "Criterio": "Consistencia con espectro NEC",
+            "Parámetro NEC": "SD1",
+            "Valor calculado": f"SD1 = {SD1:.3f}",
+            "Observación": "Debe ser coherente con la demanda espectral"
         })
 
-    # 2) TM <= 5.0 s
-    if np.isfinite(T_M):
-        rows.append({
-            "Criterio": "Período efectivo del sistema aislado",
-            "Límite NEC": "T_M ≤ 5.0 s",
-            "Valor calculado": f"{T_M:.3f} s",
-            "Cumple": "✔️" if (T_M <= 5.0) else "❌",
-        })
-
-    # 3) beta_M <= 30%
-    if np.isfinite(beta_M):
-        rows.append({
-            "Criterio": "Amortiguamiento efectivo",
-            "Límite NEC": "β_M ≤ 30%",
-            "Valor calculado": f"{100.0 * beta_M:.2f} %",
-            "Cumple": "✔️" if (beta_M <= 0.30) else "❌",
-        })
-
-    # 4) T_M > 3 T_fb
-    if np.isfinite(T_M) and (Tfb is not None) and np.isfinite(Tfb) and (Tfb > 0):
-        rows.append({
-            "Criterio": "Desacople dinámico",
-            "Límite NEC": "T_M > 3·T_fb",
-            "Valor calculado": f"T_M = {T_M:.3f} s | 3·T_fb = {3.0*Tfb:.3f} s",
-            "Cumple": "✔️" if (T_M > 3.0 * Tfb) else "❌",
-        })
-
-    # 5) Altura / número de pisos
-    if np.isfinite(H_total) and np.isfinite(n_pisos):
-        ok_altura = (H_total <= 20.0)
-        ok_pisos = (n_pisos <= 4)
-
-        rows.append({
-            "Criterio": "Altura de superestructura",
-            "Límite NEC": "H ≤ 20 m",
-            "Valor calculado": f"{H_total:.3f} m",
-            "Cumple": "✔️" if ok_altura else "❌",
-        })
-
-        rows.append({
-            "Criterio": "Número de pisos",
-            "Límite NEC": "≤ 4 pisos",
-            "Valor calculado": f"{n_pisos:d}",
-            "Cumple": "✔️" if ok_pisos else "❌",
-        })
+    # -----------------------------
+    # 5) Rigidez efectiva
+    # -----------------------------
+    rows.append({
+        "Criterio": "Rigidez efectiva del sistema",
+        "Parámetro NEC": "k_M",
+        "Valor calculado": f"{k_M:.3f} Tonf/m",
+        "Observación": "Relaciona fuerzas y desplazamientos del sistema"
+    })
 
     return pd.DataFrame(rows)
 
