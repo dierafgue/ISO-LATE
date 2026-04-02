@@ -3679,11 +3679,10 @@ with col_right:
         n_aisladores = max(n_aisladores, 1)
 
         # -------------------------------------------------------------
-        # Para acercarse a ETABS:
-        # el link no lineal no lleva masa propia
+        # Usar la matriz de masas condensada completa.
+        # OJO: con este solver, poner M[0,0]=0 vuelve singular a M.
         # -------------------------------------------------------------
         M_used = np.array(M_ais, copy=True)
-        M_used[0, 0] = 0.0
 
         # -------------------------------------------------------------
         # Quitar del sistema lineal la rigidez efectiva TOTAL del
