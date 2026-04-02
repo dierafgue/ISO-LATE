@@ -1038,21 +1038,59 @@ def newmark_nl_base_bilinear(M, C, K, dt, ag_g,
                 ue_conv = ue_trial
                 break
 
-        U[:, i + 1] = u
-        V[:, i + 1] = v
-        A[:, i + 1] = a
-
-        # Actualizar memoria SOLO al final del paso convergido
-        ue_n = ue_conv
-
-        F_h, _, _ = _bilinear_state(U[0, i + 1], U[0, i], uy, k0, kp, ue_n)
-        F_iso = F_h + c_iso * V[0, i + 1]
-
-        F_iso_hist[i + 1] = F_iso
-        F_hyst_hist[i + 1] = F_h
-
-        du0 = U[0, i + 1] - U[0, i]
-        E_hyst[i + 1] = E_hyst[i] + 0.5 * (F_hyst_hist[i + 1] + F_hyst_hist[i]) * du0
+        for i in range(nt - 1):
+            U_pred = U[:, i] + dt * V[:, i] + dt**2 * (0.5 - beta) * A[:, i]
+            V_pred = V[:, i] + dt * (1.0 - gamma) * A[:, i]
+        
+            P = -(M @ np.ones(n)) * ag[i + 1]
+        
+            u = U_pred.copy()
+            v = V_pred.copy()
+            a = a0 * (u - U[:, i]) - a2 * V[:, i] - a3 * A[:, i]
+        
+            ue_prev = ue_n
+            ue_conv = ue_prev
+        
+            for _ in range(newton_maxit):
+                F_h, k_t, ue_trial = _bilinear_state(
+                    u[0], U[0, i], uy, k0, kp, ue_prev
+                )
+                F_iso = F_h + c_iso * v[0]
+        
+                R = P - (M @ a + C @ v + K @ u + F_iso * e0)
+        
+                Kt = K.copy()
+                Kt[0, 0] += k_t
+        
+                Keff = M_eff.copy() + (Kt - K)
+                Keff[0, 0] += c_iso * a1
+        
+                du = np.linalg.solve(Keff, R)
+                u += du
+        
+                a = a0 * (u - U[:, i]) - a2 * V[:, i] - a3 * A[:, i]
+                v = V[:, i] + dt * ((1.0 - gamma) * A[:, i] + gamma * a)
+        
+                if np.linalg.norm(du, ord=np.inf) < newton_tol:
+                    ue_conv = ue_trial
+                    break
+        
+            U[:, i + 1] = u
+            V[:, i + 1] = v
+            A[:, i + 1] = a
+        
+            # guardar fuerza del paso convergido
+            F_h, _, _ = _bilinear_state(U[0, i + 1], U[0, i], uy, k0, kp, ue_prev)
+            F_iso = F_h + c_iso * V[0, i + 1]
+        
+            F_iso_hist[i + 1] = F_iso
+            F_hyst_hist[i + 1] = F_h
+        
+            du0 = U[0, i + 1] - U[0, i]
+            E_hyst[i + 1] = E_hyst[i] + 0.5 * (F_hyst_hist[i + 1] + F_hyst_hist[i]) * du0
+        
+            # actualizar estado interno al final
+            ue_n = ue_conv
 
     return U, V, A, F_iso_hist, F_hyst_hist, E_hyst
 
