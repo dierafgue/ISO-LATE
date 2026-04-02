@@ -3340,13 +3340,11 @@ with colR:
         C_ais[0, 0] += c_1ais * n_aisladores
 
         # métricas
-        m1, m2, m3, m4, m5, m6 = st.columns(6)
+        m1, m2, m3, m4 = st.columns(4)
         m1.metric("α", f"{alpha_ais:.3e}", "1/s")
         m2.metric("β", f"{beta_ais:.3e}", "s")
         m3.metric("ζ", f"{zeta:.3f}", "")
-        m4.metric("ω₂", f"{wR_ais[0]:.3f}", "rad/s")
-        m5.metric("ω₃", f"{wR_ais[1]:.3f}", "rad/s")
-        m6.metric(tr("b6_metrics_dur"), f"{t_total:.2f}", "s")
+        m4.metric(tr("b6_metrics_dur"), f"{t_total:.2f}", "s")
 
         # ---------------------------------------------------------
         # Newmark
