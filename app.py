@@ -3681,12 +3681,11 @@ with col_right:
         # Quitar del sistema lineal la rigidez efectiva TOTAL del aislador
         # para que el aislador no lineal no se cuente dos veces
         # -------------------------------------------------------------
-        keff_1ais = float(st.session_state["res_aislador"]["keff_1ais"])
-
         K_used = np.array(K_ais, copy=True)
-        K_used[0, 0] -= keff_1ais
-        if K_used[0, 0] < 0.0:
-            K_used[0, 0] = 0.0
+
+        # eliminar completamente la rigidez lineal del aislador
+        K_used[0, :] = 0.0
+        K_used[:, 0] = 0.0
 
         # -------------------------------------------------------------
         # Amortiguamiento estructural SOLAMENTE en la superestructura
