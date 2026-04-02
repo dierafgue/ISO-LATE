@@ -3786,8 +3786,8 @@ with col_right:
         f_min = float(np.min(F_link_1))
         
         legend_txt = (
-            f"u_max = {u_max:.4f} m | F_max = {f_max:.4f} Tf\n"
-            f"u_min = {u_min:.4f} m | F_min = {f_min:.4f} Tf"
+            f"u max = {u_max:.6f} m | F max = {f_max:.6f} Tf\n"
+            f"u min = {u_min:.6f} m | F min = {f_min:.6f} Tf"
         )
         
         leg = ax.legend(
