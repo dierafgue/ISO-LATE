@@ -4048,23 +4048,71 @@ if F_fix.shape[0] != n_pisos:
 
 V_fix_all = _story_from_forces(F_fix)
 
-# -------------------- AISLADA (SOLO SUPERESTRUCTURA, sin aislador) --------------------
+# -------------------- AISLADA (DEBUG ETABS) --------------------
 t_ais, ag_ais = _match_ag(ag, a_ais.shape[1])
 
 if a_ais.shape[0] == n_pisos + 1:
-    # GDL 0 = base/aislador, NO se muestra
+    # GDL 0 = base/aislador
     a_base_rel = a_ais[0:1, :]
     a_sup_rel_base = a_ais[1:1+n_pisos, :] - a_base_rel
 
     m_sup = np.diag(np.asarray(M_ais, float))[1:1+n_pisos].reshape(n_pisos, 1)
     F_ais_sup = m_sup * a_sup_rel_base
+
+    # opción actual: SOLO superestructura
     V_ais_all = _story_from_forces(F_ais_sup)
 
+    # ================= DEBUG PARA COMPARAR CON ETABS =================
+    with st.expander("DEBUG cortantes AISLADA vs ETABS", expanded=False):
+        st.write("n_pisos =", n_pisos)
+        st.write("shape a_ais =", np.asarray(a_ais).shape)
+        st.write("shape M_ais =", np.asarray(M_ais).shape)
+
+        dbg_V_sup_max = np.max(V_ais_all, axis=1)
+        dbg_V_sup_min = np.min(V_ais_all, axis=1)
+
+        dbg_df_sup = pd.DataFrame({
+            "Nivel_app": [f"Piso{i}" for i in range(1, len(dbg_V_sup_max) + 1)],
+            "Vmax_sup": np.round(dbg_V_sup_max, 6),
+            "Vmin_sup": np.round(dbg_V_sup_min, 6),
+        })
+        st.write("Envolvente actual SOLO superestructura")
+        st.dataframe(dbg_df_sup, hide_index=True, use_container_width=True)
+
+        # opción ETABS-like: incluir AIS como nivel adicional
+        F_AIS = np.sum(F_ais_sup, axis=0, keepdims=True)
+        F_levels_etabs_like = np.vstack([F_AIS, F_ais_sup])
+        V_levels_etabs_like = _story_from_forces(F_levels_etabs_like)
+
+        dbg_V_etabs_max = np.max(V_levels_etabs_like, axis=1)
+        dbg_V_etabs_min = np.min(V_levels_etabs_like, axis=1)
+
+        dbg_names = ["AIS"] + [f"Story{i}" for i in range(1, n_pisos + 1)]
+        dbg_df_etabs = pd.DataFrame({
+            "Nivel_etabs_like": dbg_names,
+            "Vmax": np.round(dbg_V_etabs_max, 6),
+            "Vmin": np.round(dbg_V_etabs_min, 6),
+        })
+        st.write("Prueba incluyendo AIS + Story1..StoryN")
+        st.dataframe(dbg_df_etabs, hide_index=True, use_container_width=True)
+
 elif a_ais.shape[0] == n_pisos:
-    # si ya viene solo con pisos, se asume relativo a base
+    # si ya viene solo con pisos
     m_sup = np.diag(np.asarray(M_ais, float)).reshape(n_pisos, 1)
     F_ais_sup = m_sup * a_ais
     V_ais_all = _story_from_forces(F_ais_sup)
+
+    with st.expander("DEBUG cortantes AISLADA vs ETABS", expanded=False):
+        dbg_V_sup_max = np.max(V_ais_all, axis=1)
+        dbg_V_sup_min = np.min(V_ais_all, axis=1)
+
+        dbg_df_sup = pd.DataFrame({
+            "Nivel_app": [f"Piso{i}" for i in range(1, len(dbg_V_sup_max) + 1)],
+            "Vmax_sup": np.round(dbg_V_sup_max, 6),
+            "Vmin_sup": np.round(dbg_V_sup_min, 6),
+        })
+        st.write("Envolvente actual SOLO superestructura")
+        st.dataframe(dbg_df_sup, hide_index=True, use_container_width=True)
 
 else:
     st.error("❌ THA AISLADA: dimensiones no calzan con n_pisos ni n_pisos+1.")
