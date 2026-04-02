@@ -3679,8 +3679,7 @@ with col_right:
         n_aisladores = max(n_aisladores, 1)
 
         # -------------------------------------------------------------
-        # Usar la matriz de masas condensada completa.
-        # OJO: con este solver, poner M[0,0]=0 vuelve singular a M.
+        # Mantener masa condensada completa
         # -------------------------------------------------------------
         M_used = np.array(M_ais, copy=True)
 
@@ -3731,20 +3730,16 @@ with col_right:
 
         # -------------------------------------------------------------
         # Propiedades TOTALES del sistema de aislamiento equivalente
-        # IMPORTANTE:
-        # Ceq es amortiguamiento equivalente lineal, no dashpot físico
-        # para el modelo bilineal no lineal
         # -------------------------------------------------------------
         k0_1 = float(st.session_state["k_inicial_1ais"])
         kp_1 = float(st.session_state["k_post_1ais"])
         Fy_1 = float(st.session_state["yield_1ais"])
+        c_1  = float(st.session_state["c_1ais"])
 
         k0_tot = k0_1 * n_aisladores
         kp_tot = kp_1 * n_aisladores
         Fy_tot = Fy_1 * n_aisladores
-
-        # No usar Ceq aquí para no doble-contar disipación
-        c_iso_tot = 0.0
+        c_iso_tot = c_1 * n_aisladores
 
         # -------------------------------------------------------------
         # Análisis no lineal del sistema condensado
@@ -3767,13 +3762,10 @@ with col_right:
         )
 
         # -------------------------------------------------------------
-        # Histéresis del aislador equivalente:
-        # desplazamiento del GDL base vs fuerza histérica del link
+        # Para comparar con ETABS: usar fuerza TOTAL del link
         # -------------------------------------------------------------
         u_iso = np.asarray(U_nl[0, :], dtype=float).ravel()
-
-        # Para comparar la histéresis NL, usar la fuerza histérica pura
-        Fiso_hist_eq = np.asarray(Fhyst_hist_tot, dtype=float).ravel()
+        Fiso_hist_eq = np.asarray(Fiso_hist_tot, dtype=float).ravel()
         Fhyst_hist_eq = np.asarray(Fhyst_hist_tot, dtype=float).ravel()
 
         st.session_state["U_nl"] = U_nl
@@ -3789,6 +3781,7 @@ with col_right:
         st.session_state["dbg_K00"] = float(K_used[0, 0])
         st.session_state["dbg_u_iso_max"] = float(np.max(np.abs(u_iso)))
         st.session_state["dbg_Fiso_eq_max"] = float(np.max(np.abs(Fiso_hist_eq)))
+        st.session_state["dbg_Fhyst_eq_max"] = float(np.max(np.abs(Fhyst_hist_eq)))
         st.session_state["dbg_Fy_tot"] = float(Fy_tot)
         st.session_state["dbg_uy_tot"] = float(Fy_tot / k0_tot) if abs(k0_tot) > 0 else np.nan
 
