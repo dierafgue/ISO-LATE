@@ -3509,7 +3509,7 @@ T["en"].update({
     "b7_ylabel_Sa": "Sa [g]",
 
     # Right side
-    "b7_right_hdr": "Real isolator hysteresis (individual bilinear)",
+    "b7_right_hdr": "Equivalent isolator hysteresis",
     "b7_xlabel_u0": "Base displacement u₀ [m]",
     "b7_ylabel_Fiso": "Isolator force [Tf]",
 })
@@ -3529,7 +3529,7 @@ T["es"].update({
     "b7_ylabel_Sa": "Sa [g]",
 
     # Right side
-    "b7_right_hdr": "Histéresis real del aislador (bilineal individual)",
+    "b7_right_hdr": "Histéresis del aislador equivalente",
     "b7_xlabel_u0": "Desplazamiento base u₀ [m]",
     "b7_ylabel_Fiso": "Fuerza del aislador [Tf]",
 })
@@ -3569,6 +3569,7 @@ required = [
     "k_post_1ais",
     "yield_1ais",
     "c_1ais",
+    "res_aislador",
 ]
 
 missing = [k for k in required if k not in st.session_state]
@@ -3678,6 +3679,13 @@ with col_right:
         n_aisladores = max(n_aisladores, 1)
 
         # -------------------------------------------------------------
+        # Para acercarse a ETABS:
+        # el link no lineal no lleva masa propia
+        # -------------------------------------------------------------
+        M_used = np.array(M_ais, copy=True)
+        M_used[0, 0] = 0.0
+
+        # -------------------------------------------------------------
         # Quitar del sistema lineal la rigidez efectiva TOTAL del
         # aislador equivalente para evitar doble conteo en el solver NL
         # -------------------------------------------------------------
@@ -3693,13 +3701,13 @@ with col_right:
         # Amortiguamiento estructural SOLO en la superestructura
         # (sin Rayleigh en el GDL del aislador)
         # -------------------------------------------------------------
-        C_used = np.zeros_like(M_ais, dtype=float)
+        C_used = np.zeros_like(M_used, dtype=float)
 
         if (rayleigh_from_w is not None) and (modal_w is not None):
             try:
                 zeta = float(st.session_state.get("zeta_modal", 0.05))
 
-                w_ais = modal_w(K_used, M_ais)
+                w_ais = modal_w(K_used, M_used)
                 w_ais = np.asarray(w_ais, dtype=float).ravel()
                 w_ais = np.sort(w_ais[w_ais > 1e-6])
 
@@ -3710,37 +3718,41 @@ with col_right:
                 else:
                     wR_ais = None
 
-                if (wR_ais is not None) and (M_ais.shape[0] > 1):
+                if (wR_ais is not None) and (M_used.shape[0] > 1):
                     alpha_ais, beta_ais = rayleigh_from_w(wR_ais, zeta)
 
-                    M_sup = M_ais[1:, 1:]
+                    M_sup = M_used[1:, 1:]
                     K_sup = K_used[1:, 1:]
                     C_sup = alpha_ais * M_sup + beta_ais * K_sup
 
                     C_used[1:, 1:] = C_sup
 
             except Exception:
-                C_used = np.zeros_like(M_ais, dtype=float)
+                C_used = np.zeros_like(M_used, dtype=float)
 
         # -------------------------------------------------------------
         # Propiedades TOTALES del sistema de aislamiento equivalente
+        # IMPORTANTE:
+        # Ceq es amortiguamiento equivalente lineal, no dashpot físico
+        # para el modelo bilineal no lineal
         # -------------------------------------------------------------
         k0_1 = float(st.session_state["k_inicial_1ais"])
         kp_1 = float(st.session_state["k_post_1ais"])
         Fy_1 = float(st.session_state["yield_1ais"])
-        c_1  = float(st.session_state["c_1ais"])
 
-        k0_tot    = k0_1 * n_aisladores
-        kp_tot    = kp_1 * n_aisladores
-        Fy_tot    = Fy_1 * n_aisladores
-        c_iso_tot = c_1  * n_aisladores
+        k0_tot = k0_1 * n_aisladores
+        kp_tot = kp_1 * n_aisladores
+        Fy_tot = Fy_1 * n_aisladores
+
+        # No usar Ceq aquí para no doble-contar disipación
+        c_iso_tot = 0.0
 
         # -------------------------------------------------------------
         # Análisis no lineal del sistema condensado
         # GDL 0 = aislador equivalente total
         # -------------------------------------------------------------
         U_nl, V_nl, A_nl, Fiso_hist_tot, Fhyst_hist_tot, Ehyst = newmark_nl_base_bilinear(
-            M=M_ais,
+            M=M_used,
             C=C_used,
             K=K_used,
             dt=dt,
@@ -3756,11 +3768,13 @@ with col_right:
         )
 
         # -------------------------------------------------------------
-        # Histéresis correcta del sistema condensado:
-        # desplazamiento del GDL base vs fuerza total del aislador equivalente
+        # Histéresis del aislador equivalente:
+        # desplazamiento del GDL base vs fuerza histérica del link
         # -------------------------------------------------------------
         u_iso = np.asarray(U_nl[0, :], dtype=float).ravel()
-        Fiso_hist_eq = np.asarray(Fiso_hist_tot, dtype=float).ravel()
+
+        # Para comparar la histéresis NL, usar la fuerza histérica pura
+        Fiso_hist_eq = np.asarray(Fhyst_hist_tot, dtype=float).ravel()
         Fhyst_hist_eq = np.asarray(Fhyst_hist_tot, dtype=float).ravel()
 
         st.session_state["U_nl"] = U_nl
@@ -3772,15 +3786,17 @@ with col_right:
         st.session_state["Ehyst"] = np.asarray(Ehyst, dtype=float).ravel()
 
         st.session_state["dbg_n_aisladores"] = n_aisladores
+        st.session_state["dbg_M00"] = float(M_used[0, 0])
+        st.session_state["dbg_K00"] = float(K_used[0, 0])
         st.session_state["dbg_u_iso_max"] = float(np.max(np.abs(u_iso)))
         st.session_state["dbg_Fiso_eq_max"] = float(np.max(np.abs(Fiso_hist_eq)))
-        st.session_state["dbg_Fhyst_eq_max"] = float(np.max(np.abs(Fhyst_hist_eq)))
+        st.session_state["dbg_Fy_tot"] = float(Fy_tot)
+        st.session_state["dbg_uy_tot"] = float(Fy_tot / k0_tot) if abs(k0_tot) > 0 else np.nan
 
         fig, ax = plt.subplots(figsize=(FIG_W, FIG_H))
         fig.patch.set_facecolor(BG)
         ax.set_facecolor(BG)
 
-        # Para comparar con ETABS normalmente usa la fuerza total del link
         ax.plot(
             u_iso,
             Fiso_hist_eq,
@@ -3802,7 +3818,7 @@ with col_right:
         fig.tight_layout()
         st.pyplot(fig, use_container_width=True)
         plt.close(fig)
-        
+
 # =============================================================================
 # === BLOQUE 8: CORTANTES POR PISO (RSA INELÁSTICO vs THA MAX/MIN) ============
 # =============================================================================
