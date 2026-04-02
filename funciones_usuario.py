@@ -918,7 +918,6 @@ def escalera_xy(Vmax, alturas_levels):
 
     return x, y
 
-
 # =======================================================================
 # === MODELO BILINEAL HISTÉRETICO CON MEMORIA Y RIGIDEZ TANGENTE =======
 # =======================================================================
@@ -934,7 +933,6 @@ def _bilinear_state(u0, u0_prev, uy, k0, kp, ue_prev):
     k_t = kp + (k0 - kp) * d_ue_du
     return F_hyst, k_t, ue
 
-
 # =====================================================================================
 # === NEWMARK NO LINEAL (AISLADOR BILINEAL EN LA BASE, DOF 0 DEL SISTEMA) ============
 # =====================================================================================
@@ -945,9 +943,17 @@ def newmark_nl_base_bilinear(M, C, K, dt, ag_g,
                              newton_tol=1e-6, newton_maxit=25):
     """
     Integra en el tiempo un sistema MDOF con aislador bilineal en el DOF 0
-    (Newmark-Beta + Newton-Raphson).
+    usando Newmark-Beta + Newton-Raphson.
 
-    ag_g debe venir en unidades de g.
+    Parámetros
+    ----------
+    M, C, K : matrices globales del sistema
+    dt      : paso de tiempo
+    ag_g    : aceleración del terreno en unidades de g
+    k0      : rigidez inicial total del aislador
+    kp      : rigidez postfluencia total del aislador
+    Fy      : fuerza de fluencia total del aislador
+    c_iso   : amortiguamiento viscoso total del aislador
     """
     M = np.asarray(M, dtype=float)
     C = np.asarray(C, dtype=float)
@@ -972,8 +978,8 @@ def newmark_nl_base_bilinear(M, C, K, dt, ag_g,
     # Estado interno convergido del paso anterior
     ue_n = 0.0
 
-    # Estado inicial
-    F_h0, k_t0, ue0 = _bilinear_state(U[0, 0], U[0, 0], uy, k0, kp, ue_n)
+    # Estado inicial del aislador
+    F_h0, _, _ = _bilinear_state(U[0, 0], U[0, 0], uy, k0, kp, ue_n)
     F_iso0 = F_h0 + c_iso * V[0, 0]
 
     P0 = -(M @ np.ones(n)) * ag[0]
@@ -996,6 +1002,7 @@ def newmark_nl_base_bilinear(M, C, K, dt, ag_g,
     F_iso_hist[0] = F_iso0
     F_hyst_hist[0] = F_h0
 
+    # Parte efectiva constante de la matriz tangente
     M_eff = a0 * M + a1 * C + K
 
     for i in range(nt - 1):
@@ -1009,24 +1016,21 @@ def newmark_nl_base_bilinear(M, C, K, dt, ag_g,
         v = V_pred.copy()
         a = a0 * (u - U[:, i]) - a2 * V[:, i] - a3 * A[:, i]
 
-        # IMPORTANTE:
-        # ue_n permanece fijo durante TODAS las iteraciones del paso.
-        # Solo se actualiza cuando el paso converge.
-        ue_conv = ue_n
+        # Estado previo fijo durante todo Newton
+        ue_prev = ue_n
+        ue_conv = ue_prev
+        converged = False
 
         for _ in range(newton_maxit):
             F_h, k_t, ue_trial = _bilinear_state(
-                u[0], U[0, i], uy, k0, kp, ue_n
+                u[0], U[0, i], uy, k0, kp, ue_prev
             )
             F_iso = F_h + c_iso * v[0]
 
             R = P - (M @ a + C @ v + K @ u + F_iso * e0)
 
-            Kt = K.copy()
-            Kt[0, 0] += k_t
-
-            Keff = M_eff.copy() + (Kt - K)
-            Keff[0, 0] += c_iso * a1
+            Keff = M_eff.copy()
+            Keff[0, 0] += k_t + c_iso * a1
 
             du = np.linalg.solve(Keff, R)
             u += du
@@ -1036,61 +1040,31 @@ def newmark_nl_base_bilinear(M, C, K, dt, ag_g,
 
             if np.linalg.norm(du, ord=np.inf) < newton_tol:
                 ue_conv = ue_trial
+                converged = True
                 break
 
-        for i in range(nt - 1):
-            U_pred = U[:, i] + dt * V[:, i] + dt**2 * (0.5 - beta) * A[:, i]
-            V_pred = V[:, i] + dt * (1.0 - gamma) * A[:, i]
-        
-            P = -(M @ np.ones(n)) * ag[i + 1]
-        
-            u = U_pred.copy()
-            v = V_pred.copy()
-            a = a0 * (u - U[:, i]) - a2 * V[:, i] - a3 * A[:, i]
-        
-            ue_prev = ue_n
-            ue_conv = ue_prev
-        
-            for _ in range(newton_maxit):
-                F_h, k_t, ue_trial = _bilinear_state(
-                    u[0], U[0, i], uy, k0, kp, ue_prev
-                )
-                F_iso = F_h + c_iso * v[0]
-        
-                R = P - (M @ a + C @ v + K @ u + F_iso * e0)
-        
-                Kt = K.copy()
-                Kt[0, 0] += k_t
-        
-                Keff = M_eff.copy() + (Kt - K)
-                Keff[0, 0] += c_iso * a1
-        
-                du = np.linalg.solve(Keff, R)
-                u += du
-        
-                a = a0 * (u - U[:, i]) - a2 * V[:, i] - a3 * A[:, i]
-                v = V[:, i] + dt * ((1.0 - gamma) * A[:, i] + gamma * a)
-        
-                if np.linalg.norm(du, ord=np.inf) < newton_tol:
-                    ue_conv = ue_trial
-                    break
-        
-            U[:, i + 1] = u
-            V[:, i + 1] = v
-            A[:, i + 1] = a
-        
-            # guardar fuerza del paso convergido
-            F_h, _, _ = _bilinear_state(U[0, i + 1], U[0, i], uy, k0, kp, ue_prev)
-            F_iso = F_h + c_iso * V[0, i + 1]
-        
-            F_iso_hist[i + 1] = F_iso
-            F_hyst_hist[i + 1] = F_h
-        
-            du0 = U[0, i + 1] - U[0, i]
-            E_hyst[i + 1] = E_hyst[i] + 0.5 * (F_hyst_hist[i + 1] + F_hyst_hist[i]) * du0
-        
-            # actualizar estado interno al final
-            ue_n = ue_conv
+        if not converged:
+            # toma el último estado trial si no alcanzó tolerancia
+            ue_conv = ue_trial
+
+        U[:, i + 1] = u
+        V[:, i + 1] = v
+        A[:, i + 1] = a
+
+        # Guardar fuerza del paso usando el estado previo del paso
+        F_h, _, _ = _bilinear_state(
+            U[0, i + 1], U[0, i], uy, k0, kp, ue_prev
+        )
+        F_iso = F_h + c_iso * V[0, i + 1]
+
+        F_iso_hist[i + 1] = F_iso
+        F_hyst_hist[i + 1] = F_h
+
+        du0 = U[0, i + 1] - U[0, i]
+        E_hyst[i + 1] = E_hyst[i] + 0.5 * (F_hyst_hist[i + 1] + F_hyst_hist[i]) * du0
+
+        # Actualizar memoria recién al final del paso
+        ue_n = ue_conv
 
     return U, V, A, F_iso_hist, F_hyst_hist, E_hyst
 
