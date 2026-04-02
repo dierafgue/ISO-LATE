@@ -3762,11 +3762,12 @@ with col_right:
         )
 
         # -------------------------------------------------------------
-        # Para comparar con ETABS: usar fuerza TOTAL del link
+        # Para comparar con ETABS de UN link:
+        # mismo desplazamiento de base, fuerza por aislador individual
         # -------------------------------------------------------------
         u_iso = np.asarray(U_nl[0, :], dtype=float).ravel()
-        Fiso_hist_eq = np.asarray(Fiso_hist_tot, dtype=float).ravel()
-        Fhyst_hist_eq = np.asarray(Fhyst_hist_tot, dtype=float).ravel()
+        Fiso_hist_eq = np.asarray(Fiso_hist_tot, dtype=float).ravel() / n_aisladores
+        Fhyst_hist_eq = np.asarray(Fhyst_hist_tot, dtype=float).ravel() / n_aisladores
 
         st.session_state["U_nl"] = U_nl
         st.session_state["V_nl"] = V_nl
