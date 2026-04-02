@@ -3520,7 +3520,7 @@ T["en"].update({
     "b7_ylabel_Sa": "Sa [g]",
 
     # Right side
-    "b7_right_hdr": "Equivalent linear isolator hysteresis (ETABS-like)",
+    "b7_right_hdr": "Equivalent linear isolator hysteresis",
     "b7_xlabel_u0": "Base displacement u₀ [m]",
     "b7_ylabel_Fiso": "Isolator force [Tf]",
 })
@@ -3540,7 +3540,7 @@ T["es"].update({
     "b7_ylabel_Sa": "Sa [g]",
 
     # Right side
-    "b7_right_hdr": "Histéresis lineal equivalente del aislador (tipo ETABS)",
+    "b7_right_hdr": "Histéresis lineal equivalente del aislador",
     "b7_xlabel_u0": "Desplazamiento base u₀ [m]",
     "b7_ylabel_Fiso": "Fuerza del aislador [Tf]",
 })
