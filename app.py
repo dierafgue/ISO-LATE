@@ -3980,7 +3980,7 @@ if alt_fix is None:
 
 alt_fix = np.asarray(alt_fix, float).ravel()
 n_pisos = int(len(alt_fix))
-y_levels = np.r_[0.0, alt_fix]   # solo base + pisos reales
+y_levels_ais = np.r_[0.0, 1.0, alt_fix[1:]]
 
 # =============================================================================
 # THA (Tiempo historia) – SOLO Max/Min
@@ -4079,15 +4079,13 @@ if a_ais.shape[0] == n_pisos + 1:
         st.write("Envolvente actual SOLO superestructura")
         st.dataframe(dbg_df_sup, hide_index=True, use_container_width=True)
 
-        # opción ETABS-like: incluir AIS como nivel adicional
-        F_AIS = np.sum(F_ais_sup, axis=0, keepdims=True)
-        F_levels_etabs_like = np.vstack([F_AIS, F_ais_sup])
-        V_levels_etabs_like = _story_from_forces(F_levels_etabs_like)
+        # opción ETABS-like correcta:
+        # AIS = cortante en el primer nivel de superestructura
+        # Story1..StoryN = restantes niveles
+        dbg_names = ["AIS"] + [f"Story{i}" for i in range(1, n_pisos)]
+        dbg_V_etabs_max = np.r_[dbg_V_sup_max[0], dbg_V_sup_max[1:]]
+        dbg_V_etabs_min = np.r_[dbg_V_sup_min[0], dbg_V_sup_min[1:]]
 
-        dbg_V_etabs_max = np.max(V_levels_etabs_like, axis=1)
-        dbg_V_etabs_min = np.min(V_levels_etabs_like, axis=1)
-
-        dbg_names = ["AIS"] + [f"Story{i}" for i in range(1, n_pisos + 1)]
         dbg_df_etabs = pd.DataFrame({
             "Nivel_etabs_like": dbg_names,
             "Vmax": np.round(dbg_V_etabs_max, 6),
@@ -4142,12 +4140,15 @@ with colL:
     with st.container(border=True):
         st.subheader(tr("b8_tha_fix"))
 
+        niveles_ais = ["AIS"] + [f"Story{i}" for i in range(1, n_pisos)]
+        alturas_ais = np.r_[alt_fix[0], alt_fix[1:]]
+
         df = pd.DataFrame({
-            "Piso": np.arange(1, n_pisos + 1),
-            "Altura sup [m]": np.round(alt_fix, 3),
-            "Vmax [tonf]": np.round(V_fix_max, 6),
-            "Vmin [tonf]": np.round(V_fix_min, 6),
-            "|V|max [tonf]": np.round(np.maximum(np.abs(V_fix_max), np.abs(V_fix_min)), 6),
+            "Nivel": niveles_ais,
+            "Altura sup [m]": np.round(alturas_ais, 3),
+            "Vmax [tonf]": np.round(V_ais_max, 6),
+            "Vmin [tonf]": np.round(V_ais_min, 6),
+            "|V|max [tonf]": np.round(np.maximum(np.abs(V_ais_max), np.abs(V_ais_min)), 6),
         })
 
         with st.expander(tr("b8_table_fix"), expanded=False):
