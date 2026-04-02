@@ -3674,22 +3674,20 @@ with col_right:
         M_ais = np.array(st.session_state["M_cond_ais"], dtype=float)
         K_ais = np.array(st.session_state["K_cond_ais"], dtype=float)
 
-        n_aisladores = int(st.session_state.get("n_aisladores", 1))
-        n_aisladores = max(n_aisladores, 1)
+        # -------------------------------------------------------------
+        # Quitar del sistema lineal la rigidez efectiva del link equivalente
+        # para evitar doble conteo del aislador no lineal
+        # -------------------------------------------------------------
+        keff_1ais = float(st.session_state["res_aislador"]["keff_1ais"])
 
-        # -------------------------------------------------------------
-        # Quitar del sistema lineal la rigidez efectiva TOTAL del aislador
-        # para que el aislador no lineal no se cuente dos veces
-        # -------------------------------------------------------------
         K_used = np.array(K_ais, copy=True)
-
-        # eliminar completamente la rigidez lineal del aislador
-        K_used[0, :] = 0.0
-        K_used[:, 0] = 0.0
+        K_used[0, 0] -= keff_1ais
+        if K_used[0, 0] < 0.0:
+            K_used[0, 0] = 0.0
 
         # -------------------------------------------------------------
-        # Amortiguamiento estructural SOLAMENTE en la superestructura
-        # (sin modo 1 del aislador, sin damping Rayleigh en GDL 0)
+        # Amortiguamiento estructural SOLO en la superestructura
+        # (sin Rayleigh en el GDL del aislador)
         # -------------------------------------------------------------
         C_used = np.zeros_like(M_ais, dtype=float)
 
@@ -3701,7 +3699,6 @@ with col_right:
                 w_ais = np.asarray(w_ais, dtype=float).ravel()
                 w_ais = np.sort(w_ais[w_ais > 1e-6])
 
-                # usar modos 2 y 3 del sistema global
                 if len(w_ais) >= 3:
                     wR_ais = np.array([w_ais[1], w_ais[2]], dtype=float)
                 elif len(w_ais) == 2:
@@ -3728,14 +3725,9 @@ with col_right:
         kp_1 = float(st.session_state["k_post_1ais"])
         Fy_1 = float(st.session_state["yield_1ais"])
         c_1  = float(st.session_state["c_1ais"])
-        
-        k0_tot    = k0_1
-        kp_tot    = kp_1
-        Fy_tot    = Fy_1
-        c_iso_tot = c_1
 
         # -------------------------------------------------------------
-        # Análisis no lineal
+        # Análisis no lineal del sistema
         # -------------------------------------------------------------
         U_nl, V_nl, A_nl, Fiso_hist_tot, Fhyst_hist_tot, Ehyst = newmark_nl_base_bilinear(
             M=M_ais,
@@ -3743,10 +3735,10 @@ with col_right:
             K=K_used,
             dt=dt,
             ag_g=ag_g,
-            k0=k0_tot,
-            kp=kp_tot,
-            Fy=Fy_tot,
-            c_iso=c_iso_tot,
+            k0=k0_1,
+            kp=kp_1,
+            Fy=Fy_1,
+            c_iso=c_1,
             gamma=0.5,
             beta=0.25,
             newton_tol=1e-7,
@@ -3757,8 +3749,16 @@ with col_right:
         # Histéresis de UN aislador individual
         # -------------------------------------------------------------
         u_iso = np.asarray(U_nl[0, :], dtype=float).ravel()
-        Fiso_hist_1 = np.asarray(Fiso_hist_tot, dtype=float).ravel()
-        Fhyst_hist_1 = np.asarray(Fhyst_hist_tot, dtype=float).ravel()
+        v_iso = np.asarray(V_nl[0, :], dtype=float).ravel()
+
+        Fiso_hist_1, Fhyst_hist_1 = hysteresis_bilinear_individual(
+            u_hist=u_iso,
+            v_hist=v_iso,
+            k0=k0_1,
+            kp=kp_1,
+            Fy=Fy_1,
+            c_iso=c_1,
+        )
 
         st.session_state["U_nl"] = U_nl
         st.session_state["V_nl"] = V_nl
@@ -3767,13 +3767,12 @@ with col_right:
         st.session_state["Fiso_hist_total"] = np.asarray(Fiso_hist_tot, dtype=float).ravel()
         st.session_state["Fhyst_hist_total"] = np.asarray(Fhyst_hist_tot, dtype=float).ravel()
 
-        st.session_state["Fiso_hist_1ais"] = Fiso_hist_1
-        st.session_state["Fhyst_hist_1ais"] = Fhyst_hist_1
+        st.session_state["Fiso_hist_1ais"] = np.asarray(Fiso_hist_1, dtype=float).ravel()
+        st.session_state["Fhyst_hist_1ais"] = np.asarray(Fhyst_hist_1, dtype=float).ravel()
         st.session_state["Ehyst"] = np.asarray(Ehyst, dtype=float).ravel()
 
-        # Debug útil para comparar con ETABS
-        st.session_state["dbg_n_aisladores"] = n_aisladores
         st.session_state["dbg_u_iso_max"] = float(np.max(np.abs(u_iso)))
+        st.session_state["dbg_v_iso_max"] = float(np.max(np.abs(v_iso)))
         st.session_state["dbg_Fiso_1_max"] = float(np.max(np.abs(Fiso_hist_1)))
         st.session_state["dbg_Fhyst_1_max"] = float(np.max(np.abs(Fhyst_hist_1)))
 
@@ -3781,8 +3780,15 @@ with col_right:
         fig.patch.set_facecolor(BG)
         ax.set_facecolor(BG)
 
-        # comparación principal con ETABS: fuerza total del link
-        ax.plot(u_iso, Fiso_hist_1, color=COLOR_LINE1, lw=0.8)
+        ax.plot(
+            u_iso,
+            Fiso_hist_1,
+            color=COLOR_LINE1,
+            lw=0.25,
+            alpha=0.95,
+            solid_capstyle="round",
+            solid_joinstyle="round",
+        )
 
         ax.set_xlabel(tr("b7_xlabel_u0"), color=COLOR_TEXT)
         ax.set_ylabel(tr("b7_ylabel_Fiso"), color=COLOR_TEXT)
