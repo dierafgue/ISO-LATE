@@ -3760,10 +3760,15 @@ with col_right:
         st.session_state["dbg_u_iso_max"] = float(np.max(np.abs(u_iso)))
         st.session_state["dbg_Fiso_1_max"] = float(np.max(np.abs(F_link_1)))
 
+        st.session_state["u_iso_max_b7"] = float(np.max(u_iso))
+        st.session_state["u_iso_min_b7"] = float(np.min(u_iso))
+        st.session_state["f_iso_max_b7"] = float(np.max(F_link_1))
+        st.session_state["f_iso_min_b7"] = float(np.min(F_link_1))
+
         fig, ax = plt.subplots(figsize=(FIG_W, FIG_H))
         fig.patch.set_facecolor(BG)
         ax.set_facecolor(BG)
-
+        
         ax.plot(
             u_iso,
             F_link_1,
@@ -3773,15 +3778,37 @@ with col_right:
             solid_capstyle="round",
             solid_joinstyle="round",
         )
-
+        
+        # máximos y mínimos
+        u_max = float(np.max(u_iso))
+        u_min = float(np.min(u_iso))
+        f_max = float(np.max(F_link_1))
+        f_min = float(np.min(F_link_1))
+        
+        legend_txt = (
+            f"u_max = {u_max:.4f} m | F_max = {f_max:.4f} Tf\n"
+            f"u_min = {u_min:.4f} m | F_min = {f_min:.4f} Tf"
+        )
+        
+        leg = ax.legend(
+            [legend_txt],
+            loc="upper left",
+            facecolor=LEG_FACE,
+            edgecolor=LEG_EDGE,
+            framealpha=0.95,
+            fontsize=9
+        )
+        for txt in leg.get_texts():
+            txt.set_color(COLOR_TEXT)
+        
         ax.set_xlabel(tr("b7_xlabel_u0"), color=COLOR_TEXT)
         ax.set_ylabel(tr("b7_ylabel_Fiso"), color=COLOR_TEXT)
-
+        
         ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.35)
         ax.tick_params(colors=COLOR_TEXT)
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
-
+        
         fig.tight_layout()
         st.pyplot(fig, use_container_width=True)
         plt.close(fig)
