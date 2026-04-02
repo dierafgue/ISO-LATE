@@ -3682,10 +3682,9 @@ with col_right:
         # para que el aislador no lineal no se cuente dos veces
         # -------------------------------------------------------------
         keff_1ais = float(st.session_state["res_aislador"]["keff_1ais"])
-        k_iso_total = keff_1ais * n_aisladores
 
         K_used = np.array(K_ais, copy=True)
-        K_used[0, 0] -= k_iso_total
+        K_used[0, 0] -= keff_1ais
         if K_used[0, 0] < 0.0:
             K_used[0, 0] = 0.0
 
