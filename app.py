@@ -3486,10 +3486,21 @@ def get_fun(name):
 # -------------------------------------------------------------------------
 # ✅ Funciones auxiliares
 # -------------------------------------------------------------------------
-newmark_nl_base_bilinear = get_fun("newmark_nl_base_bilinear")
+newmark = get_fun("newmark")
+ensure_2d = get_fun("ensure_2d")
 rayleigh_from_w = get_fun("rayleigh_from_w")
-pick_two_w = get_fun("pick_two_w")
 modal_w = get_fun("modal_w")
+
+# fallback simple si no existe ensure_2d
+if ensure_2d is None:
+    def ensure_2d(*arrs):
+        out = []
+        for a in arrs:
+            a = np.asarray(a, dtype=float)
+            if a.ndim == 1:
+                a = a.reshape(1, -1)
+            out.append(a)
+        return out if len(out) > 1 else out[0]
 
 # -------------------------------------------------------------------------
 # ✅ Textos EN/ES
@@ -3498,7 +3509,7 @@ T["en"].update({
     "b7_title": "NEC-24 spectrum + isolator hysteresis",
 
     "b7_missing_vars": "Missing variables for this block: {keys}",
-    "b7_missing_fun": "Function `newmark_nl_base_bilinear` was not found.",
+    "b7_missing_fun": "Function `newmark` was not found.",
 
     # Left side
     "b7_left_hdr": "NEC-24 design spectrum + points (FIXED vs ISOLATED)",
@@ -3509,7 +3520,7 @@ T["en"].update({
     "b7_ylabel_Sa": "Sa [g]",
 
     # Right side
-    "b7_right_hdr": "Equivalent isolator hysteresis",
+    "b7_right_hdr": "Equivalent linear isolator hysteresis (ETABS-like)",
     "b7_xlabel_u0": "Base displacement u₀ [m]",
     "b7_ylabel_Fiso": "Isolator force [Tf]",
 })
@@ -3518,7 +3529,7 @@ T["es"].update({
     "b7_title": "Espectro NEC-24 + Histéresis del aislador",
 
     "b7_missing_vars": "⚠️ Faltan variables para este bloque: {keys}",
-    "b7_missing_fun": "⚠️ No se encontró la función `newmark_nl_base_bilinear`.",
+    "b7_missing_fun": "⚠️ No se encontró la función `newmark`.",
 
     # Left side
     "b7_left_hdr": "Espectro de diseño NEC-24 + puntos (FIJA vs AISLADA)",
@@ -3529,7 +3540,7 @@ T["es"].update({
     "b7_ylabel_Sa": "Sa [g]",
 
     # Right side
-    "b7_right_hdr": "Histéresis del aislador equivalente",
+    "b7_right_hdr": "Histéresis lineal equivalente del aislador (tipo ETABS)",
     "b7_xlabel_u0": "Desplazamiento base u₀ [m]",
     "b7_ylabel_Fiso": "Fuerza del aislador [Tf]",
 })
@@ -3565,9 +3576,6 @@ required = [
     "K_cond_ais",
     "dt",
     "ag_filt",
-    "k_inicial_1ais",
-    "k_post_1ais",
-    "yield_1ais",
     "c_1ais",
     "res_aislador",
 ]
@@ -3577,7 +3585,7 @@ if missing:
     st.warning(tr("b7_missing_vars").format(keys=", ".join(missing)))
     st.stop()
 
-if newmark_nl_base_bilinear is None:
+if newmark is None:
     st.warning(tr("b7_missing_fun"))
     st.stop()
 
@@ -3658,19 +3666,19 @@ with col_left:
         plt.close(fig)
 
 # =============================================================================
-# DERECHA: HISTÉRESIS DEL AISLADOR EQUIVALENTE DEL SISTEMA CONDENSADO
+# DERECHA: HISTÉRESIS LINEAL EQUIVALENTE TIPO ETABS
 # =============================================================================
 with col_right:
     with st.container(border=True):
         st.subheader(f"🟣 {tr('b7_right_hdr')}")
 
         dt = float(st.session_state["dt"])
+        zeta = float(st.session_state.get("zeta_modal", 0.05))
 
         # -------------------------------------------------------------
-        # Acelerograma en g para el solver NL
+        # Entrada sísmica en m/s² para Newmark lineal
         # -------------------------------------------------------------
         ag_mps2 = np.asarray(st.session_state["ag_filt"], dtype=float).ravel()
-        ag_g = ag_mps2 / 9.8066500000
 
         M_ais = np.array(st.session_state["M_cond_ais"], dtype=float)
         K_ais = np.array(st.session_state["K_cond_ais"], dtype=float)
@@ -3678,34 +3686,23 @@ with col_right:
         n_aisladores = int(st.session_state.get("n_aisladores", 1))
         n_aisladores = max(n_aisladores, 1)
 
-        # -------------------------------------------------------------
-        # Mantener masa condensada completa
-        # -------------------------------------------------------------
-        M_used = np.array(M_ais, copy=True)
+        res_ais = st.session_state["res_aislador"]
+        keff_1ais = float(res_ais["keff_1ais"])
+        c_1ais = float(st.session_state["c_1ais"])
 
-        # -------------------------------------------------------------
-        # Quitar del sistema lineal la rigidez efectiva TOTAL del
-        # aislador equivalente para evitar doble conteo en el solver NL
-        # -------------------------------------------------------------
-        keff_1ais = float(st.session_state["res_aislador"]["keff_1ais"])
         keff_tot = keff_1ais * n_aisladores
-
-        K_used = np.array(K_ais, copy=True)
-        K_used[0, 0] -= keff_tot
-        if K_used[0, 0] < 0.0:
-            K_used[0, 0] = 0.0
+        c_tot = c_1ais * n_aisladores
 
         # -------------------------------------------------------------
-        # Amortiguamiento estructural SOLO en la superestructura
-        # (sin Rayleigh en el GDL del aislador)
+        # Matriz de amortiguamiento:
+        # - Rayleigh solo en la superestructura
+        # - Ceq total del sistema de aislamiento en C[0,0]
         # -------------------------------------------------------------
-        C_used = np.zeros_like(M_used, dtype=float)
+        C_used = np.zeros_like(M_ais, dtype=float)
 
         if (rayleigh_from_w is not None) and (modal_w is not None):
             try:
-                zeta = float(st.session_state.get("zeta_modal", 0.05))
-
-                w_ais = modal_w(K_used, M_used)
+                w_ais = modal_w(K_ais, M_ais)
                 w_ais = np.asarray(w_ais, dtype=float).ravel()
                 w_ais = np.sort(w_ais[w_ais > 1e-6])
 
@@ -3716,75 +3713,52 @@ with col_right:
                 else:
                     wR_ais = None
 
-                if (wR_ais is not None) and (M_used.shape[0] > 1):
+                if (wR_ais is not None) and (M_ais.shape[0] > 1):
                     alpha_ais, beta_ais = rayleigh_from_w(wR_ais, zeta)
 
-                    M_sup = M_used[1:, 1:]
-                    K_sup = K_used[1:, 1:]
+                    M_sup = M_ais[1:, 1:]
+                    K_sup = K_ais[1:, 1:]
                     C_sup = alpha_ais * M_sup + beta_ais * K_sup
-
                     C_used[1:, 1:] = C_sup
-
             except Exception:
-                C_used = np.zeros_like(M_used, dtype=float)
+                C_used = np.zeros_like(M_ais, dtype=float)
+
+        # amortiguamiento equivalente TOTAL del sistema de aislamiento
+        C_used[0, 0] += c_tot
 
         # -------------------------------------------------------------
-        # Propiedades TOTALES del sistema de aislamiento equivalente
+        # Análisis lineal equivalente del sistema condensado
         # -------------------------------------------------------------
-        k0_1 = float(st.session_state["k_inicial_1ais"])
-        kp_1 = float(st.session_state["k_post_1ais"])
-        Fy_1 = float(st.session_state["yield_1ais"])
-        c_1  = float(st.session_state["c_1ais"])
+        r = np.ones((M_ais.shape[0], 1))
+        P = -(M_ais @ r) @ ag_mps2[np.newaxis, :]
 
-        k0_tot = k0_1 * n_aisladores
-        kp_tot = kp_1 * n_aisladores
-        Fy_tot = Fy_1 * n_aisladores
-        c_iso_tot = c_1 * n_aisladores
+        U0 = np.zeros(M_ais.shape[0], dtype=float)
+        V0 = np.zeros(M_ais.shape[0], dtype=float)
 
-        # -------------------------------------------------------------
-        # Análisis no lineal del sistema condensado
-        # GDL 0 = aislador equivalente total
-        # -------------------------------------------------------------
-        U_nl, V_nl, A_nl, Fiso_hist_tot, Fhyst_hist_tot, Ehyst = newmark_nl_base_bilinear(
-            M=M_used,
-            C=C_used,
-            K=K_used,
-            dt=dt,
-            ag_g=ag_g,
-            k0=k0_tot,
-            kp=kp_tot,
-            Fy=Fy_tot,
-            c_iso=c_iso_tot,
-            gamma=0.5,
-            beta=0.25,
-            newton_tol=1e-7,
-            newton_maxit=30
+        U_lin, V_lin, A_lin = newmark(
+            M_ais, C_used, K_ais, U0, V0, dt, P, gamma=0.5, beta=0.25
         )
+        U_lin, V_lin, A_lin = ensure_2d(U_lin, V_lin, A_lin)
 
         # -------------------------------------------------------------
-        # Para comparar con ETABS de UN link:
-        # mismo desplazamiento de base, fuerza por aislador individual
+        # Fuerza de UN link equivalente individual, tipo ETABS
+        # mismo desplazamiento base, misma velocidad base
         # -------------------------------------------------------------
-        u_iso = np.asarray(U_nl[0, :], dtype=float).ravel()
-        Fiso_hist_eq = np.asarray(Fiso_hist_tot, dtype=float).ravel() / n_aisladores
-        Fhyst_hist_eq = np.asarray(Fhyst_hist_tot, dtype=float).ravel() / n_aisladores
+        u_iso = np.asarray(U_lin[0, :], dtype=float).ravel()
+        v_iso = np.asarray(V_lin[0, :], dtype=float).ravel()
 
-        st.session_state["U_nl"] = U_nl
-        st.session_state["V_nl"] = V_nl
-        st.session_state["A_nl"] = A_nl
+        F_link_1 = keff_1ais * u_iso + c_1ais * v_iso
 
-        st.session_state["Fiso_hist_total"] = Fiso_hist_eq
-        st.session_state["Fhyst_hist_total"] = Fhyst_hist_eq
-        st.session_state["Ehyst"] = np.asarray(Ehyst, dtype=float).ravel()
+        st.session_state["U_lin_b7"] = U_lin
+        st.session_state["V_lin_b7"] = V_lin
+        st.session_state["A_lin_b7"] = A_lin
+        st.session_state["Fiso_hist_1ais_b7"] = np.asarray(F_link_1, dtype=float).ravel()
 
         st.session_state["dbg_n_aisladores"] = n_aisladores
-        st.session_state["dbg_M00"] = float(M_used[0, 0])
-        st.session_state["dbg_K00"] = float(K_used[0, 0])
+        st.session_state["dbg_keff_1ais"] = keff_1ais
+        st.session_state["dbg_ceq_1ais"] = c_1ais
         st.session_state["dbg_u_iso_max"] = float(np.max(np.abs(u_iso)))
-        st.session_state["dbg_Fiso_eq_max"] = float(np.max(np.abs(Fiso_hist_eq)))
-        st.session_state["dbg_Fhyst_eq_max"] = float(np.max(np.abs(Fhyst_hist_eq)))
-        st.session_state["dbg_Fy_tot"] = float(Fy_tot)
-        st.session_state["dbg_uy_tot"] = float(Fy_tot / k0_tot) if abs(k0_tot) > 0 else np.nan
+        st.session_state["dbg_Fiso_1_max"] = float(np.max(np.abs(F_link_1)))
 
         fig, ax = plt.subplots(figsize=(FIG_W, FIG_H))
         fig.patch.set_facecolor(BG)
@@ -3792,7 +3766,7 @@ with col_right:
 
         ax.plot(
             u_iso,
-            Fiso_hist_eq,
+            F_link_1,
             color=COLOR_LINE1,
             lw=0.25,
             alpha=0.95,
