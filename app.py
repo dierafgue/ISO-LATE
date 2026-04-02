@@ -3814,7 +3814,7 @@ with col_right:
         plt.close(fig)
 
 # =============================================================================
-# === BLOQUE 8: CORTANTES POR PISO (RSA INELÁSTICO vs THA MAX/MIN) ============
+# === BLOQUE 8: CORTANTES POR PISO (SOLO THA MAX/MIN) =========================
 # =============================================================================
 import numpy as np
 import pandas as pd
@@ -3826,33 +3826,15 @@ import matplotlib.patheffects as pe
 # ✅ Textos EN/ES (solo para este bloque) + HELPERS
 # -------------------------------------------------------------------------
 T["en"].update({
-    "b8_title": "Story shears – Inelastic response spectrum (RSA) & Time History (THA)",
-
-    "b8_method": "Select shear-force method",
-    "h_b8_method": "RSA: SRSS peak from the inelastic target spectrum. THA: time-history response using the real Max/Min envelope.",
-    "b8_method_rsa": "Inelastic response spectrum analysis (RSA)",
-    "b8_method_tha": "Time history analysis (THA)",
+    "b8_title": "Story shears – Time History (THA Max/Min)",
 
     "b8_need_alt": "Missing st.session_state['alturas'] (floor heights). Run Block 6 first.",
-    "b8_need_nec": "Missing NEC spectrum from Block 3: rs_T_spec / rs_Sa_inelas.",
-    "b8_spec_dim": "Spectrum arrays have inconsistent lengths.",
-    "b8_need_fix_modal": "Missing FIXED: M_cond / v_norm_sin / T_sin.",
-    "b8_need_iso_modal": "Missing ISOLATED: M_cond_ais / v_norm_ais / T_ais.",
-    "b8_fix_dim_bad": "FIXED: v_norm_sin does not match number of DOFs.",
-    "b8_iso_dim_bad": "ISOLATED: v_norm_ais does not match number of DOFs.",
-
-    "b8_rsa_left": "FIXED – Inelastic RSA (SRSS)",
-    "b8_rsa_right": "ISOLATED – Inelastic RSA (SRSS)",
-    "b8_table_fix": "Show shear table (FIXED)",
-    "b8_table_iso": "Show shear table (ISOLATED)",
-    "b8_plot_fix_rsa": "Story shears – Inelastic RSA (FIXED) – ±SRSS envelope",
-    "b8_plot_iso_rsa": "Story shears – Inelastic RSA (ISOLATED) – ±SRSS envelope",
-    "b8_rsa_ok": "Story shears (inelastic RSA) ready.",
-
     "b8_need_tha": "Missing THA variables: {keys}",
 
     "b8_tha_fix": "FIXED – THA (Max/Min)",
     "b8_tha_iso": "ISOLATED – THA (Max/Min)",
+    "b8_table_fix": "Show shear table (FIXED)",
+    "b8_table_iso": "Show shear table (ISOLATED)",
     "b8_plot_fix_maxmin": "THA – Story shears Max/Min (FIXED)",
     "b8_plot_iso_maxmin": "THA – Story shears Max/Min (ISOLATED)",
     "b8_tha_ok": "Story shears (THA Max/Min) ready.",
@@ -3862,33 +3844,15 @@ T["en"].update({
 })
 
 T["es"].update({
-    "b8_title": "Cortantes por piso – Espectro inelástico (RSA) y Tiempo historia (THA)",
-
-    "b8_method": "Selecciona el método de cortantes",
-    "h_b8_method": "RSA: SRSS desde el espectro inelástico. THA: tiempo-historia usando la envolvente real Max/Min.",
-    "b8_method_rsa": "Análisis modal espectral inelástico (RSA)",
-    "b8_method_tha": "Tiempo historia (THA)",
+    "b8_title": "Cortantes por piso – Tiempo historia (THA Max/Min)",
 
     "b8_need_alt": "❌ Falta st.session_state['alturas'] (alturas de pisos). Ejecuta el Bloque 6 primero.",
-    "b8_need_nec": "❌ Falta el espectro NEC del Bloque 3: rs_T_spec / rs_Sa_inelas.",
-    "b8_spec_dim": "❌ Espectro: dimensiones no coinciden.",
-    "b8_need_fix_modal": "❌ Falta FIJA: M_cond / v_norm_sin / T_sin.",
-    "b8_need_iso_modal": "❌ Falta AISLADA: M_cond_ais / v_norm_ais / T_ais.",
-    "b8_fix_dim_bad": "❌ FIJA: v_norm_sin no coincide con n_dofs.",
-    "b8_iso_dim_bad": "❌ AISLADA: v_norm_ais no coincide con n_dofs.",
-
-    "b8_rsa_left": "🟦 FIJA – RSA inelástico (SRSS)",
-    "b8_rsa_right": "🟩 AISLADA – RSA inelástico (SRSS)",
-    "b8_table_fix": "📋 Ver tabla de cortantes (FIJA)",
-    "b8_table_iso": "📋 Ver tabla de cortantes (AISLADA)",
-    "b8_plot_fix_rsa": "Cortantes por piso – RSA inelástico (FIJA) – envolvente ±SRSS",
-    "b8_plot_iso_rsa": "Cortantes por piso – RSA inelástico (AISLADA) – envolvente ±SRSS",
-    "b8_rsa_ok": "✅ Cortantes por RSA inelástico listos",
-
     "b8_need_tha": "❌ Faltan variables THA: {keys}",
 
     "b8_tha_fix": "🟦 FIJA – THA (Max/Min)",
     "b8_tha_iso": "🟩 AISLADA – THA (Max/Min)",
+    "b8_table_fix": "📋 Ver tabla de cortantes (FIJA)",
+    "b8_table_iso": "📋 Ver tabla de cortantes (AISLADA)",
     "b8_plot_fix_maxmin": "THA – Cortantes por piso Max/Min (FIJA)",
     "b8_plot_iso_maxmin": "THA – Cortantes por piso Max/Min (AISLADA)",
     "b8_tha_ok": "✅ Cortantes por THA Max/Min listos",
@@ -3908,7 +3872,6 @@ COLOR_TEXT    = "#E8EDF2"
 COLOR_GRID    = "#5B657A"
 COLOR_FIX     = "#A8D5FF"
 COLOR_AIS     = "#77DD77"
-COLOR_GUIDE   = "#FFDFA0"
 HALO = [pe.withStroke(linewidth=2.4, foreground=BG), pe.Normal()]
 
 # ----------------------- Helpers gráficos -----------------------
@@ -4005,17 +3968,11 @@ def _plot_story_shear_etabs_maxmin(Vmax_story, Vmin_story, y_levels, title, colo
 
     fig.tight_layout()
     st.pyplot(fig, use_container_width=True)
+    plt.close(fig)
 
-# -------------------- Selector método --------------------
-metodo = st.selectbox(
-    tr("b8_method"),
-    [tr("b8_method_rsa"), tr("b8_method_tha")],
-    index=0,
-    key="metodo_cortantes",
-    help=tr("h_b8_method"),
-)
-
+# -------------------------------------------------------------------------
 # Alturas pisos
+# -------------------------------------------------------------------------
 alt_fix = st.session_state.get("alturas", None)
 if alt_fix is None:
     st.error(tr("b8_need_alt"))
@@ -4026,318 +3983,162 @@ n_pisos = int(len(alt_fix))
 y_levels = np.r_[0.0, alt_fix]
 
 # =============================================================================
-# RSA (Modal espectral inelástico) – SUPER vs SUPER
-# =============================================================================
-if metodo == tr("b8_method_rsa"):
-
-    T_spec = st.session_state.get("rs_T_spec", None)
-    Sa_in  = st.session_state.get("rs_Sa_inelas", None)
-    Ie     = float(st.session_state.get("rs_Ie", 1.0))
-
-    if T_spec is None or Sa_in is None:
-        st.error(tr("b8_need_nec"))
-        st.stop()
-
-    T_spec = np.asarray(T_spec, float).ravel()
-    Sa_in  = np.asarray(Sa_in, float).ravel()
-
-    if len(T_spec) != len(Sa_in):
-        st.error(tr("b8_spec_dim"))
-        st.stop()
-
-    Sa_use = Sa_in * Ie
-    g = 9.8066500000
-
-    M_fix  = st.session_state.get("M_cond", None)
-    Vn_fix = st.session_state.get("v_norm_sin", None)
-    T_fix  = st.session_state.get("T_sin", None)
-    if M_fix is None or Vn_fix is None or T_fix is None:
-        st.error(tr("b8_need_fix_modal"))
-        st.stop()
-
-    M_fix  = np.asarray(M_fix, float)
-    Vn_fix = np.asarray(Vn_fix, float)
-    T_fix  = np.asarray(T_fix, float).ravel()
-    n_fix  = int(M_fix.shape[0])
-
-    M_ais  = st.session_state.get("M_cond_ais", st.session_state.get("M_cond_aislador", None))
-    Vn_ais = st.session_state.get("v_norm_ais", None)
-    T_ais  = st.session_state.get("T_ais", None)
-    if M_ais is None or Vn_ais is None or T_ais is None:
-        st.error(tr("b8_need_iso_modal"))
-        st.stop()
-
-    M_ais  = np.asarray(M_ais, float)
-    Vn_ais = np.asarray(Vn_ais, float)
-    T_ais  = np.asarray(T_ais, float).ravel()
-    n_ais  = int(M_ais.shape[0])
-
-    if Vn_fix.shape[0] != n_fix:
-        st.error(tr("b8_fix_dim_bad"))
-        st.stop()
-    if Vn_ais.shape[0] != n_ais:
-        st.error(tr("b8_iso_dim_bad"))
-        st.stop()
-
-    def _rsa_story_shear_super(Mmat, Vnorm, Tvec, n_pisos_ref):
-        Mmat = np.asarray(Mmat, float)
-        Vnorm = np.asarray(Vnorm, float)
-        Tvec = np.asarray(Tvec, float).ravel()
-
-        n = int(Mmat.shape[0])
-        nmod = int(Vnorm.shape[1])
-        has_iso = (n == (n_pisos_ref + 1))
-
-        V_modes = []
-
-        for rr in range(nmod):
-            Tr = float(Tvec[rr]) if rr < len(Tvec) else np.nan
-            if (not np.isfinite(Tr)) or Tr <= 0:
-                continue
-
-            Sa_r = float(np.interp(Tr, T_spec, Sa_use)) * g
-            phi = np.asarray(Vnorm[:, rr], float).reshape(n, 1)
-
-            r = np.ones((n, 1), float)
-
-            num = float((phi.T @ Mmat @ r).item())
-            den = float((phi.T @ Mmat @ phi).item())
-
-            if (not np.isfinite(den)) or abs(den) < 1e-14:
-                continue
-
-            Gamma = num / den
-            F_full = (Gamma * (Mmat @ phi) * Sa_r).ravel()
-
-            if has_iso:
-                F_use = F_full[1:1+n_pisos_ref]
-            else:
-                F_use = F_full[:n_pisos_ref]
-
-            if len(F_use) != n_pisos_ref:
-                return None
-
-            V_r = np.zeros((n_pisos_ref,), float)
-            for k in range(n_pisos_ref):
-                V_r[k] = np.sum(F_use[k:])
-
-            V_modes.append(V_r)
-
-        if len(V_modes) == 0:
-            return None
-
-        V_modes = np.vstack(V_modes)
-        return np.sqrt(np.sum(V_modes**2, axis=0))
-
-    V_fix_srss = _rsa_story_shear_super(M_fix, Vn_fix, T_fix, n_pisos)
-    V_ais_srss = _rsa_story_shear_super(M_ais, Vn_ais, T_ais, n_pisos)
-
-    if V_fix_srss is None:
-        st.error("❌ RSA FIJA: no se pudieron armar modos válidos o dimensiones no calzan.")
-        st.stop()
-    if V_ais_srss is None:
-        st.error("❌ RSA AISLADA: no se pudieron armar modos válidos o dimensiones no calzan.")
-        st.stop()
-
-    V_fix_srss = np.asarray(V_fix_srss, float).ravel()
-    V_ais_srss = np.asarray(V_ais_srss, float).ravel()
-
-    V_fix_max, V_fix_min = V_fix_srss.copy(), -V_fix_srss.copy()
-    V_ais_max, V_ais_min = V_ais_srss.copy(), -V_ais_srss.copy()
-
-    df_fix = pd.DataFrame({
-        "Piso": np.arange(1, n_pisos + 1),
-        "Altura sup [m]": np.round(alt_fix, 3),
-        "Vmax [tonf]": np.round(V_fix_max, 6),
-        "Vmin [tonf]": np.round(V_fix_min, 6),
-        "|V|max [tonf]": np.round(np.maximum(np.abs(V_fix_max), np.abs(V_fix_min)), 6),
-    })
-    df_ais = pd.DataFrame({
-        "Piso": np.arange(1, n_pisos + 1),
-        "Altura sup [m]": np.round(alt_fix, 3),
-        "Vmax [tonf]": np.round(V_ais_max, 6),
-        "Vmin [tonf]": np.round(V_ais_min, 6),
-        "|V|max [tonf]": np.round(np.maximum(np.abs(V_ais_max), np.abs(V_ais_min)), 6),
-    })
-
-    colL, colR = st.columns([1, 1], gap="large")
-
-    with colL:
-        with st.container(border=True):
-            st.subheader(tr("b8_rsa_left"))
-            with st.expander(tr("b8_table_fix"), expanded=False):
-                _df_to_compact_table(df_fix)
-            _plot_story_shear_etabs_maxmin(
-                V_fix_max, None, y_levels, tr("b8_plot_fix_rsa"), COLOR_FIX, nref=n_pisos
-            )
-
-    with colR:
-        with st.container(border=True):
-            st.subheader(tr("b8_rsa_right"))
-            with st.expander(tr("b8_table_iso"), expanded=False):
-                _df_to_compact_table(df_ais)
-            _plot_story_shear_etabs_maxmin(
-                V_ais_max, None, y_levels, tr("b8_plot_iso_rsa"), COLOR_AIS, nref=n_pisos
-            )
-
-    st.success(tr("b8_rsa_ok"))
-
-    st.session_state["cmp_V_fix_story"]     = np.maximum(np.abs(V_fix_max), np.abs(V_fix_min))
-    st.session_state["cmp_V_ais_story"]     = np.maximum(np.abs(V_ais_max), np.abs(V_ais_min))
-    st.session_state["cmp_V_fix_story_max"] = V_fix_max
-    st.session_state["cmp_V_fix_story_min"] = V_fix_min
-    st.session_state["cmp_V_ais_story_max"] = V_ais_max
-    st.session_state["cmp_V_ais_story_min"] = V_ais_min
-    st.session_state["cmp_tag_shear"] = (
-        "Inelastic RSA (SRSS) ±" if st.session_state.get("lang", "en") == "en"
-        else "RSA inelástico (SRSS) ±"
-    )
-    st.session_state["cmp_Vb_fix"]          = float(V_fix_max[0]) if len(V_fix_max) else np.nan
-    st.session_state["cmp_Vb_ais"]          = float(V_ais_max[0]) if len(V_ais_max) else np.nan
-
-# =============================================================================
 # THA (Tiempo historia) – SOLO Max/Min
 # =============================================================================
-else:
-    dt = st.session_state.get("dt", None)
-    ag = st.session_state.get("ag_filt", None)
+dt = st.session_state.get("dt", None)
+ag = st.session_state.get("ag_filt", None)
 
-    a_fix = st.session_state.get("a_t", None)
-    M_fix = st.session_state.get("M_cond", None)
+a_fix = st.session_state.get("a_t", None)
+M_fix = st.session_state.get("M_cond", None)
 
-    a_ais = st.session_state.get("a_t_ais", None)
-    M_ais = st.session_state.get("M_cond_ais", st.session_state.get("M_cond_aislador", None))
+a_ais = st.session_state.get("a_t_ais", None)
+M_ais = st.session_state.get("M_cond_ais", st.session_state.get("M_cond_aislador", None))
 
-    falt = []
-    if dt is None: falt.append("dt")
-    if ag is None: falt.append("ag_filt")
-    if a_fix is None: falt.append("a_t")
-    if M_fix is None: falt.append("M_cond")
-    if a_ais is None: falt.append("a_t_ais")
-    if M_ais is None: falt.append("M_cond_ais (o M_cond_aislador)")
-    if falt:
-        st.error(tr("b8_need_tha").format(keys=", ".join(falt)))
-        st.stop()
+falt = []
+if dt is None: falt.append("dt")
+if ag is None: falt.append("ag_filt")
+if a_fix is None: falt.append("a_t")
+if M_fix is None: falt.append("M_cond")
+if a_ais is None: falt.append("a_t_ais")
+if M_ais is None: falt.append("M_cond_ais (o M_cond_aislador)")
+if falt:
+    st.error(tr("b8_need_tha").format(keys=", ".join(falt)))
+    st.stop()
 
-    dt = float(dt)
-    ag = np.asarray(ag, float).ravel()
+dt = float(dt)
+ag = np.asarray(ag, float).ravel()
 
-    a_fix = np.asarray(a_fix, float); a_fix = a_fix if a_fix.ndim == 2 else a_fix[np.newaxis, :]
-    a_ais = np.asarray(a_ais, float); a_ais = a_ais if a_ais.ndim == 2 else a_ais[np.newaxis, :]
+a_fix = np.asarray(a_fix, float)
+a_fix = a_fix if a_fix.ndim == 2 else a_fix[np.newaxis, :]
 
-    def _match_ag(ag_in, nt):
-        ag2 = np.asarray(ag_in, float).ravel()
-        if len(ag2) < nt:
-            ag2 = np.pad(ag2, (0, nt - len(ag2)), mode="constant")
-        else:
-            ag2 = ag2[:nt]
-        t = np.arange(nt, dtype=float) * dt
-        return t, ag2
+a_ais = np.asarray(a_ais, float)
+a_ais = a_ais if a_ais.ndim == 2 else a_ais[np.newaxis, :]
 
-    def _floor_forces(Mmat, a_rel, ag_series):
-        a_rel = np.asarray(a_rel, float)
-        n, nt = a_rel.shape
-        m = np.diag(np.asarray(Mmat, float)).reshape(n, 1)
-        a_abs = a_rel + ag_series.reshape(1, nt)
-        return m * a_abs
-
-    def _story_from_forces(F):
-        F = np.asarray(F, float)
-        n, nt = F.shape
-        V = np.zeros_like(F)
-        for k in range(n):
-            V[k, :] = np.sum(F[k:, :], axis=0)
-        return V
-
-    t_fix, ag_fix = _match_ag(ag, a_fix.shape[1])
-    F_fix = _floor_forces(M_fix, a_fix, ag_fix)
-    if F_fix.shape[0] != n_pisos:
-        st.error("❌ THA FIJA: fuerzas no calzan con n_pisos (revisa GDL cond).")
-        st.stop()
-    V_fix_all = _story_from_forces(F_fix)
-
-    t_ais, ag_ais = _match_ag(ag, a_ais.shape[1])
-
-    if a_ais.shape[0] == n_pisos + 1:
-        a_base_rel = a_ais[0:1, :]
-        a_sup_rel_base = a_ais[1:1+n_pisos, :] - a_base_rel
-
-        m_sup = np.diag(np.asarray(M_ais, float))[1:1+n_pisos].reshape(n_pisos, 1)
-        F_ais_sup = m_sup * a_sup_rel_base
-        V_ais_all = _story_from_forces(F_ais_sup)
-
-    elif a_ais.shape[0] == n_pisos:
-        m_sup = np.diag(np.asarray(M_ais, float)).reshape(n_pisos, 1)
-        F_ais_sup = m_sup * a_ais
-        V_ais_all = _story_from_forces(F_ais_sup)
-
+def _match_ag(ag_in, nt):
+    ag2 = np.asarray(ag_in, float).ravel()
+    if len(ag2) < nt:
+        ag2 = np.pad(ag2, (0, nt - len(ag2)), mode="constant")
     else:
-        st.error("❌ THA AISLADA: dimensiones no calzan con n_pisos ni n_pisos+1.")
-        st.stop()
+        ag2 = ag2[:nt]
+    t = np.arange(nt, dtype=float) * dt
+    return t, ag2
 
-    V_fix_max = np.max(V_fix_all, axis=1)
-    V_fix_min = np.min(V_fix_all, axis=1)
-    V_ais_max = np.max(V_ais_all, axis=1)
-    V_ais_min = np.min(V_ais_all, axis=1)
+def _floor_forces(Mmat, a_rel, ag_series):
+    a_rel = np.asarray(a_rel, float)
+    n, nt = a_rel.shape
+    m = np.diag(np.asarray(Mmat, float)).reshape(n, 1)
+    a_abs = a_rel + ag_series.reshape(1, nt)
+    return m * a_abs
 
-    V_fix_cmp = np.maximum(np.abs(V_fix_max), np.abs(V_fix_min))
-    V_ais_cmp = np.maximum(np.abs(V_ais_max), np.abs(V_ais_min))
+def _story_from_forces(F):
+    F = np.asarray(F, float)
+    n, nt = F.shape
+    V = np.zeros_like(F)
+    for k in range(n):
+        V[k, :] = np.sum(F[k:, :], axis=0)
+    return V
 
-    title_fix = tr("b8_plot_fix_maxmin")
-    title_ais = tr("b8_plot_iso_maxmin")
+# -------------------- FIJA --------------------
+t_fix, ag_fix = _match_ag(ag, a_fix.shape[1])
+F_fix = _floor_forces(M_fix, a_fix, ag_fix)
 
-    V_fix_max = np.asarray(V_fix_max, float).ravel()
-    V_fix_min = np.asarray(V_fix_min, float).ravel()
-    V_ais_max = np.asarray(V_ais_max, float).ravel()
-    V_ais_min = np.asarray(V_ais_min, float).ravel()
+if F_fix.shape[0] != n_pisos:
+    st.error("❌ THA FIJA: fuerzas no calzan con n_pisos (revisa GDL cond).")
+    st.stop()
 
-    colL, colR = st.columns([1, 1], gap="large")
+V_fix_all = _story_from_forces(F_fix)
 
-    with colL:
-        with st.container(border=True):
-            st.subheader(tr("b8_tha_fix"))
+# -------------------- AISLADA --------------------
+t_ais, ag_ais = _match_ag(ag, a_ais.shape[1])
 
-            df = pd.DataFrame({
-                "Piso": np.arange(1, n_pisos + 1),
-                "Altura sup [m]": np.round(alt_fix, 3),
-                "Vmax [tonf]": np.round(V_fix_max, 6),
-                "Vmin [tonf]": np.round(V_fix_min, 6),
-                "|V|max [tonf]": np.round(np.maximum(np.abs(V_fix_max), np.abs(V_fix_min)), 6),
-            })
+if a_ais.shape[0] == n_pisos + 1:
+    # GDL 0 = base/aislador; se usa solo superestructura
+    a_base_rel = a_ais[0:1, :]
+    a_sup_rel_base = a_ais[1:1+n_pisos, :] - a_base_rel
 
-            with st.expander(tr("b8_table_fix"), expanded=False):
-                _df_to_compact_table(df)
+    m_sup = np.diag(np.asarray(M_ais, float))[1:1+n_pisos].reshape(n_pisos, 1)
+    F_ais_sup = m_sup * a_sup_rel_base
+    V_ais_all = _story_from_forces(F_ais_sup)
 
-            _plot_story_shear_etabs_maxmin(V_fix_max, V_fix_min, y_levels, title_fix, COLOR_FIX, nref=n_pisos)
+elif a_ais.shape[0] == n_pisos:
+    m_sup = np.diag(np.asarray(M_ais, float)).reshape(n_pisos, 1)
+    F_ais_sup = m_sup * a_ais
+    V_ais_all = _story_from_forces(F_ais_sup)
 
-    with colR:
-        with st.container(border=True):
-            st.subheader(tr("b8_tha_iso"))
+else:
+    st.error("❌ THA AISLADA: dimensiones no calzan con n_pisos ni n_pisos+1.")
+    st.stop()
 
-            df = pd.DataFrame({
-                "Piso": np.arange(1, n_pisos + 1),
-                "Altura sup [m]": np.round(alt_fix, 3),
-                "Vmax [tonf]": np.round(V_ais_max, 6),
-                "Vmin [tonf]": np.round(V_ais_min, 6),
-                "|V|max [tonf]": np.round(np.maximum(np.abs(V_ais_max), np.abs(V_ais_min)), 6),
-            })
+# -------------------- Envolventes Max/Min --------------------
+V_fix_max = np.max(V_fix_all, axis=1)
+V_fix_min = np.min(V_fix_all, axis=1)
+V_ais_max = np.max(V_ais_all, axis=1)
+V_ais_min = np.min(V_ais_all, axis=1)
 
-            with st.expander(tr("b8_table_iso"), expanded=False):
-                _df_to_compact_table(df)
+V_fix_cmp = np.maximum(np.abs(V_fix_max), np.abs(V_fix_min))
+V_ais_cmp = np.maximum(np.abs(V_ais_max), np.abs(V_ais_min))
 
-            _plot_story_shear_etabs_maxmin(V_ais_max, V_ais_min, y_levels, title_ais, COLOR_AIS, nref=n_pisos)
+title_fix = tr("b8_plot_fix_maxmin")
+title_ais = tr("b8_plot_iso_maxmin")
 
-    st.success(tr("b8_tha_ok"))
+V_fix_max = np.asarray(V_fix_max, float).ravel()
+V_fix_min = np.asarray(V_fix_min, float).ravel()
+V_ais_max = np.asarray(V_ais_max, float).ravel()
+V_ais_min = np.asarray(V_ais_min, float).ravel()
 
-    st.session_state["cmp_V_fix_story"]     = np.asarray(V_fix_cmp, float).ravel()
-    st.session_state["cmp_V_ais_story"]     = np.asarray(V_ais_cmp, float).ravel()
-    st.session_state["cmp_V_fix_story_max"] = V_fix_max
-    st.session_state["cmp_V_ais_story_max"] = V_ais_max
-    st.session_state["cmp_V_fix_story_min"] = V_fix_min
-    st.session_state["cmp_V_ais_story_min"] = V_ais_min
-    st.session_state["cmp_tag_shear"]       = "THA (Max/Min)"
-    st.session_state["cmp_Vb_fix"]          = float(st.session_state["cmp_V_fix_story"][0]) if len(st.session_state["cmp_V_fix_story"]) else np.nan
-    st.session_state["cmp_Vb_ais"]          = float(st.session_state["cmp_V_ais_story"][0]) if len(st.session_state["cmp_V_ais_story"]) else np.nan
+# -------------------- Layout resultados --------------------
+colL, colR = st.columns([1, 1], gap="large")
+
+with colL:
+    with st.container(border=True):
+        st.subheader(tr("b8_tha_fix"))
+
+        df = pd.DataFrame({
+            "Piso": np.arange(1, n_pisos + 1),
+            "Altura sup [m]": np.round(alt_fix, 3),
+            "Vmax [tonf]": np.round(V_fix_max, 6),
+            "Vmin [tonf]": np.round(V_fix_min, 6),
+            "|V|max [tonf]": np.round(np.maximum(np.abs(V_fix_max), np.abs(V_fix_min)), 6),
+        })
+
+        with st.expander(tr("b8_table_fix"), expanded=False):
+            _df_to_compact_table(df)
+
+        _plot_story_shear_etabs_maxmin(
+            V_fix_max, V_fix_min, y_levels, title_fix, COLOR_FIX, nref=n_pisos
+        )
+
+with colR:
+    with st.container(border=True):
+        st.subheader(tr("b8_tha_iso"))
+
+        df = pd.DataFrame({
+            "Piso": np.arange(1, n_pisos + 1),
+            "Altura sup [m]": np.round(alt_fix, 3),
+            "Vmax [tonf]": np.round(V_ais_max, 6),
+            "Vmin [tonf]": np.round(V_ais_min, 6),
+            "|V|max [tonf]": np.round(np.maximum(np.abs(V_ais_max), np.abs(V_ais_min)), 6),
+        })
+
+        with st.expander(tr("b8_table_iso"), expanded=False):
+            _df_to_compact_table(df)
+
+        _plot_story_shear_etabs_maxmin(
+            V_ais_max, V_ais_min, y_levels, title_ais, COLOR_AIS, nref=n_pisos
+        )
+
+st.success(tr("b8_tha_ok"))
+
+# -------------------- Guardado para comparación posterior --------------------
+st.session_state["cmp_V_fix_story"]     = np.asarray(V_fix_cmp, float).ravel()
+st.session_state["cmp_V_ais_story"]     = np.asarray(V_ais_cmp, float).ravel()
+st.session_state["cmp_V_fix_story_max"] = V_fix_max
+st.session_state["cmp_V_fix_story_min"] = V_fix_min
+st.session_state["cmp_V_ais_story_max"] = V_ais_max
+st.session_state["cmp_V_ais_story_min"] = V_ais_min
+st.session_state["cmp_tag_shear"]       = "THA (Max/Min)"
+st.session_state["cmp_Vb_fix"]          = float(st.session_state["cmp_V_fix_story"][0]) if len(st.session_state["cmp_V_fix_story"]) else np.nan
+st.session_state["cmp_Vb_ais"]          = float(st.session_state["cmp_V_ais_story"][0]) if len(st.session_state["cmp_V_ais_story"]) else np.nan
     
 # =============================================================================
 # === BLOQUE 9: DESPLAZAMIENTOS LATERALES (RSA INELÁSTICO vs THA MAX/MIN) =====
