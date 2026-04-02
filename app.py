@@ -3299,26 +3299,58 @@ with colR:
     with st.container(border=True):
         st.markdown(f"### {tr('b6_right_hdr')}")
 
-        # Rayleigh AISLADA con modelo condensado (evita w ~ 0)
+        # ---------------------------------------------------------
+        # Frecuencias modales (excluyendo modo 1 del aislador)
+        # ---------------------------------------------------------
         w_ais = modal_w(K_ais_eff, M_ais_eff)
-        wR_ais = pick_two_w(w_ais, wmin=1e-6)
+        w_ais = np.asarray(w_ais, dtype=float).ravel()
+        w_ais = np.sort(w_ais[w_ais > 1e-6])
 
+        if len(w_ais) >= 3:
+            wR_ais = np.array([w_ais[1], w_ais[2]], dtype=float)  # modos 2 y 3
+        elif len(w_ais) == 2:
+            wR_ais = np.array([w_ais[0], w_ais[1]], dtype=float)
+            st.warning("Solo hay 2 frecuencias válidas; no se pudo excluir completamente el modo del aislador.")
+        else:
+            st.error("No hay suficientes frecuencias para definir Rayleigh.")
+            st.stop()
+
+        # coeficientes Rayleigh
         alpha_ais, beta_ais = rayleigh_from_w(wR_ais, zeta)
-        C_ais = alpha_ais * M_ais_eff + beta_ais * K_ais_eff
 
-        # número de aisladores
+        # ---------------------------------------------------------
+        # Matriz de amortiguamiento:
+        # - aislador: solo c equivalente
+        # - superestructura: Rayleigh
+        # ---------------------------------------------------------
+        C_ais = np.zeros_like(M_ais_eff, dtype=float)
+
+        n_gdl = M_ais_eff.shape[0]
+
+        if n_gdl > 1:
+            M_sup = M_ais_eff[1:, 1:]
+            K_sup = K_ais_eff[1:, 1:]
+
+            C_sup = alpha_ais * M_sup + beta_ais * K_sup
+            C_ais[1:, 1:] = C_sup
+
+        # amortiguamiento del aislador
         n_aisladores = int(st.session_state.get("n_aisladores", 1))
-
-        # ✅ amortiguamiento viscoso equivalente del aislador
         c_1ais = float(st.session_state["res_aislador"]["c_1ais"])
         C_ais[0, 0] += c_1ais * n_aisladores
 
-        m1, m2, m3, m4 = st.columns(4)
+        # métricas
+        m1, m2, m3, m4, m5, m6 = st.columns(6)
         m1.metric("α", f"{alpha_ais:.3e}", "1/s")
         m2.metric("β", f"{beta_ais:.3e}", "s")
         m3.metric("ζ", f"{zeta:.3f}", "")
-        m4.metric(tr("b6_metrics_dur"), f"{t_total:.2f}", "s")
+        m4.metric("ω₂", f"{wR_ais[0]:.3f}", "rad/s")
+        m5.metric("ω₃", f"{wR_ais[1]:.3f}", "rad/s")
+        m6.metric(tr("b6_metrics_dur"), f"{t_total:.2f}", "s")
 
+        # ---------------------------------------------------------
+        # Newmark
+        # ---------------------------------------------------------
         sig_ais = _sig(K_ais_eff, M_ais_eff, C_ais, ag_ext, extra=(dt, zeta, gamma_n, beta_n))
         cache_ais = st.session_state.get("b6_cache_ais", {})
 
@@ -3330,7 +3362,8 @@ with colR:
             V0_ais = np.zeros(K_ais_eff.shape[0])
 
             u_ais, v_ais_t, a_ais_t = newmark(
-                M_ais_eff, C_ais, K_ais_eff, U0_ais, V0_ais, dt, P_ais, gamma=gamma_n, beta=beta_n
+                M_ais_eff, C_ais, K_ais_eff, U0_ais, V0_ais, dt, P_ais,
+                gamma=gamma_n, beta=beta_n
             )
             u_ais, v_ais_t, a_ais_t = ensure_2d(u_ais, v_ais_t, a_ais_t)
 
@@ -3347,20 +3380,20 @@ with colR:
             v_ais_t = cache_ais["v"]
             a_ais_t = cache_ais["a"]
 
-        # Guardar THA AISLADA completa
+        # guardar resultados
         st.session_state["u_t_ais"] = u_ais
         st.session_state["v_t_ais"] = v_ais_t
         st.session_state["a_t_ais"] = a_ais_t
         st.session_state["t_ais"]   = t
         st.session_state["C_ais"]   = C_ais
 
-        # PFA AISLADA (a_abs = a_rel + ag)
+        # PFA
         a_abs_ais = a_ais_t + ag_ext.reshape(1, -1)
         pfa_ais_mps2 = np.max(np.abs(a_abs_ais), axis=1)
-        st.session_state["pfa_ais_mps2"] = np.asarray(pfa_ais_mps2, float).ravel()
-        st.session_state["pfa_ais_g"]    = st.session_state["pfa_ais_mps2"] / 9.8066500000
 
-        # PFA SOLO SUPERESTRUCTURA
+        st.session_state["pfa_ais_mps2"] = np.asarray(pfa_ais_mps2, float).ravel()
+        st.session_state["pfa_ais_g"]    = st.session_state["pfa_ais_mps2"] / 9.80665
+
         if a_ais_t.shape[0] >= 2:
             st.session_state["pfa_ais_super_mps2"] = st.session_state["pfa_ais_mps2"][1:].copy()
             st.session_state["pfa_ais_super_g"]    = st.session_state["pfa_ais_g"][1:].copy()
@@ -3368,13 +3401,12 @@ with colR:
             st.session_state["pfa_ais_super_mps2"] = np.array([], dtype=float)
             st.session_state["pfa_ais_super_g"]    = np.array([], dtype=float)
 
-        # Demanda aislador (GDL 0) — se conserva para otros bloques
+        # demanda aislador
         u_iso_t = np.asarray(u_ais[0, :], float).ravel()
-        u_iso_max = float(np.max(np.abs(u_iso_t)))
         st.session_state["u_iso_t"]   = u_iso_t
-        st.session_state["u_iso_max"] = float(u_iso_max)
+        st.session_state["u_iso_max"] = float(np.max(np.abs(u_iso_t)))
 
-        # Excel completo del sistema aislado (incluye aislador)
+        # Excel
         labels_ais = ["Isolator_0"] + [f"Level_{i}" for i in range(1, int(u_ais.shape[0]))]
 
         if st.session_state["b6_cache_ais"].get("xlsx") is None:
@@ -3391,28 +3423,26 @@ with colR:
             use_container_width=True,
         )
 
+    # ---------------------------------------------------------
+    # RESPUESTAS (sin mostrar aislador)
+    # ---------------------------------------------------------
     with st.container(border=True):
         st.markdown(f"### {tr('b6_right_resp')}")
 
         alt_fix = st.session_state.get("alturas", None)
         if alt_fix is None:
-            # alturas de pisos reales solamente
             alt_fix = np.arange(1, max(u_ais.shape[0], 2), dtype=float)
 
         alt_fix = np.asarray(alt_fix, float).ravel()
-
-        # se mantiene completo por compatibilidad con otros bloques
         st.session_state["alturas_ais"] = np.r_[0.0, alt_fix]
 
-        # ✅ SOLO mostrar pisos reales, no el aislador
         n_gdl_ais = int(u_ais.shape[0])
 
         if n_gdl_ais <= 1:
-            st.info("No hay pisos disponibles para mostrar en la superestructura.")
+            st.info("No hay pisos disponibles.")
         else:
             for idx in range(1, n_gdl_ais):
                 titulo = f"**{tr('b6_floor').format(i=idx)}**"
-                nombre = str(idx)
                 h = float(alt_fix[idx - 1]) if (idx - 1) < len(alt_fix) else float(idx)
 
                 with st.expander(titulo, expanded=(idx == 1)):
@@ -3423,7 +3453,7 @@ with colR:
                         a_ais_t[[idx], :],
                         [h],
                         t_total,
-                        nombre_piso=nombre,
+                        nombre_piso=str(idx),
                     )
 
 st.success(tr("b6_ok"))
