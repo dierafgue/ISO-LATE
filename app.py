@@ -3665,9 +3665,9 @@ with col_right:
 
         dt = float(st.session_state["dt"])
 
-        # -----------------------------------------------------------------
-        # ✅ newmark_nl_base_bilinear espera ag_g en g
-        # -----------------------------------------------------------------
+        # -------------------------------------------------------------
+        # Acelerograma en g para el solver NL
+        # -------------------------------------------------------------
         ag_mps2 = np.asarray(st.session_state["ag_filt"], dtype=float).ravel()
         ag_g = ag_mps2 / 9.8066500000
 
@@ -3677,36 +3677,55 @@ with col_right:
         n_aisladores = int(st.session_state.get("n_aisladores", 1))
         n_aisladores = max(n_aisladores, 1)
 
-        # -----------------------------------------------------------------
-        # ✅ Retirar keff total del aislador para evitar doble conteo
-        # -----------------------------------------------------------------
+        # -------------------------------------------------------------
+        # Quitar del sistema lineal la rigidez efectiva TOTAL del aislador
+        # para que el aislador no lineal no se cuente dos veces
+        # -------------------------------------------------------------
         keff_1ais = float(st.session_state["res_aislador"]["keff_1ais"])
         k_iso_total = keff_1ais * n_aisladores
 
         K_used = np.array(K_ais, copy=True)
         K_used[0, 0] -= k_iso_total
-
-        if K_used[0, 0] < 0:
+        if K_used[0, 0] < 0.0:
             K_used[0, 0] = 0.0
 
-        # -----------------------------------------------------------------
-        # ✅ Amortiguamiento estructural solamente
-        # -----------------------------------------------------------------
-        C_used = np.zeros_like(M_ais)
+        # -------------------------------------------------------------
+        # Amortiguamiento estructural SOLAMENTE en la superestructura
+        # (sin modo 1 del aislador, sin damping Rayleigh en GDL 0)
+        # -------------------------------------------------------------
+        C_used = np.zeros_like(M_ais, dtype=float)
 
-        if (rayleigh_from_w is not None) and (pick_two_w is not None) and (modal_w is not None):
+        if (rayleigh_from_w is not None) and (modal_w is not None):
             try:
                 zeta = float(st.session_state.get("zeta_modal", 0.05))
-                w_ais = modal_w(K_used, M_ais)
-                wR_ais = pick_two_w(w_ais, wmin=1e-6)
-                alpha_ais, beta_ais = rayleigh_from_w(wR_ais, zeta)
-                C_used = alpha_ais * M_ais + beta_ais * K_used
-            except Exception:
-                C_used = np.zeros_like(M_ais)
 
-        # -----------------------------------------------------------------
-        # ✅ Propiedades TOTALES para el solver no lineal
-        # -----------------------------------------------------------------
+                w_ais = modal_w(K_used, M_ais)
+                w_ais = np.asarray(w_ais, dtype=float).ravel()
+                w_ais = np.sort(w_ais[w_ais > 1e-6])
+
+                # usar modos 2 y 3 del sistema global
+                if len(w_ais) >= 3:
+                    wR_ais = np.array([w_ais[1], w_ais[2]], dtype=float)
+                elif len(w_ais) == 2:
+                    wR_ais = np.array([w_ais[0], w_ais[1]], dtype=float)
+                else:
+                    wR_ais = None
+
+                if (wR_ais is not None) and (M_ais.shape[0] > 1):
+                    alpha_ais, beta_ais = rayleigh_from_w(wR_ais, zeta)
+
+                    M_sup = M_ais[1:, 1:]
+                    K_sup = K_used[1:, 1:]
+                    C_sup = alpha_ais * M_sup + beta_ais * K_sup
+
+                    C_used[1:, 1:] = C_sup
+
+            except Exception:
+                C_used = np.zeros_like(M_ais, dtype=float)
+
+        # -------------------------------------------------------------
+        # Propiedades TOTALES del conjunto de aisladores
+        # -------------------------------------------------------------
         k0_1 = float(st.session_state["k_inicial_1ais"])
         kp_1 = float(st.session_state["k_post_1ais"])
         Fy_1 = float(st.session_state["yield_1ais"])
@@ -3717,6 +3736,9 @@ with col_right:
         Fy_tot    = Fy_1 * n_aisladores
         c_iso_tot = c_1  * n_aisladores
 
+        # -------------------------------------------------------------
+        # Análisis no lineal
+        # -------------------------------------------------------------
         U_nl, V_nl, A_nl, Fiso_hist_tot, Fhyst_hist_tot, Ehyst = newmark_nl_base_bilinear(
             M=M_ais,
             C=C_used,
@@ -3733,10 +3755,10 @@ with col_right:
             newton_maxit=30
         )
 
-        # -----------------------------------------------------------------
-        # ✅ Histéresis de un aislador individual
-        # Para comparar con ETABS link vs link, conviene usar la parte histérica
-        # -----------------------------------------------------------------
+        # -------------------------------------------------------------
+        # Histéresis de UN aislador individual
+        # ETABS suele mostrar fuerza del link vs deformación del link
+        # -------------------------------------------------------------
         u_iso = np.asarray(U_nl[0, :], dtype=float).ravel()
         Fiso_hist_1 = np.asarray(Fiso_hist_tot, dtype=float).ravel() / n_aisladores
         Fhyst_hist_1 = np.asarray(Fhyst_hist_tot, dtype=float).ravel() / n_aisladores
@@ -3752,10 +3774,17 @@ with col_right:
         st.session_state["Fhyst_hist_1ais"] = Fhyst_hist_1
         st.session_state["Ehyst"] = np.asarray(Ehyst, dtype=float).ravel()
 
+        # Debug útil para comparar con ETABS
+        st.session_state["dbg_n_aisladores"] = n_aisladores
+        st.session_state["dbg_u_iso_max"] = float(np.max(np.abs(u_iso)))
+        st.session_state["dbg_Fiso_1_max"] = float(np.max(np.abs(Fiso_hist_1)))
+        st.session_state["dbg_Fhyst_1_max"] = float(np.max(np.abs(Fhyst_hist_1)))
+
         fig, ax = plt.subplots(figsize=(FIG_W, FIG_H))
         fig.patch.set_facecolor(BG)
         ax.set_facecolor(BG)
 
+        # comparación principal con ETABS: fuerza total del link
         ax.plot(u_iso, Fiso_hist_1, color=COLOR_LINE1, lw=0.8)
 
         ax.set_xlabel(tr("b7_xlabel_u0"), color=COLOR_TEXT)
