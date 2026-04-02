@@ -3724,13 +3724,13 @@ with col_right:
                 C_used = np.zeros_like(M_ais, dtype=float)
 
         # -------------------------------------------------------------
-        # Propiedades TOTALES del conjunto de aisladores
+        # Propiedades del aislador INDIVIDUAL
         # -------------------------------------------------------------
         k0_1 = float(st.session_state["k_inicial_1ais"])
         kp_1 = float(st.session_state["k_post_1ais"])
         Fy_1 = float(st.session_state["yield_1ais"])
         c_1  = float(st.session_state["c_1ais"])
-
+        
         k0_tot    = k0_1
         kp_tot    = kp_1
         Fy_tot    = Fy_1
@@ -3757,11 +3757,10 @@ with col_right:
 
         # -------------------------------------------------------------
         # Histéresis de UN aislador individual
-        # ETABS suele mostrar fuerza del link vs deformación del link
         # -------------------------------------------------------------
         u_iso = np.asarray(U_nl[0, :], dtype=float).ravel()
-        Fiso_hist_1 = np.asarray(Fiso_hist_tot, dtype=float).ravel() / n_aisladores
-        Fhyst_hist_1 = np.asarray(Fhyst_hist_tot, dtype=float).ravel() / n_aisladores
+        Fiso_hist_1 = np.asarray(Fiso_hist_tot, dtype=float).ravel()
+        Fhyst_hist_1 = np.asarray(Fhyst_hist_tot, dtype=float).ravel()
 
         st.session_state["U_nl"] = U_nl
         st.session_state["V_nl"] = V_nl
