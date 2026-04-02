@@ -3731,10 +3731,10 @@ with col_right:
         Fy_1 = float(st.session_state["yield_1ais"])
         c_1  = float(st.session_state["c_1ais"])
 
-        k0_tot    = k0_1 * n_aisladores
-        kp_tot    = kp_1 * n_aisladores
-        Fy_tot    = Fy_1 * n_aisladores
-        c_iso_tot = c_1  * n_aisladores
+        k0_tot    = k0_1
+        kp_tot    = kp_1
+        Fy_tot    = Fy_1
+        c_iso_tot = c_1
 
         # -------------------------------------------------------------
         # Análisis no lineal
