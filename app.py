@@ -3971,7 +3971,7 @@ def _plot_story_shear_etabs_maxmin(Vmax_story, Vmin_story, y_levels, title, colo
     plt.close(fig)
 
 # -------------------------------------------------------------------------
-# Alturas pisos
+# Alturas pisos (SOLO superestructura)
 # -------------------------------------------------------------------------
 alt_fix = st.session_state.get("alturas", None)
 if alt_fix is None:
@@ -3980,7 +3980,7 @@ if alt_fix is None:
 
 alt_fix = np.asarray(alt_fix, float).ravel()
 n_pisos = int(len(alt_fix))
-y_levels = np.r_[0.0, alt_fix]
+y_levels = np.r_[0.0, alt_fix]   # solo base + pisos reales
 
 # =============================================================================
 # THA (Tiempo historia) – SOLO Max/Min
@@ -4048,21 +4048,24 @@ if F_fix.shape[0] != n_pisos:
 
 V_fix_all = _story_from_forces(F_fix)
 
-# -------------------- AISLADA --------------------
+# -------------------- AISLADA (SOLO SUPERESTRUCTURA, sin aislador) --------------------
 t_ais, ag_ais = _match_ag(ag, a_ais.shape[1])
 
 if a_ais.shape[0] == n_pisos + 1:
-    # GDL 0 = base/aislador; se usa solo superestructura
-    a_base_rel = a_ais[0:1, :]
-    a_sup_rel_base = a_ais[1:1+n_pisos, :] - a_base_rel
+    # GDL 0 = aislador/base, NO se muestra
+    a_sup_rel = a_ais[1:1+n_pisos, :]
+    a_sup_abs = a_sup_rel + ag_ais.reshape(1, -1)
 
     m_sup = np.diag(np.asarray(M_ais, float))[1:1+n_pisos].reshape(n_pisos, 1)
-    F_ais_sup = m_sup * a_sup_rel_base
+    F_ais_sup = m_sup * a_sup_abs
     V_ais_all = _story_from_forces(F_ais_sup)
 
 elif a_ais.shape[0] == n_pisos:
+    # ya viene solo con pisos
+    a_sup_abs = a_ais + ag_ais.reshape(1, -1)
+
     m_sup = np.diag(np.asarray(M_ais, float)).reshape(n_pisos, 1)
-    F_ais_sup = m_sup * a_ais
+    F_ais_sup = m_sup * a_sup_abs
     V_ais_all = _story_from_forces(F_ais_sup)
 
 else:
