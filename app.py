@@ -3971,7 +3971,7 @@ def _plot_story_shear_etabs_maxmin(Vmax_story, Vmin_story, y_levels, title, colo
     plt.close(fig)
 
 # -------------------------------------------------------------------------
-# Alturas pisos (SOLO superestructura)
+# Alturas pisos
 # -------------------------------------------------------------------------
 alt_fix = st.session_state.get("alturas", None)
 if alt_fix is None:
@@ -3980,6 +3980,13 @@ if alt_fix is None:
 
 alt_fix = np.asarray(alt_fix, float).ravel()
 n_pisos = int(len(alt_fix))
+
+# Para FIJA: base + pisos
+y_levels_fix = np.r_[0.0, alt_fix]
+
+# Para AISLADA estilo ETABS: Base + AIS + Story1 + Story2 + ...
+# si alt_fix = [3, 5.8, 8.6, 11.4], y AIS está a 1.0 m:
+# niveles => [0.0, 1.0, 5.8, 8.6, 11.4] para AIS, Story1, Story2, Story3
 y_levels_ais = np.r_[0.0, 1.0, alt_fix[1:]]
 
 # =============================================================================
@@ -4048,7 +4055,7 @@ if F_fix.shape[0] != n_pisos:
 
 V_fix_all = _story_from_forces(F_fix)
 
-# -------------------- AISLADA (DEBUG ETABS) --------------------
+# -------------------- AISLADA --------------------
 t_ais, ag_ais = _match_ag(ag, a_ais.shape[1])
 
 if a_ais.shape[0] == n_pisos + 1:
@@ -4059,8 +4066,19 @@ if a_ais.shape[0] == n_pisos + 1:
     m_sup = np.diag(np.asarray(M_ais, float))[1:1+n_pisos].reshape(n_pisos, 1)
     F_ais_sup = m_sup * a_sup_rel_base
 
-    # opción actual: SOLO superestructura
+    # Cortantes SOLO superestructura
     V_ais_all = _story_from_forces(F_ais_sup)
+
+    # Tabla tipo ETABS:
+    # AIS      = V_ais_all[0]
+    # Story1   = V_ais_all[1]
+    # Story2   = V_ais_all[2]
+    # Story3   = V_ais_all[3]
+    # Story4   = F_ais_sup[-1]
+    if n_pisos >= 2:
+        V_ais_etabs_all = np.vstack([V_ais_all[0:1, :], V_ais_all[1:, :], F_ais_sup[-1:, :]])
+    else:
+        V_ais_etabs_all = np.vstack([V_ais_all, F_ais_sup[-1:, :]])
 
     # ================= DEBUG PARA COMPARAR CON ETABS =================
     with st.expander("DEBUG cortantes AISLADA vs ETABS", expanded=False):
@@ -4079,13 +4097,10 @@ if a_ais.shape[0] == n_pisos + 1:
         st.write("Envolvente actual SOLO superestructura")
         st.dataframe(dbg_df_sup, hide_index=True, use_container_width=True)
 
-        # opción ETABS-like correcta:
-        # AIS = cortante en el primer nivel de superestructura
-        # Story1..StoryN = restantes niveles
-        dbg_names = ["AIS"] + [f"Story{i}" for i in range(1, n_pisos)]
-        dbg_V_etabs_max = np.r_[dbg_V_sup_max[0], dbg_V_sup_max[1:]]
-        dbg_V_etabs_min = np.r_[dbg_V_sup_min[0], dbg_V_sup_min[1:]]
+        dbg_V_etabs_max = np.max(V_ais_etabs_all, axis=1)
+        dbg_V_etabs_min = np.min(V_ais_etabs_all, axis=1)
 
+        dbg_names = ["AIS"] + [f"Story{i}" for i in range(1, n_pisos + 1)]
         dbg_df_etabs = pd.DataFrame({
             "Nivel_etabs_like": dbg_names,
             "Vmax": np.round(dbg_V_etabs_max, 6),
@@ -4100,6 +4115,11 @@ elif a_ais.shape[0] == n_pisos:
     F_ais_sup = m_sup * a_ais
     V_ais_all = _story_from_forces(F_ais_sup)
 
+    if n_pisos >= 2:
+        V_ais_etabs_all = np.vstack([V_ais_all[0:1, :], V_ais_all[1:, :], F_ais_sup[-1:, :]])
+    else:
+        V_ais_etabs_all = np.vstack([V_ais_all, F_ais_sup[-1:, :]])
+
     with st.expander("DEBUG cortantes AISLADA vs ETABS", expanded=False):
         dbg_V_sup_max = np.max(V_ais_all, axis=1)
         dbg_V_sup_min = np.min(V_ais_all, axis=1)
@@ -4112,6 +4132,18 @@ elif a_ais.shape[0] == n_pisos:
         st.write("Envolvente actual SOLO superestructura")
         st.dataframe(dbg_df_sup, hide_index=True, use_container_width=True)
 
+        dbg_V_etabs_max = np.max(V_ais_etabs_all, axis=1)
+        dbg_V_etabs_min = np.min(V_ais_etabs_all, axis=1)
+
+        dbg_names = ["AIS"] + [f"Story{i}" for i in range(1, n_pisos + 1)]
+        dbg_df_etabs = pd.DataFrame({
+            "Nivel_etabs_like": dbg_names,
+            "Vmax": np.round(dbg_V_etabs_max, 6),
+            "Vmin": np.round(dbg_V_etabs_min, 6),
+        })
+        st.write("Prueba incluyendo AIS + Story1..StoryN")
+        st.dataframe(dbg_df_etabs, hide_index=True, use_container_width=True)
+
 else:
     st.error("❌ THA AISLADA: dimensiones no calzan con n_pisos ni n_pisos+1.")
     st.stop()
@@ -4119,8 +4151,9 @@ else:
 # -------------------- Envolventes Max/Min --------------------
 V_fix_max = np.max(V_fix_all, axis=1)
 V_fix_min = np.min(V_fix_all, axis=1)
-V_ais_max = np.max(V_ais_all, axis=1)
-V_ais_min = np.min(V_ais_all, axis=1)
+
+V_ais_max = np.max(V_ais_etabs_all, axis=1)
+V_ais_min = np.min(V_ais_etabs_all, axis=1)
 
 V_fix_cmp = np.maximum(np.abs(V_fix_max), np.abs(V_fix_min))
 V_ais_cmp = np.maximum(np.abs(V_ais_max), np.abs(V_ais_min))
@@ -4140,10 +4173,29 @@ with colL:
     with st.container(border=True):
         st.subheader(tr("b8_tha_fix"))
 
-        niveles_ais = ["AIS"] + [f"Story{i}" for i in range(1, n_pisos)]
-        alturas_ais = np.r_[alt_fix[0], alt_fix[1:]]
+        df_fix = pd.DataFrame({
+            "Piso": np.arange(1, n_pisos + 1),
+            "Altura sup [m]": np.round(alt_fix, 3),
+            "Vmax [tonf]": np.round(V_fix_max, 6),
+            "Vmin [tonf]": np.round(V_fix_min, 6),
+            "|V|max [tonf]": np.round(np.maximum(np.abs(V_fix_max), np.abs(V_fix_min)), 6),
+        })
 
-        df = pd.DataFrame({
+        with st.expander(tr("b8_table_fix"), expanded=False):
+            _df_to_compact_table(df_fix)
+
+        _plot_story_shear_etabs_maxmin(
+            V_fix_max, V_fix_min, y_levels_fix, title_fix, COLOR_FIX, nref=n_pisos
+        )
+
+with colR:
+    with st.container(border=True):
+        st.subheader(tr("b8_tha_iso"))
+
+        niveles_ais = ["AIS"] + [f"Story{i}" for i in range(1, n_pisos + 1)]
+        alturas_ais = np.r_[1.0, alt_fix[1:], alt_fix[-1]]
+
+        df_ais = pd.DataFrame({
             "Nivel": niveles_ais,
             "Altura sup [m]": np.round(alturas_ais, 3),
             "Vmax [tonf]": np.round(V_ais_max, 6),
@@ -4151,30 +4203,11 @@ with colL:
             "|V|max [tonf]": np.round(np.maximum(np.abs(V_ais_max), np.abs(V_ais_min)), 6),
         })
 
-        with st.expander(tr("b8_table_fix"), expanded=False):
-            _df_to_compact_table(df)
-
-        _plot_story_shear_etabs_maxmin(
-            V_fix_max, V_fix_min, y_levels, title_fix, COLOR_FIX, nref=n_pisos
-        )
-
-with colR:
-    with st.container(border=True):
-        st.subheader(tr("b8_tha_iso"))
-
-        df = pd.DataFrame({
-            "Piso": np.arange(1, n_pisos + 1),
-            "Altura sup [m]": np.round(alt_fix, 3),
-            "Vmax [tonf]": np.round(V_ais_max, 6),
-            "Vmin [tonf]": np.round(V_ais_min, 6),
-            "|V|max [tonf]": np.round(np.maximum(np.abs(V_ais_max), np.abs(V_ais_min)), 6),
-        })
-
         with st.expander(tr("b8_table_iso"), expanded=False):
-            _df_to_compact_table(df)
+            _df_to_compact_table(df_ais)
 
         _plot_story_shear_etabs_maxmin(
-            V_ais_max, V_ais_min, y_levels, title_ais, COLOR_AIS, nref=n_pisos
+            V_ais_max, V_ais_min, y_levels_ais, title_ais, COLOR_AIS, nref=n_pisos
         )
 
 st.success(tr("b8_tha_ok"))
@@ -4189,7 +4222,7 @@ st.session_state["cmp_V_ais_story_min"] = V_ais_min
 st.session_state["cmp_tag_shear"]       = "THA (Max/Min)"
 st.session_state["cmp_Vb_fix"]          = float(st.session_state["cmp_V_fix_story"][0]) if len(st.session_state["cmp_V_fix_story"]) else np.nan
 st.session_state["cmp_Vb_ais"]          = float(st.session_state["cmp_V_ais_story"][0]) if len(st.session_state["cmp_V_ais_story"]) else np.nan
-    
+
 # =============================================================================
 # === BLOQUE 9: DESPLAZAMIENTOS LATERALES (RSA INELÁSTICO vs THA MAX/MIN) =====
 # =============================================================================
