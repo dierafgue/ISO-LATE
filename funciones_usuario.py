@@ -933,39 +933,6 @@ def _bilinear_state(u0, u0_prev, uy, k0, kp, ue_prev):
     k_t = kp + (k0 - kp) * d_ue_du
     return F_hyst, k_t, ue
 
-# =======================================================================
-# === FUERZA DE HISTÉRESIS DE UN AISLADOR INDIVIDUAL ====================
-# =======================================================================
-def hysteresis_bilinear_individual(u_hist, v_hist, k0, kp, Fy, c_iso):
-    """
-    Reconstruye la fuerza de un aislador individual a partir del historial
-    de desplazamiento y velocidad, usando la misma ley bilineal con memoria.
-    """
-    u_hist = np.asarray(u_hist, dtype=float).ravel()
-    v_hist = np.asarray(v_hist, dtype=float).ravel()
-
-    nt = len(u_hist)
-    uy = float(Fy) / float(k0)
-
-    F_iso = np.zeros(nt, dtype=float)
-    F_hyst = np.zeros(nt, dtype=float)
-
-    ue_prev = 0.0
-
-    for i in range(nt):
-        u_prev = u_hist[i - 1] if i > 0 else u_hist[0]
-
-        F_h, _, ue_new = _bilinear_state(
-            u_hist[i], u_prev, uy, k0, kp, ue_prev
-        )
-
-        F_hyst[i] = F_h
-        F_iso[i] = F_h + c_iso * v_hist[i]
-
-        ue_prev = ue_new
-
-    return F_iso, F_hyst
-
 # =====================================================================================
 # === NEWMARK NO LINEAL (AISLADOR BILINEAL EN LA BASE, DOF 0 DEL SISTEMA) ============
 # =====================================================================================
