@@ -3746,19 +3746,16 @@ with col_right:
         )
 
         # -------------------------------------------------------------
-        # Histéresis de UN aislador individual
+        # Histéresis del aislador: usar DIRECTO lo que devuelve el solver
         # -------------------------------------------------------------
         u_iso = np.asarray(U_nl[0, :], dtype=float).ravel()
         v_iso = np.asarray(V_nl[0, :], dtype=float).ravel()
-
-        Fiso_hist_1, Fhyst_hist_1 = hysteresis_bilinear_individual(
-            u_hist=u_iso,
-            v_hist=v_iso,
-            k0=k0_1,
-            kp=kp_1,
-            Fy=Fy_1,
-            c_iso=c_1,
-        )
+        
+        # fuerza total del link (histérica + viscosa)
+        Fiso_hist_1 = np.asarray(Fiso_hist_tot, dtype=float).ravel()
+        
+        # fuerza histérica pura
+        Fhyst_hist_1 = np.asarray(Fhyst_hist_tot, dtype=float).ravel()
 
         st.session_state["U_nl"] = U_nl
         st.session_state["V_nl"] = V_nl
