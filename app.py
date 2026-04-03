@@ -4044,7 +4044,7 @@ if a_ais.shape[0] == n_pisos + 1:
     u_ais = np.asarray(st.session_state.get("u_t_ais"), float)
     v_ais = np.asarray(st.session_state.get("v_t_ais"), float)
     K_ais = np.asarray(st.session_state.get("K_cond_ais"), float)
-    C_ais = np.asarray(st.session_state.get("C_rayleigh"), float)
+    C_ais = np.asarray(st.session_state.get("C_rayleigh_ais"), float)
 
     if u_ais.ndim == 1: u_ais = u_ais[np.newaxis, :]
     if v_ais.ndim == 1: v_ais = v_ais[np.newaxis, :]
