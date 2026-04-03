@@ -3841,6 +3841,10 @@ T["en"].update({
 
     "b8_xlabel_V": "Shear V [tonf]",
     "b8_ylabel_h": "Height [m]",
+
+    "b8_base_iso_hdr": "Base shear of isolated system",
+    "b8_base_iso_tbl": "Show base shear table (ISOLATED)",
+    "b8_base_label": "Base / AIS",
 })
 
 T["es"].update({
@@ -3859,6 +3863,10 @@ T["es"].update({
 
     "b8_xlabel_V": "Cortante V [tonf]",
     "b8_ylabel_h": "Altura [m]",
+
+    "b8_base_iso_hdr": "Cortante basal del sistema aislado",
+    "b8_base_iso_tbl": "📋 Ver tabla de cortante basal (AISLADA)",
+    "b8_base_label": "Base / AIS",
 })
 
 # -------------------------------------------------------------------------
@@ -3984,10 +3992,10 @@ n_pisos = int(len(alt_fix))
 # Para FIJA: base + pisos
 y_levels_fix = np.r_[0.0, alt_fix]
 
-# Para AISLADA estilo ETABS: Base + AIS + Story1 + Story2 + ...
-# si alt_fix = [3, 5.8, 8.6, 11.4], y AIS está a 1.0 m:
-# niveles => [0.0, 1.0, 5.8, 8.6, 11.4] para AIS, Story1, Story2, Story3
-y_levels_ais = np.r_[0.0, 1.0, alt_fix]
+# Para AISLADA (solo superestructura): AIS level + Story1 + Story2 + ...
+# Si el aislador está a 1.0 m, la curva de story shears de la superestructura
+# arranca en ese nivel y luego sigue con las elevaciones de los pisos.
+y_levels_ais = np.r_[1.0, alt_fix]
 
 # =============================================================================
 # THA (Tiempo historia) – SOLO Max/Min
@@ -4058,30 +4066,50 @@ V_fix_all = _story_from_forces(F_fix)
 # -------------------- AISLADA --------------------
 t_ais, ag_ais = _match_ag(ag, a_ais.shape[1])
 
+# Inicialización por seguridad
+Vb_ais_t = None
+V_ais_story_all = None
+
 if a_ais.shape[0] == n_pisos + 1:
     # GDL 0 = AIS
     # GDL 1..n_pisos = Story1..StoryN
 
+    M_ais_diag = np.diag(np.asarray(M_ais, float)).ravel()
+
+    # -------------------------------------------------------------
+    # 1) CORTANTE BASAL DEL SISTEMA AISLADO (se calcula aparte)
+    #    usando fuerzas inerciales absolutas del sistema completo
+    # -------------------------------------------------------------
+    a_ais_abs = a_ais + ag_ais.reshape(1, -1)
+    F_ais_abs_all = M_ais_diag.reshape(-1, 1) * a_ais_abs
+    Vb_ais_t = np.sum(F_ais_abs_all, axis=0)
+
+    # -------------------------------------------------------------
+    # 2) STORY SHEARS DE LA SUPERESTRUCTURA
+    #    usando aceleraciones relativas respecto al aislador
+    # -------------------------------------------------------------
     a_base_rel = a_ais[0:1, :]
     a_sup_rel_base = a_ais[1:1+n_pisos, :] - a_base_rel
 
-    # Fuerzas inerciales relativas de la superestructura respecto al aislador
-    m_sup = np.diag(np.asarray(M_ais, float))[1:1+n_pisos].reshape(n_pisos, 1)
+    m_sup = M_ais_diag[1:1+n_pisos].reshape(n_pisos, 1)
     F_ais_sup = m_sup * a_sup_rel_base
 
-    # Cortantes de Story1..StoryN
-    V_ais_all = _story_from_forces(F_ais_sup)
-
-    # Cortante en AIS = suma total transmitida a la superestructura
-    V_AIS = np.sum(F_ais_sup, axis=0, keepdims=True)
-
-    # Vector final estilo ETABS: AIS + Story1..StoryN
-    V_ais_etabs_all = np.vstack([V_AIS, V_ais_all])
+    # Story1..StoryN
+    V_ais_story_all = _story_from_forces(F_ais_sup)
 
     with st.expander("DEBUG cortantes AISLADA vs ETABS", expanded=False):
         st.write("n_pisos =", n_pisos)
         st.write("shape a_ais =", np.asarray(a_ais).shape)
         st.write("shape M_ais =", np.asarray(M_ais).shape)
+
+        dbg_df_base = pd.DataFrame({
+            "Nivel": [tr("b8_base_label")],
+            "Vmax": [np.round(np.max(Vb_ais_t), 6)],
+            "Vmin": [np.round(np.min(Vb_ais_t), 6)],
+            "|V|max": [np.round(np.max(np.abs(Vb_ais_t)), 6)],
+        })
+        st.write("Cortante basal aislado calculado por separado")
+        st.dataframe(dbg_df_base, hide_index=True, use_container_width=True)
 
         dbg_F_max = np.max(F_ais_sup, axis=1)
         dbg_F_min = np.min(F_ais_sup, axis=1)
@@ -4093,32 +4121,41 @@ if a_ais.shape[0] == n_pisos + 1:
         st.write("Fuerzas por piso de superestructura respecto al AIS")
         st.dataframe(dbg_df_F, hide_index=True, use_container_width=True)
 
-        dbg_V_max = np.max(V_ais_etabs_all, axis=1)
-        dbg_V_min = np.min(V_ais_etabs_all, axis=1)
-
-        dbg_names = ["AIS"] + [f"Story{i}" for i in range(1, n_pisos + 1)]
+        dbg_V_max = np.max(V_ais_story_all, axis=1)
+        dbg_V_min = np.min(V_ais_story_all, axis=1)
         dbg_df = pd.DataFrame({
-            "Nivel_etabs_like": dbg_names,
+            "Nivel_story": [f"Story{i}" for i in range(1, n_pisos + 1)],
             "Vmax": np.round(dbg_V_max, 6),
             "Vmin": np.round(dbg_V_min, 6),
         })
-        st.write("Cortantes AIS + Story1..StoryN")
+        st.write("Cortantes por piso SOLO de superestructura")
         st.dataframe(dbg_df, hide_index=True, use_container_width=True)
 
 elif a_ais.shape[0] == n_pisos:
-    # Caso en que a_ais ya viene solo con Story1..StoryN
-    m_sup = np.diag(np.asarray(M_ais, float)).reshape(n_pisos, 1)
+    # Caso en que a_ais ya viene solo con Story1..StoryN (sin GDL explícito de AIS)
+
+    M_ais_diag = np.diag(np.asarray(M_ais, float)).ravel()
+
+    # Base shear aproximado del sistema aislado con esta información disponible
+    a_ais_abs = a_ais + ag_ais.reshape(1, -1)
+    F_ais_abs_all = M_ais_diag.reshape(-1, 1) * a_ais_abs
+    Vb_ais_t = np.sum(F_ais_abs_all, axis=0)
+
+    # Story shears con la información disponible
+    m_sup = M_ais_diag.reshape(n_pisos, 1)
     F_ais_sup = m_sup * a_ais
-
-    # Cortantes de Story1..StoryN
-    V_ais_all = _story_from_forces(F_ais_sup)
-
-    # Sin GDL explícito del AIS, usamos como AIS la suma total transmitida
-    V_AIS = np.sum(F_ais_sup, axis=0, keepdims=True)
-
-    V_ais_etabs_all = np.vstack([V_AIS, V_ais_all])
+    V_ais_story_all = _story_from_forces(F_ais_sup)
 
     with st.expander("DEBUG cortantes AISLADA vs ETABS", expanded=False):
+        dbg_df_base = pd.DataFrame({
+            "Nivel": [tr("b8_base_label")],
+            "Vmax": [np.round(np.max(Vb_ais_t), 6)],
+            "Vmin": [np.round(np.min(Vb_ais_t), 6)],
+            "|V|max": [np.round(np.max(np.abs(Vb_ais_t)), 6)],
+        })
+        st.write("Cortante basal aislado calculado por separado")
+        st.dataframe(dbg_df_base, hide_index=True, use_container_width=True)
+
         dbg_F_max = np.max(F_ais_sup, axis=1)
         dbg_F_min = np.min(F_ais_sup, axis=1)
         dbg_df_F = pd.DataFrame({
@@ -4129,16 +4166,14 @@ elif a_ais.shape[0] == n_pisos:
         st.write("Fuerzas por piso de superestructura")
         st.dataframe(dbg_df_F, hide_index=True, use_container_width=True)
 
-        dbg_V_max = np.max(V_ais_etabs_all, axis=1)
-        dbg_V_min = np.min(V_ais_etabs_all, axis=1)
-
-        dbg_names = ["AIS"] + [f"Story{i}" for i in range(1, n_pisos + 1)]
+        dbg_V_max = np.max(V_ais_story_all, axis=1)
+        dbg_V_min = np.min(V_ais_story_all, axis=1)
         dbg_df = pd.DataFrame({
-            "Nivel_etabs_like": dbg_names,
+            "Nivel_story": [f"Story{i}" for i in range(1, n_pisos + 1)],
             "Vmax": np.round(dbg_V_max, 6),
             "Vmin": np.round(dbg_V_min, 6),
         })
-        st.write("Cortantes AIS + Story1..StoryN")
+        st.write("Cortantes por piso SOLO de superestructura")
         st.dataframe(dbg_df, hide_index=True, use_container_width=True)
 
 else:
@@ -4149,8 +4184,12 @@ else:
 V_fix_max = np.max(V_fix_all, axis=1)
 V_fix_min = np.min(V_fix_all, axis=1)
 
-V_ais_max = np.max(V_ais_etabs_all, axis=1)
-V_ais_min = np.min(V_ais_etabs_all, axis=1)
+V_ais_max = np.max(V_ais_story_all, axis=1)
+V_ais_min = np.min(V_ais_story_all, axis=1)
+
+Vb_ais_max = float(np.max(Vb_ais_t))
+Vb_ais_min = float(np.min(Vb_ais_t))
+Vb_ais_abs = float(np.max(np.abs(Vb_ais_t)))
 
 V_fix_cmp = np.maximum(np.abs(V_fix_max), np.abs(V_fix_min))
 V_ais_cmp = np.maximum(np.abs(V_ais_max), np.abs(V_ais_min))
@@ -4189,8 +4228,21 @@ with colR:
     with st.container(border=True):
         st.subheader(tr("b8_tha_iso"))
 
-        niveles_ais = ["AIS"] + [f"Story{i}" for i in range(1, n_pisos + 1)]
-        alturas_ais = np.r_[1.0, alt_fix]
+        # ---- cortante basal aislado separado ----
+        st.markdown(f"**{tr('b8_base_iso_hdr')}**")
+        df_base_ais = pd.DataFrame({
+            "Nivel": [tr("b8_base_label")],
+            "Vmax [tonf]": [np.round(Vb_ais_max, 6)],
+            "Vmin [tonf]": [np.round(Vb_ais_min, 6)],
+            "|V|max [tonf]": [np.round(Vb_ais_abs, 6)],
+        })
+
+        with st.expander(tr("b8_base_iso_tbl"), expanded=False):
+            _df_to_compact_table(df_base_ais, height_min=110, height_max=150)
+
+        # ---- story shears superestructura ----
+        niveles_ais = [f"Story{i}" for i in range(1, n_pisos + 1)]
+        alturas_ais = alt_fix.copy()
 
         df_ais = pd.DataFrame({
             "Nivel": niveles_ais,
@@ -4210,15 +4262,17 @@ with colR:
 st.success(tr("b8_tha_ok"))
 
 # -------------------- Guardado para comparación posterior --------------------
-st.session_state["cmp_V_fix_story"]     = np.asarray(V_fix_cmp, float).ravel()
-st.session_state["cmp_V_ais_story"]     = np.asarray(V_ais_cmp, float).ravel()
-st.session_state["cmp_V_fix_story_max"] = V_fix_max
-st.session_state["cmp_V_fix_story_min"] = V_fix_min
-st.session_state["cmp_V_ais_story_max"] = V_ais_max
-st.session_state["cmp_V_ais_story_min"] = V_ais_min
-st.session_state["cmp_tag_shear"]       = "THA (Max/Min)"
-st.session_state["cmp_Vb_fix"]          = float(st.session_state["cmp_V_fix_story"][0]) if len(st.session_state["cmp_V_fix_story"]) else np.nan
-st.session_state["cmp_Vb_ais"]          = float(st.session_state["cmp_V_ais_story"][0]) if len(st.session_state["cmp_V_ais_story"]) else np.nan
+st.session_state["cmp_V_fix_story"]      = np.asarray(V_fix_cmp, float).ravel()
+st.session_state["cmp_V_ais_story"]      = np.asarray(V_ais_cmp, float).ravel()
+st.session_state["cmp_V_fix_story_max"]  = V_fix_max
+st.session_state["cmp_V_fix_story_min"]  = V_fix_min
+st.session_state["cmp_V_ais_story_max"]  = V_ais_max
+st.session_state["cmp_V_ais_story_min"]  = V_ais_min
+st.session_state["cmp_tag_shear"]        = "THA (Max/Min)"
+st.session_state["cmp_Vb_fix"]           = float(st.session_state["cmp_V_fix_story"][0]) if len(st.session_state["cmp_V_fix_story"]) else np.nan
+st.session_state["cmp_Vb_ais"]           = Vb_ais_abs
+st.session_state["cmp_Vb_ais_max"]       = Vb_ais_max
+st.session_state["cmp_Vb_ais_min"]       = Vb_ais_min
 
 # =============================================================================
 # === BLOQUE 9: DESPLAZAMIENTOS LATERALES (RSA INELÁSTICO vs THA MAX/MIN) =====
