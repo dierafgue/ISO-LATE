@@ -3891,7 +3891,7 @@ def _ms_by_n(n_pisos: int, ms_min=2.6, ms_max=5.5):
     t = min(max((n - 3) / (30 - 3), 0.0), 1.0)
     return float(ms_max * (1 - t) + ms_min * t)
 
-def _df_to_compact_table(df: pd.DataFrame, height=260):
+def _df_to_compact_table(df: pd.DataFrame, height=200):
     st.dataframe(
         df,
         hide_index=True,
