@@ -3891,11 +3891,13 @@ def _ms_by_n(n_pisos: int, ms_min=2.6, ms_max=5.5):
     t = min(max((n - 3) / (30 - 3), 0.0), 1.0)
     return float(ms_max * (1 - t) + ms_min * t)
 
-def _df_to_compact_table(df: pd.DataFrame, height_min=150, height_max=320):
-    n = len(df)
-    h = 44 + 26 * min(n, 9)
-    h = int(max(height_min, min(height_max, h)))
-    st.dataframe(df, hide_index=True, use_container_width=True, height=h)
+def _df_to_compact_table(df: pd.DataFrame, height=260):
+    st.dataframe(
+        df,
+        hide_index=True,
+        use_container_width=True,
+        height=height
+    )
 
 def _etabs_polyline_xy(V_story, y_levels):
     V_story  = np.asarray(V_story, float).ravel()
