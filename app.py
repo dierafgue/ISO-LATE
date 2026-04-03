@@ -4039,20 +4039,39 @@ V_fix_min = np.min(V_fix_all, axis=1)
 
 # -------------------- AISLADA --------------------
 if a_ais.shape[0] == n_pisos + 1:
-    M_ais_arr = np.asarray(M_ais, float)
-    m_diag = np.diag(M_ais_arr).ravel()
+    # historias del sistema aislado
+    u_ais = np.asarray(st.session_state.get("u_t_ais"), float)
+    v_ais = np.asarray(st.session_state.get("v_t_ais"), float)
 
-    # DOF 0 = aislador
-    a0_rel = a_ais[0, :]
+    if u_ais.ndim == 1:
+        u_ais = u_ais[np.newaxis, :]
+    if v_ais.ndim == 1:
+        v_ais = v_ais[np.newaxis, :]
 
-    # Superestructura relativa al aislador
-    a_sup_rel = a_ais[1:, :] - a0_rel.reshape(1, -1)
+    K_ais_arr = np.asarray(st.session_state.get("K_cond_ais"), float)
 
-    # Fuerzas por piso SOLO de la superestructura
-    m_sup = m_diag[1:1+n_pisos].reshape(n_pisos, 1)
-    F_sup = m_sup * a_sup_rel
+    # matriz de amortiguamiento del caso aislado
+    C_ais_arr = st.session_state.get("C_ais", st.session_state.get("C_ais_used", None))
+    if C_ais_arr is None:
+        C_ais_arr = np.zeros_like(K_ais_arr)
+    else:
+        C_ais_arr = np.asarray(C_ais_arr, float)
 
-    # Cortantes Story1..StoryN
+    # relativos al aislador
+    u0 = u_ais[0, :]
+    v0 = v_ais[0, :]
+
+    u_sup_rel = u_ais[1:, :] - u0.reshape(1, -1)
+    v_sup_rel = v_ais[1:, :] - v0.reshape(1, -1)
+
+    # solo submatrices de la superestructura
+    K_sup = K_ais_arr[1:, 1:]
+    C_sup = C_ais_arr[1:, 1:]
+
+    # fuerzas internas por piso de la superestructura
+    F_sup = K_sup @ u_sup_rel + C_sup @ v_sup_rel
+
+    # cortantes Story1..StoryN
     V_ais_all = _story_from_forces(F_sup)
 
     V_ais_max = np.max(V_ais_all, axis=1)
