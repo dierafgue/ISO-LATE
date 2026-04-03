@@ -3764,6 +3764,7 @@ with col_right:
         st.session_state["u_iso_min_b7"] = float(np.min(u_iso))
         st.session_state["f_iso_max_b7"] = float(np.max(F_link_1))
         st.session_state["f_iso_min_b7"] = float(np.min(F_link_1))
+        st.session_state["C_ais_used"] = C_used
 
         fig, ax = plt.subplots(figsize=(FIG_W, FIG_H))
         fig.patch.set_facecolor(BG)
@@ -3823,7 +3824,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patheffects as pe
 
 # -------------------------------------------------------------------------
-# TEXTOS
+# HEADER
 # -------------------------------------------------------------------------
 st.markdown("## 🧱 Story shears – Time History (THA Max/Min)")
 
@@ -3835,7 +3836,6 @@ COLOR_TEXT    = "#E8EDF2"
 COLOR_GRID    = "#5B657A"
 COLOR_FIX     = "#A8D5FF"
 COLOR_AIS     = "#77DD77"
-HALO = [pe.withStroke(linewidth=2.4, foreground=BG), pe.Normal()]
 
 # -------------------------------------------------------------------------
 # DATOS
@@ -3852,36 +3852,39 @@ v_ais = np.asarray(st.session_state.get("v_t_ais"), float)
 K_fix = np.asarray(st.session_state.get("K_cond"), float)
 K_ais = np.asarray(st.session_state.get("K_cond_ais"), float)
 
-C = np.asarray(st.session_state.get("C_rayleigh"), float)
+# ✅ amortiguamiento correcto
+C_fix = np.asarray(st.session_state.get("C_rayleigh"), float)
+C_ais = np.asarray(st.session_state.get("C_ais_used"), float)
+
+# ✅ datos del aislador
+F_iso_1 = np.asarray(st.session_state.get("Fiso_hist_1ais_b7"), float).ravel()
+n_ais = int(st.session_state.get("n_aisladores", 1))
+F_iso_total = F_iso_1 * n_ais   # 🔥 total sistema
 
 # -------------------------------------------------------------------------
 # HELPERS
 # -------------------------------------------------------------------------
-def story_shear_from_internal(F):
+def story_shear(F):
     n, nt = F.shape
     V = np.zeros_like(F)
     for i in range(n):
         V[i, :] = np.sum(F[i:, :], axis=0)
     return V
 
-def plot_story(Vmax, Vmin, y_levels, color, title):
-    Vmax = np.asarray(Vmax).ravel()
-    Vmin = np.asarray(Vmin).ravel()
-
+def plot_story(Vmax, Vmin, y, color, title):
     fig, ax = plt.subplots(figsize=(6.5,4.5))
     fig.patch.set_facecolor(BG)
     ax.set_facecolor(BG)
 
-    # escalonada
     def poly(V):
         xs, ys = [], []
-        xs.append(V[0]); ys.append(y_levels[0])
+        xs.append(V[0]); ys.append(y[0])
         for i in range(len(V)):
             xs += [V[i], V[i]]
-            ys += [y_levels[i], y_levels[i+1]]
+            ys += [y[i], y[i+1]]
             if i < len(V)-1:
                 xs.append(V[i+1])
-                ys.append(y_levels[i+1])
+                ys.append(y[i+1])
         return xs, ys
 
     xM,yM = poly(Vmax)
@@ -3901,44 +3904,42 @@ def plot_story(Vmax, Vmin, y_levels, color, title):
     st.pyplot(fig)
     plt.close(fig)
 
-# -------------------------------------------------------------------------
-# ======================= FIJA ============================================
-# -------------------------------------------------------------------------
+# =============================================================================
+# ======================= FIJA ===============================================
+# =============================================================================
+F_fix = K_fix @ u_fix + C_fix @ v_fix
 
-# Fuerzas internas
-F_fix = K_fix @ u_fix + C @ v_fix
+V_fix = story_shear(F_fix)
 
-# Cortantes
-V_fix_all = story_shear_from_internal(F_fix)
+V_fix_max = np.max(V_fix, axis=1)
+V_fix_min = np.min(V_fix, axis=1)
 
-V_fix_max = np.max(V_fix_all, axis=1)
-V_fix_min = np.min(V_fix_all, axis=1)
+# =============================================================================
+# ======================= AISLADA ============================================
+# =============================================================================
 
-# -------------------------------------------------------------------------
-# ======================= AISLADA =========================================
-# -------------------------------------------------------------------------
+# 🔥 fuerzas internas completas
+F_ais = K_ais @ u_ais + C_ais @ v_ais
 
-# Fuerzas internas completas
-F_ais_full = K_ais @ u_ais + C @ v_ais
+# 🔥 añadir fuerza del aislador en DOF base
+F_ais[0, :] += F_iso_total
 
-# Base (DOF 0)
-Vb_ais_t = F_ais_full[0, :]
+# 🔵 base shear real
+Vb_ais_t = F_ais[0, :]
 
-# Superestructura
-F_sup = F_ais_full[1:1+n_pisos, :]
+# 🔵 superestructura
+F_sup = F_ais[1:1+n_pisos, :]
+V_ais = story_shear(F_sup)
 
-V_ais_all = story_shear_from_internal(F_sup)
-
-V_ais_max = np.max(V_ais_all, axis=1)
-V_ais_min = np.min(V_ais_all, axis=1)
+V_ais_max = np.max(V_ais, axis=1)
+V_ais_min = np.min(V_ais, axis=1)
 
 Vb_ais_max = float(np.max(Vb_ais_t))
 Vb_ais_min = float(np.min(Vb_ais_t))
 
-# -------------------------------------------------------------------------
-# ======================= UI =============================================
-# -------------------------------------------------------------------------
-
+# =============================================================================
+# UI
+# =============================================================================
 col1, col2 = st.columns(2)
 
 # ---------------- FIXED ----------------
@@ -3950,13 +3951,11 @@ with col1:
         "Vmax": np.round(V_fix_max,6),
         "Vmin": np.round(V_fix_min,6)
     })
-
     st.dataframe(df_fix, use_container_width=True)
 
-    y_fix = np.r_[0, alt]
-    plot_story(V_fix_max, V_fix_min, y_fix, COLOR_FIX, "Fixed")
+    plot_story(V_fix_max, V_fix_min, np.r_[0,alt], COLOR_FIX, "Fixed")
 
-# ---------------- ISOLATED ----------------
+# ---------------- AISLADA ----------------
 with col2:
     st.subheader("ISOLATED")
 
@@ -3974,15 +3973,13 @@ with col2:
         "Vmax": np.round(V_ais_max,6),
         "Vmin": np.round(V_ais_min,6)
     })
-
     st.dataframe(df_ais, use_container_width=True)
 
-    y_ais = np.r_[1.0, alt]
-    plot_story(V_ais_max, V_ais_min, y_ais, COLOR_AIS, "Isolated")
+    plot_story(V_ais_max, V_ais_min, np.r_[1.0,alt], COLOR_AIS, "Isolated")
 
-# -------------------------------------------------------------------------
+# =============================================================================
 # GUARDADO
-# -------------------------------------------------------------------------
+# =============================================================================
 st.session_state["cmp_V_fix_story_max"] = V_fix_max
 st.session_state["cmp_V_fix_story_min"] = V_fix_min
 
