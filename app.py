@@ -3815,7 +3815,7 @@ with col_right:
         plt.close(fig)
 
 # =============================================================================
-# === BLOQUE 8: CORTANTES POR PISO (THA MAX/MIN – FUERZAS INTERNAS) ===========
+# === BLOQUE 8: CORTANTES POR PISO (THA MAX/MIN – CORRECTO) ===================
 # =============================================================================
 import numpy as np
 import pandas as pd
@@ -3829,7 +3829,7 @@ import matplotlib.patheffects as pe
 st.markdown("## 🧱 Story shears – Time History (THA Max/Min)")
 
 # -------------------------------------------------------------------------
-# ESTILOS
+# ESTILOS (MISMO FORMATO BLOQUE 9)
 # -------------------------------------------------------------------------
 BG            = "#2B3141"
 COLOR_TEXT    = "#E8EDF2"
@@ -3843,23 +3843,17 @@ COLOR_AIS     = "#77DD77"
 alt = np.asarray(st.session_state.get("alturas"), float).ravel()
 n_pisos = len(alt)
 
-u_fix = np.asarray(st.session_state.get("u_t"), float)
-v_fix = np.asarray(st.session_state.get("v_t"), float)
+a_fix = np.asarray(st.session_state.get("a_t"), float)
+a_ais = np.asarray(st.session_state.get("a_t_ais"), float)
 
-u_ais = np.asarray(st.session_state.get("u_t_ais"), float)
-v_ais = np.asarray(st.session_state.get("v_t_ais"), float)
+ag    = np.asarray(st.session_state.get("ag_ext"), float).ravel()
 
-K_fix = np.asarray(st.session_state.get("K_cond"), float)
-K_ais = np.asarray(st.session_state.get("K_cond_ais"), float)
+M_fix = np.asarray(st.session_state.get("M_cond"), float)
+M_ais = np.asarray(st.session_state.get("M_cond_ais"), float)
 
-# ✅ amortiguamiento correcto
-C_fix = np.asarray(st.session_state.get("C_rayleigh"), float)
-C_ais = np.asarray(st.session_state.get("C_ais_used"), float)
-
-# ✅ datos del aislador
-F_iso_1 = np.asarray(st.session_state.get("Fiso_hist_1ais_b7"), float).ravel()
-n_ais = int(st.session_state.get("n_aisladores", 1))
-F_iso_total = F_iso_1 * n_ais   # 🔥 total sistema
+# asegurar 2D
+if a_fix.ndim == 1: a_fix = a_fix.reshape(1, -1)
+if a_ais.ndim == 1: a_ais = a_ais.reshape(1, -1)
 
 # -------------------------------------------------------------------------
 # HELPERS
@@ -3871,72 +3865,88 @@ def story_shear(F):
         V[i, :] = np.sum(F[i:, :], axis=0)
     return V
 
-def plot_story(Vmax, Vmin, y, color, title):
-    fig, ax = plt.subplots(figsize=(6.5,4.5))
+def _plot_profile_maxmin(Vmax, Vmin, y, title, color):
+    Vmax = np.asarray(Vmax).ravel()
+    Vmin = np.asarray(Vmin).ravel()
+    y    = np.asarray(y).ravel()
+
+    fig, ax = plt.subplots(figsize=(6.9, 4.9))
     fig.patch.set_facecolor(BG)
     ax.set_facecolor(BG)
 
-    def poly(V):
-        xs, ys = [], []
-        xs.append(V[0]); ys.append(y[0])
-        for i in range(len(V)):
-            xs += [V[i], V[i]]
-            ys += [y[i], y[i+1]]
-            if i < len(V)-1:
-                xs.append(V[i+1])
-                ys.append(y[i+1])
-        return xs, ys
+    ax.plot(Vmax, y, "-o", color=color, lw=2.0, ms=4.5, alpha=0.95)
+    ax.plot(Vmin, y, "-o", color=color, lw=2.0, ms=4.5, alpha=0.75)
 
-    xM,yM = poly(Vmax)
-    xm,ym = poly(Vmin)
+    ax.axvline(0.0, color=COLOR_GRID, lw=1.0, alpha=0.6)
+    ax.set_xlabel("V [tonf]", color=COLOR_TEXT)
+    ax.set_ylabel("Height [m]", color=COLOR_TEXT)
+    ax.set_title(title, color=COLOR_TEXT, fontweight="bold")
 
-    ax.plot(xM,yM,color=color)
-    ax.plot(xm,ym,color=color,alpha=0.8)
-
-    ax.axvline(0,color=COLOR_GRID)
-    ax.grid(True,alpha=0.3)
-
-    ax.set_title(title,color=COLOR_TEXT)
-    ax.set_xlabel("V [tonf]",color=COLOR_TEXT)
-    ax.set_ylabel("h [m]",color=COLOR_TEXT)
+    ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
     ax.tick_params(colors=COLOR_TEXT)
 
-    st.pyplot(fig)
+    for s in ("top", "right"):
+        ax.spines[s].set_visible(False)
+
+    vmax = float(np.max(np.abs(np.r_[Vmax, Vmin])))
+    vmax = 1.0 if vmax <= 0 else vmax
+    ax.set_xlim(-1.12*vmax, 1.12*vmax)
+
+    fig.tight_layout()
+    st.pyplot(fig, use_container_width=True)
     plt.close(fig)
 
 # =============================================================================
 # ======================= FIJA ===============================================
 # =============================================================================
-F_fix = K_fix @ u_fix + C_fix @ v_fix
 
-V_fix = story_shear(F_fix)
+# aceleración absoluta
+a_abs_fix = a_fix + ag.reshape(1, -1)
 
-V_fix_max = np.max(V_fix, axis=1)
-V_fix_min = np.min(V_fix, axis=1)
+m_fix = np.diag(M_fix).reshape(n_pisos, 1)
+
+F_fix = m_fix * a_abs_fix
+
+V_fix_all = story_shear(F_fix)
+
+V_fix_max = np.max(V_fix_all, axis=1)
+V_fix_min = np.min(V_fix_all, axis=1)
 
 # =============================================================================
 # ======================= AISLADA ============================================
 # =============================================================================
 
-# 🔥 fuerzas internas completas
-F_ais = K_ais @ u_ais + C_ais @ v_ais
+if a_ais.shape[0] == n_pisos + 1:
 
-# 🔵 base shear real
-Vb_ais_t = F_ais[0, :]
+    a_base = a_ais[0:1, :]
+    a_sup_rel = a_ais[1:, :] - a_base
 
-# 🔵 superestructura
-F_sup = F_ais[1:1+n_pisos, :]
-V_ais = story_shear(F_sup)
+    a_sup_abs = a_sup_rel + ag.reshape(1, -1)
 
-V_ais_max = np.max(V_ais, axis=1)
-V_ais_min = np.min(V_ais, axis=1)
+    m_sup = np.diag(M_ais)[1:].reshape(n_pisos, 1)
 
-Vb_ais_max = float(np.max(Vb_ais_t))
-Vb_ais_min = float(np.min(Vb_ais_t))
+    F_sup = m_sup * a_sup_abs
+
+    # cortantes superestructura
+    V_ais_all = story_shear(F_sup)
+
+    V_ais_max = np.max(V_ais_all, axis=1)
+    V_ais_min = np.min(V_ais_all, axis=1)
+
+    # base REAL (aislador)
+    Vb_t = np.sum(F_sup, axis=0)
+
+    Vb_max = float(np.max(Vb_t))
+    Vb_min = float(np.min(Vb_t))
+
+else:
+    st.error("Dimensiones inconsistentes en modelo aislado")
+    st.stop()
 
 # =============================================================================
-# UI
+# ======================= UI ==================================================
 # =============================================================================
+
 col1, col2 = st.columns(2)
 
 # ---------------- FIXED ----------------
@@ -3944,35 +3954,53 @@ with col1:
     st.subheader("FIXED")
 
     df_fix = pd.DataFrame({
-        "Story": np.arange(1,n_pisos+1),
+        "Story": np.arange(1, n_pisos+1),
         "Vmax": np.round(V_fix_max,6),
         "Vmin": np.round(V_fix_min,6)
     })
+
     st.dataframe(df_fix, use_container_width=True)
 
-    plot_story(V_fix_max, V_fix_min, np.r_[0,alt], COLOR_FIX, "Fixed")
+    y_fix = np.r_[0, alt]
 
-# ---------------- AISLADA ----------------
+    _plot_profile_maxmin(
+        np.r_[V_fix_max[0], V_fix_max],
+        np.r_[V_fix_min[0], V_fix_min],
+        y_fix,
+        "Fixed",
+        COLOR_FIX
+    )
+
+# ---------------- ISOLATED ----------------
 with col2:
     st.subheader("ISOLATED")
 
-    # base
+    # BASE
     st.markdown("**Base shear**")
     df_base = pd.DataFrame({
-        "Vmax":[np.round(Vb_ais_max,6)],
-        "Vmin":[np.round(Vb_ais_min,6)]
+        "Vmax":[np.round(Vb_max,6)],
+        "Vmin":[np.round(Vb_min,6)]
     })
     st.dataframe(df_base, use_container_width=True)
 
-    # pisos
+    # STORIES
     df_ais = pd.DataFrame({
-        "Story": np.arange(1,n_pisos+1),
+        "Story": np.arange(1, n_pisos+1),
         "Vmax": np.round(V_ais_max,6),
         "Vmin": np.round(V_ais_min,6)
     })
+
     st.dataframe(df_ais, use_container_width=True)
 
-    plot_story(V_ais_max, V_ais_min, np.r_[1.0,alt], COLOR_AIS, "Isolated")
+    y_ais = np.r_[1.0, alt]
+
+    _plot_profile_maxmin(
+        np.r_[Vb_max, V_ais_max],
+        np.r_[Vb_min, V_ais_min],
+        y_ais,
+        "Isolated",
+        COLOR_AIS
+    )
 
 # =============================================================================
 # GUARDADO
@@ -3983,8 +4011,8 @@ st.session_state["cmp_V_fix_story_min"] = V_fix_min
 st.session_state["cmp_V_ais_story_max"] = V_ais_max
 st.session_state["cmp_V_ais_story_min"] = V_ais_min
 
-st.session_state["cmp_Vb_ais_max"] = Vb_ais_max
-st.session_state["cmp_Vb_ais_min"] = Vb_ais_min
+st.session_state["cmp_Vb_ais_max"] = Vb_max
+st.session_state["cmp_Vb_ais_min"] = Vb_min
 
 # =============================================================================
 # === BLOQUE 9: DESPLAZAMIENTOS LATERALES (RSA INELÁSTICO vs THA MAX/MIN) =====
