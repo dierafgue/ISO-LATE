@@ -4037,24 +4037,32 @@ V_fix_all = _story_from_forces(F_fix)
 V_fix_max = np.max(V_fix_all, axis=1)
 V_fix_min = np.min(V_fix_all, axis=1)
 
+
 # -------------------- AISLADA --------------------
 if a_ais.shape[0] == n_pisos + 1:
-    a_base = a_ais[0:1, :]
-    a_sup_rel = a_ais[1:, :] - a_base
 
-    # 🔥 clave: aceleración absoluta
-    a_sup_abs = a_sup_rel + ag.reshape(1, -1)
+    u_ais = np.asarray(st.session_state.get("u_t_ais"), float)
+    v_ais = np.asarray(st.session_state.get("v_t_ais"), float)
+    K_ais = np.asarray(st.session_state.get("K_cond_ais"), float)
+    C_ais = np.asarray(st.session_state.get("C_rayleigh"), float)
 
-    m_sup = np.diag(np.asarray(M_ais, float))[1:].reshape(n_pisos, 1)
+    if u_ais.ndim == 1: u_ais = u_ais[np.newaxis, :]
+    if v_ais.ndim == 1: v_ais = v_ais[np.newaxis, :]
 
-    F_sup = m_sup * a_sup_abs
+    # 🔥 FUERZAS INTERNAS REALES
+    F_full = K_ais @ u_ais + C_ais @ v_ais
+
+    # DOF 0 = base aislador
+    Vb_t = F_full[0, :]
+
+    # superestructura
+    F_sup = F_full[1:, :]
 
     V_ais_all = _story_from_forces(F_sup)
 
     V_ais_max = np.max(V_ais_all, axis=1)
     V_ais_min = np.min(V_ais_all, axis=1)
 
-    Vb_t = np.sum(F_sup, axis=0)
     Vb_max = float(np.max(Vb_t))
     Vb_min = float(np.min(Vb_t))
 
