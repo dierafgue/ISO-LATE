@@ -4127,8 +4127,8 @@ st.session_state["cmp_V_fix_story_min"] = V_fix_min
 st.session_state["cmp_V_ais_story_max"] = V_ais_max
 st.session_state["cmp_V_ais_story_min"] = V_ais_min
 
-st.session_state["cmp_Vb_fix"] = float(V_fix_max[0]) if len(V_fix_max) else np.nan)
-st.session_state["cmp_Vb_ais"] = float(V_ais_max[0]) if len(V_ais_max) else np.nan)
+st.session_state["cmp_Vb_fix"] = float(V_fix_max[0]) if len(V_fix_max) else np.nan
+st.session_state["cmp_Vb_ais"] = float(V_ais_max[0]) if len(V_ais_max) else np.nan
 
 # =============================================================================
 # === BLOQUE 9: DESPLAZAMIENTOS LATERALES (RSA INELÁSTICO vs THA MAX/MIN) =====
