@@ -3921,9 +3921,6 @@ V_fix_min = np.min(V_fix, axis=1)
 # 🔥 fuerzas internas completas
 F_ais = K_ais @ u_ais + C_ais @ v_ais
 
-# 🔥 añadir fuerza del aislador en DOF base
-F_ais[0, :] += F_iso_total
-
 # 🔵 base shear real
 Vb_ais_t = F_ais[0, :]
 
