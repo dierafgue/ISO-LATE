@@ -4039,40 +4039,28 @@ V_fix_min = np.min(V_fix_all, axis=1)
 
 # -------------------- AISLADA --------------------
 if a_ais.shape[0] == n_pisos + 1:
-    nt_ais = a_ais.shape[1]
 
-    ag_ais = np.asarray(ag, float).ravel()
-    if len(ag_ais) < nt_ais:
-        ag_ais = np.pad(ag_ais, (0, nt_ais - len(ag_ais)), mode="constant")
-    else:
-        ag_ais = ag_ais[:nt_ais]
+    # desplazamientos
+    u_ais = np.asarray(st.session_state.get("u_t_ais"), float)
+    if u_ais.ndim == 1:
+        u_ais = u_ais[np.newaxis, :]
 
-    M_ais_arr = np.asarray(M_ais, float)
-    m_diag = np.diag(M_ais_arr).ravel()
+    K_ais = np.asarray(st.session_state.get("K_cond_ais"), float)
 
-    # DOF 0 = nivel de aislamiento
-    a0_rel = a_ais[0, :]
-    a0_abs = a0_rel + ag_ais
+    # 🔥 fuerzas internas reales (SOLO K)
+    F_full = K_ais @ u_ais
 
-    # Superestructura relativa al nivel de aislamiento
-    a_sup_rel = a_ais[1:, :] - a0_rel.reshape(1, -1)
+    # base (DOF 0)
+    Vb_t = F_full[0, :]
 
-    # Fuerzas "por piso" de la superestructura
-    m_sup = m_diag[1:1+n_pisos].reshape(n_pisos, 1)
-    F_sup = m_sup * a_sup_rel
+    # superestructura (DOF 1..n)
+    F_sup = F_full[1:, :]
 
-    # Cortantes Story1..StoryN
+    # cortantes por piso
     V_ais_all = _story_from_forces(F_sup)
 
     V_ais_max = np.max(V_ais_all, axis=1)
     V_ais_min = np.min(V_ais_all, axis=1)
-
-    # Nivel AIS:
-    # cortante de superestructura + inercia de la masa del DOF 0
-    m0 = float(m_diag[0]) if len(m_diag) > 0 else 0.0
-    F0 = m0 * a0_abs
-
-    Vb_t = F0 + V_ais_all[0, :]
 
     Vb_max = float(np.max(Vb_t))
     Vb_min = float(np.min(Vb_t))
