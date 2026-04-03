@@ -4037,6 +4037,37 @@ V_fix_all = _story_from_forces(F_fix)
 V_fix_max = np.max(V_fix_all, axis=1)
 V_fix_min = np.min(V_fix_all, axis=1)
 
+# # -------------------- AISLADA --------------------
+# if a_ais.shape[0] == n_pisos + 1:
+#     M_ais_arr = np.asarray(M_ais, float)
+#     m_diag = np.diag(M_ais_arr).ravel()
+
+#     # DOF 0 = nivel de aislamiento
+#     a0_rel = a_ais[0, :]
+
+#     # Superestructura relativa al nivel de aislamiento
+#     a_sup_rel = a_ais[1:, :] - a0_rel.reshape(1, -1)
+
+#     # Fuerzas por piso SOLO de la superestructura
+#     m_sup = m_diag[1:1+n_pisos].reshape(n_pisos, 1)
+#     F_sup = m_sup * a_sup_rel
+
+#     # Cortantes Story1..StoryN
+#     V_ais_all = _story_from_forces(F_sup)
+
+#     V_ais_max = np.max(V_ais_all, axis=1)
+#     V_ais_min = np.min(V_ais_all, axis=1)
+
+#     # AIS = cortante basal del edificio/superestructura
+#     Vb_t = np.sum(F_sup, axis=0)
+
+#     Vb_max = float(np.max(Vb_t))
+#     Vb_min = float(np.min(Vb_t))
+
+# else:
+#     st.error("❌ THA AISLADA: dimensiones incorrectas.")
+#     st.stop()
+
 # -------------------- AISLADA --------------------
 if a_ais.shape[0] == n_pisos + 1:
     M_ais_arr = np.asarray(M_ais, float)
@@ -4058,8 +4089,37 @@ if a_ais.shape[0] == n_pisos + 1:
     V_ais_max = np.max(V_ais_all, axis=1)
     V_ais_min = np.min(V_ais_all, axis=1)
 
-    # AIS = cortante basal del edificio/superestructura
-    Vb_t = np.sum(F_sup, axis=0)
+    # AIS = fuerza total del sistema de aislamiento
+    F_link_1 = st.session_state.get("Fiso_hist_1ais_b7", None)
+    n_ais = int(st.session_state.get("n_aisladores", 1))
+
+    if F_link_1 is not None:
+        F_link_1 = np.asarray(F_link_1, float).ravel()
+
+        nt_ais = a_ais.shape[1]
+        if len(F_link_1) < nt_ais:
+            F_link_1 = np.pad(F_link_1, (0, nt_ais - len(F_link_1)), mode="edge")
+        else:
+            F_link_1 = F_link_1[:nt_ais]
+
+        Vb_t = F_link_1 * n_ais
+    else:
+        # fallback por si no existe el historial del link equivalente
+        u_ais_hist = np.asarray(st.session_state.get("u_t_ais"), float)
+        v_ais_hist = np.asarray(st.session_state.get("v_t_ais"), float)
+
+        if u_ais_hist.ndim == 1:
+            u_ais_hist = u_ais_hist[np.newaxis, :]
+        if v_ais_hist.ndim == 1:
+            v_ais_hist = v_ais_hist[np.newaxis, :]
+
+        keff_1ais = float(st.session_state["res_aislador"]["keff_1ais"])
+        c_1ais = float(st.session_state["c_1ais"])
+
+        u0 = u_ais_hist[0, :]
+        v0 = v_ais_hist[0, :]
+
+        Vb_t = (keff_1ais * u0 + c_1ais * v0) * n_ais
 
     Vb_max = float(np.max(Vb_t))
     Vb_min = float(np.min(Vb_t))
