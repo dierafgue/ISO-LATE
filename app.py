@@ -4038,38 +4038,83 @@ V_fix_all = _story_from_forces(F_fix)
 V_fix_max = np.max(V_fix_all, axis=1)
 V_fix_min = np.min(V_fix_all, axis=1)
 
-# -------------------- AISLADA (solo superestructura, aceleración absoluta) --------------------
-if a_ais_rel.shape[0] == n_pisos + 1:
-    a_abs_ais = a_ais_rel + ag.reshape(1, -1)
+# -------------------- AISLADA --------------------
+if a_ais.shape[0] == n_pisos + 1:
 
-    m_diag_ais = np.diag(np.asarray(M_ais, float)).reshape(-1, 1)
+    u_ais = np.asarray(st.session_state.get("u_t_ais"), float)
+    v_ais = np.asarray(st.session_state.get("v_t_ais"), float)
 
-    # 🔥 FUERZA COMPLETA (como ETABS)
-    M_arr = np.asarray(M_ais, float)
-    K_arr = np.asarray(st.session_state.get("K_cond_ais"), float)
-    
-    C_arr = st.session_state.get("C_ais", st.session_state.get("C_ais_used", None))
-    if C_arr is None:
-        C_arr = np.zeros_like(K_arr)
+    if u_ais.ndim == 1:
+        u_ais = u_ais[np.newaxis, :]
+    if v_ais.ndim == 1:
+        v_ais = v_ais[np.newaxis, :]
+
+    K_ais_arr = np.asarray(st.session_state.get("K_cond_ais"), float)
+
+    C_ais_arr = st.session_state.get("C_ais", st.session_state.get("C_ais_used", None))
+    if C_ais_arr is None:
+        C_ais_arr = np.zeros_like(K_ais_arr)
     else:
-        C_arr = np.asarray(C_arr, float)
-    
-    u = np.asarray(st.session_state.get("u_t_ais"), float)
-    v = np.asarray(st.session_state.get("v_t_ais"), float)
-    
-    if u.ndim == 1: u = u[np.newaxis, :]
-    if v.ndim == 1: v = v[np.newaxis, :]
-    
-    # 🔥 ecuación dinámica completa
-    F_full = (M_arr @ a_abs_ais) + (C_arr @ v) + (K_arr @ u)
-    
-    # 🔥 SOLO superestructura
-    F_sup = F_full[1:, :]
+        C_ais_arr = np.asarray(C_ais_arr, float)
 
-    V_ais_all = _story_from_forces(F_sup)
+    # -------------------------------------------------
+    # 1) Respuesta relativa de la superestructura
+    # -------------------------------------------------
+    u0 = u_ais[0, :]
+    v0 = v_ais[0, :]
 
-    V_ais_max = np.max(V_ais_all, axis=1)
-    V_ais_min = np.min(V_ais_all, axis=1)
+    x  = u_ais[1:, :] - u0.reshape(1, -1)   # desplazamientos relativos al aislador
+    xd = v_ais[1:, :] - v0.reshape(1, -1)   # velocidades relativas al aislador
+
+    n = n_pisos
+
+    # -------------------------------------------------
+    # 2) Submatrices de superestructura
+    # -------------------------------------------------
+    K_sup = np.asarray(K_ais_arr[1:, 1:], float)
+    C_sup = np.asarray(C_ais_arr[1:, 1:], float)
+
+    # -------------------------------------------------
+    # 3) Extraer rigideces y amortiguamientos de story
+    #    desde matriz tridiagonal tipo shear-building
+    # -------------------------------------------------
+    k_story = np.zeros(n, dtype=float)
+    c_story = np.zeros(n, dtype=float)
+
+    if n == 1:
+        k_story[0] = K_sup[0, 0]
+        c_story[0] = C_sup[0, 0]
+    else:
+        # story 2..N desde off-diagonals
+        for i in range(1, n):
+            k_story[i] = -K_sup[i - 1, i]
+            c_story[i] = -C_sup[i - 1, i]
+
+        # story 1 desde equilibrio de la primera diagonal
+        k_story[0] = K_sup[0, 0] - k_story[1]
+        c_story[0] = C_sup[0, 0] - c_story[1]
+
+        # último story por diagonal superior
+        k_story[-1] = K_sup[-1, -1]
+        c_story[-1] = C_sup[-1, -1]
+
+    # -------------------------------------------------
+    # 4) Fuerzas de story = resorte + amortiguador
+    # -------------------------------------------------
+    V_story_t = np.zeros_like(x)
+
+    # Story 1
+    V_story_t[0, :] = k_story[0] * x[0, :] + c_story[0] * xd[0, :]
+
+    # Story 2..N
+    for i in range(1, n):
+        dx = x[i, :] - x[i - 1, :]
+        dv = xd[i, :] - xd[i - 1, :]
+        V_story_t[i, :] = k_story[i] * dx + c_story[i] * dv
+
+    # Envolventes
+    V_ais_max = np.max(V_story_t, axis=1)
+    V_ais_min = np.min(V_story_t, axis=1)
 
 else:
     st.error("❌ THA AISLADA: dimensiones incorrectas.")
