@@ -4058,35 +4058,41 @@ V_fix_all = _story_from_forces(F_fix)
 # -------------------- AISLADA --------------------
 t_ais, ag_ais = _match_ag(ag, a_ais.shape[1])
 
-def _floor_forces_abs(Mmat, a_rel, ag_series):
-    a_rel = np.asarray(a_rel, float)
-    m = np.diag(np.asarray(Mmat, float)).reshape(-1, 1)
-    a_abs = a_rel + ag_series.reshape(1, -1)
-    return m * a_abs
-
 if a_ais.shape[0] == n_pisos + 1:
-    # DOF 0 = AIS
-    # DOF 1..n_pisos = Story1..StoryN
-    F_ais_abs_all = _floor_forces_abs(M_ais, a_ais, ag_ais)
+    # GDL 0 = AIS
+    # GDL 1..n_pisos = Story1..StoryN
 
-    # Fuerzas absolutas de la superestructura
-    F_sup_abs = F_ais_abs_all[1:1+n_pisos, :]
+    a_base_rel = a_ais[0:1, :]
+    a_sup_rel_base = a_ais[1:1+n_pisos, :] - a_base_rel
+
+    # Fuerzas inerciales relativas de la superestructura respecto al aislador
+    m_sup = np.diag(np.asarray(M_ais, float))[1:1+n_pisos].reshape(n_pisos, 1)
+    F_ais_sup = m_sup * a_sup_rel_base
 
     # Cortantes de Story1..StoryN
-    V_story_sup = _story_from_forces(F_sup_abs)
+    V_ais_all = _story_from_forces(F_ais_sup)
 
-    # Cortante en AIS:
-    # si ETABS incluye la masa del DOF AIS, usa TODAS las fuerzas
-    V_AIS = np.sum(F_ais_abs_all, axis=0, keepdims=True)
+    # Cortante en AIS = suma total transmitida a la superestructura
+    V_AIS = np.sum(F_ais_sup, axis=0, keepdims=True)
 
     # Vector final estilo ETABS: AIS + Story1..StoryN
-    V_ais_etabs_all = np.vstack([V_AIS, V_story_sup])
+    V_ais_etabs_all = np.vstack([V_AIS, V_ais_all])
 
     with st.expander("DEBUG cortantes AISLADA vs ETABS", expanded=False):
         st.write("n_pisos =", n_pisos)
         st.write("shape a_ais =", np.asarray(a_ais).shape)
         st.write("shape M_ais =", np.asarray(M_ais).shape)
 
+        dbg_F_max = np.max(F_ais_sup, axis=1)
+        dbg_F_min = np.min(F_ais_sup, axis=1)
+        dbg_df_F = pd.DataFrame({
+            "Piso_sup": [f"Story{i}" for i in range(1, n_pisos + 1)],
+            "Fmax_rel": np.round(dbg_F_max, 6),
+            "Fmin_rel": np.round(dbg_F_min, 6),
+        })
+        st.write("Fuerzas por piso de superestructura respecto al AIS")
+        st.dataframe(dbg_df_F, hide_index=True, use_container_width=True)
+
         dbg_V_max = np.max(V_ais_etabs_all, axis=1)
         dbg_V_min = np.min(V_ais_etabs_all, axis=1)
 
@@ -4096,21 +4102,33 @@ if a_ais.shape[0] == n_pisos + 1:
             "Vmax": np.round(dbg_V_max, 6),
             "Vmin": np.round(dbg_V_min, 6),
         })
-        st.write("Cortantes con fuerzas inerciales absolutas")
+        st.write("Cortantes AIS + Story1..StoryN")
         st.dataframe(dbg_df, hide_index=True, use_container_width=True)
 
 elif a_ais.shape[0] == n_pisos:
-    # Caso sin DOF explícito de AIS: solo superestructura
-    F_sup_abs = _floor_forces_abs(M_ais, a_ais, ag_ais)
-    V_story_sup = _story_from_forces(F_sup_abs)
+    # Caso en que a_ais ya viene solo con Story1..StoryN
+    m_sup = np.diag(np.asarray(M_ais, float)).reshape(n_pisos, 1)
+    F_ais_sup = m_sup * a_ais
 
-    # Aquí NO puedes reconstruir bien el renglón AIS si no existe DOF 0
-    # por eso lo dejamos igual al primer corte de superestructura
-    V_AIS = np.sum(F_sup_abs, axis=0, keepdims=True)
+    # Cortantes de Story1..StoryN
+    V_ais_all = _story_from_forces(F_ais_sup)
 
-    V_ais_etabs_all = np.vstack([V_AIS, V_story_sup])
+    # Sin GDL explícito del AIS, usamos como AIS la suma total transmitida
+    V_AIS = np.sum(F_ais_sup, axis=0, keepdims=True)
+
+    V_ais_etabs_all = np.vstack([V_AIS, V_ais_all])
 
     with st.expander("DEBUG cortantes AISLADA vs ETABS", expanded=False):
+        dbg_F_max = np.max(F_ais_sup, axis=1)
+        dbg_F_min = np.min(F_ais_sup, axis=1)
+        dbg_df_F = pd.DataFrame({
+            "Piso_sup": [f"Story{i}" for i in range(1, n_pisos + 1)],
+            "Fmax_rel": np.round(dbg_F_max, 6),
+            "Fmin_rel": np.round(dbg_F_min, 6),
+        })
+        st.write("Fuerzas por piso de superestructura")
+        st.dataframe(dbg_df_F, hide_index=True, use_container_width=True)
+
         dbg_V_max = np.max(V_ais_etabs_all, axis=1)
         dbg_V_min = np.min(V_ais_etabs_all, axis=1)
 
@@ -4120,7 +4138,7 @@ elif a_ais.shape[0] == n_pisos:
             "Vmax": np.round(dbg_V_max, 6),
             "Vmin": np.round(dbg_V_min, 6),
         })
-        st.write("Cortantes con fuerzas inerciales absolutas")
+        st.write("Cortantes AIS + Story1..StoryN")
         st.dataframe(dbg_df, hide_index=True, use_container_width=True)
 
 else:
@@ -4172,7 +4190,7 @@ with colR:
         st.subheader(tr("b8_tha_iso"))
 
         niveles_ais = ["AIS"] + [f"Story{i}" for i in range(1, n_pisos + 1)]
-        alturas_ais = np.r_[1.0, alt_fix[1:], alt_fix[-1]]
+        alturas_ais = np.r_[1.0, alt_fix]
 
         df_ais = pd.DataFrame({
             "Nivel": niveles_ais,
