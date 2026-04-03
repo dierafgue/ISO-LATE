@@ -4044,8 +4044,27 @@ if a_ais_rel.shape[0] == n_pisos + 1:
 
     m_diag_ais = np.diag(np.asarray(M_ais, float)).reshape(-1, 1)
 
-    # Solo superestructura (sin DOF 0 del aislador)
-    F_sup = m_diag_ais[1:, :] * a_abs_ais[1:, :]
+    # 🔥 FUERZA COMPLETA (como ETABS)
+    M_arr = np.asarray(M_ais, float)
+    K_arr = np.asarray(st.session_state.get("K_cond_ais"), float)
+    
+    C_arr = st.session_state.get("C_ais", st.session_state.get("C_ais_used", None))
+    if C_arr is None:
+        C_arr = np.zeros_like(K_arr)
+    else:
+        C_arr = np.asarray(C_arr, float)
+    
+    u = np.asarray(st.session_state.get("u_t_ais"), float)
+    v = np.asarray(st.session_state.get("v_t_ais"), float)
+    
+    if u.ndim == 1: u = u[np.newaxis, :]
+    if v.ndim == 1: v = v[np.newaxis, :]
+    
+    # 🔥 ecuación dinámica completa
+    F_full = (M_arr @ a_abs_ais) + (C_arr @ v) + (K_arr @ u)
+    
+    # 🔥 SOLO superestructura
+    F_sup = F_full[1:, :]
 
     V_ais_all = _story_from_forces(F_sup)
 
