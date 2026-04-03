@@ -4051,7 +4051,7 @@ if a_ais.shape[0] == n_pisos + 1:
     F_full = K_ais @ u_ais
 
     # base (DOF 0)
-    Vb_t = F_full[0, :]
+    Vb_t = np.sum(F_full, axis=0)
 
     # superestructura (DOF 1..n)
     F_sup = F_full[1:, :]
