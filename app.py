@@ -4037,22 +4037,26 @@ V_fix_all = _story_from_forces(F_fix)
 V_fix_max = np.max(V_fix_all, axis=1)
 V_fix_min = np.min(V_fix_all, axis=1)
 
-
 # -------------------- AISLADA --------------------
 if a_ais.shape[0] == n_pisos + 1:
 
     u_ais = np.asarray(st.session_state.get("u_t_ais"), float)
     v_ais = np.asarray(st.session_state.get("v_t_ais"), float)
     K_ais = np.asarray(st.session_state.get("K_cond_ais"), float)
-    C_ais = np.asarray(st.session_state.get("C_rayleigh_ais"), float)
 
     if u_ais.ndim == 1: u_ais = u_ais[np.newaxis, :]
     if v_ais.ndim == 1: v_ais = v_ais[np.newaxis, :]
 
-    # 🔥 FUERZAS INTERNAS REALES
+    # 🔧 asegurar C consistente
+    if "C_rayleigh_ais" in st.session_state:
+        C_ais = np.asarray(st.session_state.get("C_rayleigh_ais"), float)
+    else:
+        C_ais = np.zeros_like(K_ais)
+
+    # 🔥 fuerzas internas
     F_full = K_ais @ u_ais + C_ais @ v_ais
 
-    # DOF 0 = base aislador
+    # base
     Vb_t = F_full[0, :]
 
     # superestructura
