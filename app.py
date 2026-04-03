@@ -3824,9 +3824,47 @@ import matplotlib.pyplot as plt
 import matplotlib.patheffects as pe
 
 # -------------------------------------------------------------------------
-# TEXTOS (mantén los tuyos si ya los tienes)
-# -------------------------------------------------------------------------
-# (Asumo que ya tienes T y tr definidos arriba como en tu app)
+T["en"].update({
+    "b8_title": "Story shears – Time History (THA Max/Min)",
+
+    "b8_need_alt": "Missing floor heights (run previous block).",
+    "b8_need_tha": "Missing THA variables: {keys}",
+
+    "b8_tha_fix": "FIXED – THA (Max/Min)",
+    "b8_tha_iso": "ISOLATED – THA (Max/Min)",
+
+    "b8_table_fix": "Show shear table (FIXED)",
+    "b8_table_iso": "Show shear table (ISOLATED)",
+
+    "b8_plot_fix_maxmin": "THA – Story shears Max/Min (FIXED)",
+    "b8_plot_iso_maxmin": "THA – Story shears Max/Min (ISOLATED)",
+
+    "b8_xlabel_V": "Shear V [tonf]",
+    "b8_ylabel_h": "Height [m]",
+
+    "b8_tha_ok": "Story shears ready",
+})
+
+T["es"].update({
+    "b8_title": "Cortantes por piso – Tiempo historia (THA Max/Min)",
+
+    "b8_need_alt": "Faltan alturas de piso (ejecuta bloque anterior).",
+    "b8_need_tha": "Faltan variables THA: {keys}",
+
+    "b8_tha_fix": "FIJA – THA (Max/Min)",
+    "b8_tha_iso": "AISLADA – THA (Max/Min)",
+
+    "b8_table_fix": "Ver tabla de cortantes (FIJA)",
+    "b8_table_iso": "Ver tabla de cortantes (AISLADA)",
+
+    "b8_plot_fix_maxmin": "THA – Cortantes por piso Max/Min (FIJA)",
+    "b8_plot_iso_maxmin": "THA – Cortantes por piso Max/Min (AISLADA)",
+
+    "b8_xlabel_V": "Cortante V [tonf]",
+    "b8_ylabel_h": "Altura [m]",
+
+    "b8_tha_ok": "Cortantes listos",
+})
 
 st.markdown(f"## 🧱 {tr('b8_title')}")
 
