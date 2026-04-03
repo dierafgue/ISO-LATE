@@ -4055,7 +4055,7 @@ if a_ais.shape[0] == n_pisos + 1:
             F_link_1 = F_link_1[:nt_ais]
 
         # total del sistema aislado
-        Vb_t = F_link_1 * n_ais
+        Vb_t = np.sum(F_sup, axis=0)
     else:
         # fallback si por alguna razón no existe el historial del link
         u_ais = np.asarray(st.session_state.get("u_t_ais"), float)
