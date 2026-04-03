@@ -4039,8 +4039,6 @@ V_fix_min = np.min(V_fix_all, axis=1)
 
 # -------------------- AISLADA --------------------
 if a_ais.shape[0] == n_pisos + 1:
-    nt_ais = a_ais.shape[1]
-
     M_ais_arr = np.asarray(M_ais, float)
     m_diag = np.diag(M_ais_arr).ravel()
 
@@ -4050,7 +4048,7 @@ if a_ais.shape[0] == n_pisos + 1:
     # Superestructura relativa al nivel de aislamiento
     a_sup_rel = a_ais[1:, :] - a0_rel.reshape(1, -1)
 
-    # Fuerzas por piso de la superestructura
+    # Fuerzas por piso SOLO de la superestructura
     m_sup = m_diag[1:1+n_pisos].reshape(n_pisos, 1)
     F_sup = m_sup * a_sup_rel
 
@@ -4060,7 +4058,7 @@ if a_ais.shape[0] == n_pisos + 1:
     V_ais_max = np.max(V_ais_all, axis=1)
     V_ais_min = np.min(V_ais_all, axis=1)
 
-    # Nivel AIS = cortante transmitido a la superestructura
+    # AIS = cortante basal del edificio/superestructura
     Vb_t = np.sum(F_sup, axis=0)
 
     Vb_max = float(np.max(Vb_t))
