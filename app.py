@@ -3085,14 +3085,14 @@ if uploaded is not None:
     Sa_target_fix = Sa_nec_obj[band_fix_mask]
     Sa_target_ais = Sa_nec_obj[band_ais_mask]
 
-    sf_fix = _compute_scale_factor(T_band_fix, Sa_band_fix, Sa_target_fix, threshold=threshold)
-    sf_ais = _compute_scale_factor(T_band_ais, Sa_band_ais, Sa_target_ais, threshold=threshold)
-
+    sf_fix = _compute_scale_factor(Sa_band_fix, Sa_target_fix, threshold=threshold)
+    sf_ais = _compute_scale_factor(Sa_band_ais, Sa_target_ais, threshold=threshold)
+    
     Sa_fix_scaled = sf_fix * Sa_reg
     Sa_ais_scaled = sf_ais * Sa_reg
-
-    ok_fix = _band_check(T_band_fix, sf_fix * Sa_band_fix, Sa_target_fix, threshold=threshold)
-    ok_ais = _band_check(T_band_ais, sf_ais * Sa_band_ais, Sa_target_ais, threshold=threshold)
+    
+    ok_fix = _band_check(sf_fix * Sa_band_fix, Sa_target_fix, threshold=threshold)
+    ok_ais = _band_check(sf_ais * Sa_band_ais, Sa_target_ais, threshold=threshold)
 
     st.session_state["bn_sf_fix"] = float(sf_fix)
     st.session_state["bn_sf_ais"] = float(sf_ais)
