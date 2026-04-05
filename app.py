@@ -2911,7 +2911,7 @@ Tais_hi = 1.25 * T_ais_1
 # -------------------------------------------------------------------------
 # Layout principal
 # -------------------------------------------------------------------------
-col_left, col_right = st.columns([1.00, 2.00], gap="large")
+col_left, col_right = st.columns([1.00, 1.00], gap="large")
 
 nombre = None
 unidad = None
