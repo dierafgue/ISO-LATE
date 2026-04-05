@@ -1365,7 +1365,7 @@ with col_right:
         )
 
 # =============================================================================
-# ========== BLOQUE 3: NEC-24 (izq) + REGISTRO AT2 PEER (der) =================
+# ====================== BLOQUE 3: SOLO NEC-24 ================================
 # =============================================================================
 import io
 import numpy as np
@@ -1373,20 +1373,13 @@ import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
 
-from funciones_usuario import (
-    nec24_espectro,
-    leer_archivo_bytes_a_texto,
-    procesar_registro,
-    G_STD,
-    detectar_formato_y_extraer,
-)
+from funciones_usuario import nec24_espectro
 
 # -------------------------------------------------------------------------
 # ✅ Textos EN/ES (solo para este bloque)
 # -------------------------------------------------------------------------
 T["en"].update({
-    "b3_title": "NEC-24 + Seismic record",
-
+    "b3_title": "NEC-24",
     "b3_nec_params": "NEC-24 spectrum parameters",
     "b3_need_model_nec": "First generate the **structural model** in Section 2 to enable NEC-24.",
     "b3_z": "Seismic intensity (z)",
@@ -1394,65 +1387,31 @@ T["en"].update({
     "b3_soil": "Soil type",
     "b3_Ie": "Importance factor (Ie)",
     "b3_risk_cat": "Risk category",
+    "b3_region": "Region of Ecuador",
+    "b3_region_costa": "Coast",
+    "b3_region_sierra": "Highlands and Amazon",
 
     "h_b3_z": "Design seismic intensity parameter z (NEC-24).",
     "h_b3_zone": "Seismic zoning used by NEC-24 (I to V).",
     "h_b3_soil": "Site soil class (A to E) used to compute Fa, Fd, Fs.",
     "h_b3_Ie": "Importance factor Ie associated with the selected risk category.",
     "h_b3_risk_cat": "Defines importance factor Ie according to NEC-24.",
+    "h_b3_region": "Defines exponent r for the NEC-24 descending branch.",
 
     "b3_nec_spec": "Response spectrum – NEC-24",
     "b3_nec_wait": "The NEC-24 spectrum will be shown once the model is ready.",
     "b3_T": "Period T [s]",
     "b3_Sa": "Sa [g]",
     "b3_placeholder": "(placeholder)",
-    "b3_elastic": "Elastic",
     "b3_design_spec": "Design spectrum",
     "b3_sds_sd1": "SDS = {SDS:.3f} g, SD1 = {SD1:.3f} g·s, Ie = {Ie:.2f}",
     "b3_coeffs": "Coefficients: Fa={Fa:.2f}, Fd={Fd:.2f}, Fs={Fs:.2f}",
     "b3_nec_dl_btn": "Download NEC-24 Excel",
     "b3_nec_dl_help": "Exports 2 columns: period, design spectrum.",
-
-    "b3_region": "Region of Ecuador",
-    "b3_region_costa": "Coast",
-    "b3_region_sierra": "Highlands and Amazon",
-    "h_b3_region": "Defines exponent r for the NEC-24 descending branch.",
-
-    "b3_rec_load": "AT2 seismic record (PEER)",
-    "b3_file": "Select a PEER .at2 file",
-    "b3_file_help": "Only .at2 files already prepared by PEER are allowed in this simplified workflow.",
-    "b3_proc": "Apply filtering + baseline correction",
-    "h_b3_proc": "Applies: linear detrend + Butterworth bandpass + baseline correction (v and u).",
-    "b3_only_at2": "Only .at2 files are accepted in this section.",
-    "b3_peer_note": "Use a PEER AT2 record already selected and prepared by the user.",
-    "b3_need_model_rec": "First generate the **structural model** (Section 2) to enable the record.",
-    "b3_no_file": "Upload a PEER .at2 file to continue.",
-
-    "b3_event": "Event",
-    "b3_dt": "Time step",
-    "b3_dur": "Total duration",
-    "b3_npts": "Number of points",
-    "b3_units_in": "Input units",
-    "b3_reg_title": "Seismic record – {name}",
-    "b3_acc": "Acceleration [m/s²]",
-    "b3_vel": "Velocity [m/s]",
-    "b3_disp": "Displacement [m]",
-    "b3_time": "Time [s]",
-    "b3_orig": "Original",
-    "b3_proc_lab": "Filtered + corrected",
-
-    "b3_dl_hdr": "Download record (Excel)",
-    "b3_dl_pick": "Choose data to export",
-    "b3_dl_btn": "Download Excel (.xlsx)",
-    "h_b3_dl_pick": "Exports 4 columns: time, acceleration, velocity, displacement.",
-    "b3_dl_opt_orig": "Original",
-    "b3_dl_opt_proc": "Filtered + baseline-corrected",
-    "b3_dl_opt_final": "Final used in analysis",
 })
 
 T["es"].update({
-    "b3_title": "NEC-24 + Registro sísmico",
-
+    "b3_title": "NEC-24",
     "b3_nec_params": "Parámetros del espectro NEC-24",
     "b3_need_model_nec": "⚙️ Primero genera el **modelo estructural** en la Sección 2 para habilitar NEC-24.",
     "b3_z": "Intensidad sísmica (z)",
@@ -1460,60 +1419,27 @@ T["es"].update({
     "b3_soil": "Tipo de suelo",
     "b3_Ie": "Factor de importancia (Ie)",
     "b3_risk_cat": "Categoría de riesgo",
+    "b3_region": "Región del Ecuador",
+    "b3_region_costa": "Costa",
+    "b3_region_sierra": "Sierra y oriente",
 
     "h_b3_z": "Parámetro de intensidad sísmica z (NEC-24).",
     "h_b3_zone": "Zonificación sísmica usada por la NEC-24 (I a V).",
     "h_b3_soil": "Clase de suelo (A a E) para calcular Fa, Fd, Fs.",
     "h_b3_Ie": "Factor de importancia Ie asociado a la categoría de riesgo seleccionada.",
     "h_b3_risk_cat": "Define el factor de importancia Ie según la NEC-24.",
+    "h_b3_region": "Define el exponente r para la rama descendente del espectro NEC-24.",
 
     "b3_nec_spec": "Espectro de respuesta – NEC-24",
     "b3_nec_wait": "📌 El espectro NEC-24 se mostrará cuando el modelo esté listo.",
     "b3_T": "Período T [s]",
     "b3_Sa": "Sa [g]",
     "b3_placeholder": "(placeholder)",
-    "b3_elastic": "Elástico",
     "b3_design_spec": "Espectro de diseño",
     "b3_sds_sd1": "SDS = {SDS:.3f} g, SD1 = {SD1:.3f} g·s, Ie = {Ie:.2f}",
     "b3_coeffs": "Coeficientes: Fa={Fa:.2f}, Fd={Fd:.2f}, Fs={Fs:.2f}",
     "b3_nec_dl_btn": "Descargar NEC-24 Excel",
     "b3_nec_dl_help": "Exporta 2 columnas: periodo, espectro de diseño.",
-
-    "b3_region": "Región del Ecuador",
-    "b3_region_costa": "Costa",
-    "b3_region_sierra": "Sierra y oriente",
-    "h_b3_region": "Define el exponente r para la rama descendente del espectro NEC-24.",
-
-    "b3_rec_load": "Registro sísmico AT2 (PEER)",
-    "b3_file": "📁 Selecciona un archivo PEER .at2",
-    "b3_file_help": "En este flujo simplificado solo se aceptan archivos .at2 ya preparados por PEER.",
-    "b3_proc": "Aplicar filtrado + corrección de línea base",
-    "h_b3_proc": "Aplica: detrend lineal + filtro Butterworth pasa banda + corrección de línea base (v y u).",
-    "b3_only_at2": "En esta sección solo se aceptan archivos .at2.",
-    "b3_peer_note": "Use un registro AT2 de PEER ya seleccionado y preparado por el usuario.",
-    "b3_need_model_rec": "⚙️ Primero genera el **modelo estructural** (Sección 2) para habilitar el registro.",
-    "b3_no_file": "Cargue un archivo PEER .at2 para continuar.",
-
-    "b3_event": "Evento",
-    "b3_dt": "Paso de tiempo",
-    "b3_dur": "Duración total",
-    "b3_npts": "Número de puntos",
-    "b3_units_in": "Unidades de entrada",
-    "b3_reg_title": "Registro sísmico – {name}",
-    "b3_acc": "Aceleración [m/s²]",
-    "b3_vel": "Velocidad [m/s]",
-    "b3_disp": "Desplazamiento [m]",
-    "b3_time": "Tiempo [s]",
-    "b3_orig": "Original",
-    "b3_proc_lab": "Filtrado + corregido",
-
-    "b3_dl_hdr": "Descargar registro (Excel)",
-    "b3_dl_pick": "Elegir datos a exportar",
-    "b3_dl_btn": "Descargar Excel (.xlsx)",
-    "h_b3_dl_pick": "Exporta 4 columnas: tiempo, aceleracion, velocidad, desplazamiento.",
-    "b3_dl_opt_orig": "Original",
-    "b3_dl_opt_proc": "Filtrado + corregido (línea base)",
-    "b3_dl_opt_final": "Final usado en el análisis",
 })
 
 # -------------------------------------------------------------------------
@@ -1524,7 +1450,6 @@ def build_nec24_excel_bytes(T_spec, Sa_design):
         "periodo": np.asarray(T_spec, dtype=float).ravel(),
         "diseno": np.asarray(Sa_design, dtype=float).ravel(),
     })
-
     bio = io.BytesIO()
     with pd.ExcelWriter(bio, engine="openpyxl") as writer:
         df_nec.to_excel(writer, index=False, sheet_name="NEC24")
@@ -1543,31 +1468,12 @@ COLOR_GRID = "#5B657A"
 geom_ok = bool(st.session_state.get("geom_ready", False))
 
 # -------------------------------------------------------------------------
-# ✅ Ajustes visuales
-# -------------------------------------------------------------------------
-NEC24_PAD_PX = 15
-NEC24_FIG_H  = 3.25
-
-st.markdown(f"""
-<style>
-.nec24-equalizer {{
-  height: {NEC24_PAD_PX}px;
-}}
-
-.compact-download div[data-testid="stVerticalBlock"]{{ gap:0.25rem; }}
-.compact-download [data-testid="stSelectbox"]{{ padding-top:0rem !important; padding-bottom:0rem !important; }}
-.compact-download [data-testid="stDownloadButton"]{{ padding-top:0rem !important; padding-bottom:0rem !important; }}
-.compact-download button{{ padding-top:0.25rem !important; padding-bottom:0.25rem !important; }}
-</style>
-""", unsafe_allow_html=True)
-
-# =============================================================================
 # Layout principal (2 columnas)
-# =============================================================================
-col_left, col_right = st.columns([1.05, 1.95], gap="large")
+# -------------------------------------------------------------------------
+col_left, col_right = st.columns([1.00, 1.90], gap="large")
 
 # =============================================================================
-# IZQUIERDA: NEC-24
+# IZQUIERDA: PARÁMETROS NEC
 # =============================================================================
 with col_left:
     with st.container(border=True):
@@ -1636,30 +1542,33 @@ with col_left:
                 "r": float(r_nec),
             }
 
-    st.write("")
-
+# =============================================================================
+# DERECHA: ESPECTRO NEC
+# =============================================================================
+with col_right:
     with st.container(border=True):
         st.markdown(f"### 📈 {tr('b3_nec_spec')}")
 
         if not geom_ok:
             st.info(tr("b3_nec_wait"))
+
             T_spec = np.linspace(0.0, 5.0, 120)
             Sa_elast = np.zeros_like(T_spec)
             SDS = SD1 = Fa = Fd = Fs = 0.0
 
-            fig, ax = plt.subplots(figsize=(6.0, NEC24_FIG_H))
+            fig, ax = plt.subplots(figsize=(8.5, 4.6))
             fig.patch.set_facecolor(BG)
             ax.set_facecolor(BG)
-            ax.plot(T_spec, Sa_elast, lw=0.75, alpha=0.5, label=tr("b3_placeholder"))
+
+            ax.plot(T_spec, Sa_elast, lw=1.0, alpha=0.6, label=tr("b3_placeholder"))
             ax.set_xlabel(tr("b3_T"), color=COLOR_TEXT)
             ax.set_ylabel(tr("b3_Sa"), color=COLOR_TEXT)
             ax.tick_params(colors=COLOR_TEXT)
             ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
             ax.spines["top"].set_visible(False)
             ax.spines["right"].set_visible(False)
-            st.pyplot(fig, use_container_width=True)
 
-            st.markdown('<div class="nec24-equalizer"></div>', unsafe_allow_html=True)
+            st.pyplot(fig, use_container_width=True)
 
         else:
             T_spec, Sa_elast, _Sa_inelas_unused, SDS, SD1, Fa, Fd, Fs = nec24_espectro(
@@ -1680,15 +1589,18 @@ with col_left:
             st.session_state["rs_T_spec"] = np.asarray(T_spec, dtype=float).ravel()
             st.session_state["rs_Sa_design"] = np.asarray(Sa_design_plot, dtype=float).ravel()
             st.session_state["rs_Ie"] = float(Ie)
+            st.session_state["Fa"] = float(Fa)
+            st.session_state["Fd"] = float(Fd)
+            st.session_state["Fs"] = float(Fs)
 
             st.caption(tr("b3_sds_sd1").format(SDS=SDS, SD1=SD1, Ie=Ie))
 
-            colA, colB = st.columns([1.3, 1.0])
+            cA, cB = st.columns([1.5, 1.0])
 
-            with colA:
+            with cA:
                 st.caption(tr("b3_coeffs").format(Fa=Fa, Fd=Fd, Fs=Fs))
 
-            with colB:
+            with cB:
                 nec24_xlsx_bytes = build_nec24_excel_bytes(T_spec, Sa_design_plot)
                 st.download_button(
                     label=tr("b3_nec_dl_btn"),
@@ -1700,10 +1612,11 @@ with col_left:
                     use_container_width=True,
                 )
 
-            fig, ax = plt.subplots(figsize=(6.0, NEC24_FIG_H))
+            fig, ax = plt.subplots(figsize=(8.5, 4.8))
             fig.patch.set_facecolor(BG)
             ax.set_facecolor(BG)
-            ax.plot(T_spec, Sa_design_plot, lw=1.0, label=tr("b3_design_spec"))
+
+            ax.plot(T_spec, Sa_design_plot, lw=1.2, label=tr("b3_design_spec"))
             ax.set_xlabel(tr("b3_T"), color=COLOR_TEXT)
             ax.set_ylabel(tr("b3_Sa"), color=COLOR_TEXT)
             ax.tick_params(colors=COLOR_TEXT)
@@ -1718,284 +1631,6 @@ with col_left:
                 t.set_color(COLOR_TEXT)
 
             st.pyplot(fig, use_container_width=True)
-            st.markdown('<div class="nec24-equalizer"></div>', unsafe_allow_html=True)
-
-# =============================================================================
-# DERECHA: REGISTRO AT2
-# =============================================================================
-with col_right:
-    with st.container(border=True):
-        st.markdown(f"### 〰️ {tr('b3_rec_load')}")
-
-        col_ctrl, col_graf = st.columns([1.15, 2.55], gap="large")
-
-        nombre = None
-        unidad = None
-        dt = None
-        t_ag = None
-        ag_orig = None
-        vel_orig = None
-        disp_orig = None
-        ag_proc = None
-        vel_proc = None
-        disp_proc = None
-        ag_base = None
-        proc_disponible = False
-
-        with col_ctrl:
-            st.caption(tr("b3_peer_note"))
-
-            uploaded = st.file_uploader(
-                tr("b3_file"),
-                type=["at2"],
-                disabled=not geom_ok,
-                help=tr("b3_file_help"),
-                key="b3_at2_file"
-            )
-
-            aplicar_proc = st.checkbox(
-                tr("b3_proc"),
-                value=False,
-                disabled=not geom_ok,
-                help=tr("h_b3_proc"),
-                key="b3_proc_check"
-            )
-
-            if not geom_ok:
-                st.info(tr("b3_need_model_rec"))
-            elif uploaded is None:
-                st.info(tr("b3_no_file"))
-
-        if geom_ok and uploaded is not None:
-            if not uploaded.name.lower().endswith(".at2"):
-                st.error(tr("b3_only_at2"))
-                st.stop()
-
-            try:
-                raw = uploaded.read()
-                texto = leer_archivo_bytes_a_texto(raw)
-
-                nombre, unidad, dt, ag = detectar_formato_y_extraer(texto)
-                ag = np.asarray(ag, dtype=float).ravel()
-                dt = float(dt)
-
-                if unidad == "cm/s²":
-                    ag_orig = ag / 100.0
-                elif unidad == "g":
-                    ag_orig = ag * G_STD
-                elif unidad == "m/s²":
-                    ag_orig = ag
-                else:
-                    st.error(f"Unidad no reconocida: {unidad}")
-                    st.stop()
-
-            except Exception as e:
-                st.error(f"Error al leer el archivo AT2: {e}")
-                st.stop()
-
-            out = procesar_registro(ag_orig, dt, aplicar_proc=aplicar_proc)
-
-            t_ag = np.asarray(out["t"], dtype=float).ravel()
-            vel_orig = np.asarray(out["vel_orig"], dtype=float).ravel()
-            disp_orig = np.asarray(out["disp_orig"], dtype=float).ravel()
-            ag_proc = out["ag_proc"]
-            vel_proc = out["vel_proc"]
-            disp_proc = out["disp_proc"]
-            ag_base = np.asarray(out["ag_base"], dtype=float).ravel()
-
-            if ag_proc is not None:
-                ag_proc = np.asarray(ag_proc, dtype=float).ravel()
-            if vel_proc is not None:
-                vel_proc = np.asarray(vel_proc, dtype=float).ravel()
-            if disp_proc is not None:
-                disp_proc = np.asarray(disp_proc, dtype=float).ravel()
-
-            proc_disponible = bool(
-                aplicar_proc and
-                (ag_proc is not None) and
-                (vel_proc is not None) and
-                (disp_proc is not None)
-            )
-
-            with col_ctrl:
-                st.markdown(f"**{tr('b3_event')}:** {nombre}")
-                st.markdown(f"**{tr('b3_units_in')}:** {unidad}")
-                st.markdown(f"**{tr('b3_dt')}:** {dt:.4f} s")
-                st.markdown(f"**{tr('b3_dur')}:** {t_ag[-1]:.2f} s")
-                st.markdown(f"**{tr('b3_npts')}:** {len(ag_orig)}")
-
-            COLOR_ORIG = "#9DBEF7"
-            COLOR_PROC = "#FFD479"
-            LW_ORIG_SOLO = 0.55
-            LW_ORIG_OVER = 0.28
-            LW_PROC = 0.28
-
-            with col_graf:
-                fig, axs = plt.subplots(3, 1, figsize=(9, 11.2), sharex=True)
-                fig.patch.set_facecolor(BG)
-
-                for ax in axs:
-                    ax.set_facecolor(BG)
-                    ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
-                    ax.tick_params(colors=COLOR_TEXT)
-                    for s in ("top", "right"):
-                        ax.spines[s].set_visible(False)
-
-                axs[0].plot(
-                    t_ag, ag_orig,
-                    lw=(LW_ORIG_OVER if proc_disponible else LW_ORIG_SOLO),
-                    color=COLOR_ORIG,
-                    label=tr("b3_orig")
-                )
-                if proc_disponible:
-                    axs[0].plot(
-                        t_ag, ag_proc,
-                        lw=LW_PROC, color=COLOR_PROC, label=tr("b3_proc_lab")
-                    )
-                axs[0].set_ylabel(tr("b3_acc"), color=COLOR_TEXT)
-                axs[0].set_title(tr("b3_reg_title").format(name=nombre), color=COLOR_TEXT)
-
-                axs[1].plot(
-                    t_ag, vel_orig,
-                    lw=(LW_ORIG_OVER if proc_disponible else LW_ORIG_SOLO),
-                    color=COLOR_ORIG
-                )
-                if proc_disponible:
-                    axs[1].plot(t_ag, vel_proc, lw=LW_PROC, color=COLOR_PROC)
-                axs[1].set_ylabel(tr("b3_vel"), color=COLOR_TEXT)
-
-                axs[2].plot(
-                    t_ag, disp_orig,
-                    lw=(LW_ORIG_OVER if proc_disponible else LW_ORIG_SOLO),
-                    color=COLOR_ORIG
-                )
-                if proc_disponible:
-                    axs[2].plot(t_ag, disp_proc, lw=LW_PROC, color=COLOR_PROC)
-                axs[2].set_ylabel(tr("b3_disp"), color=COLOR_TEXT)
-                axs[2].set_xlabel(tr("b3_time"), color=COLOR_TEXT)
-
-                if proc_disponible:
-                    leg0 = axs[0].legend(framealpha=0.85)
-                    leg0.get_frame().set_facecolor(BG)
-                    leg0.get_frame().set_edgecolor(COLOR_GRID)
-                    for tt in leg0.get_texts():
-                        tt.set_color(COLOR_TEXT)
-
-                st.pyplot(fig, use_container_width=True)
-
-            # -------------------------------------------------------------
-            # ✅ Guardado principal en session_state
-            # -------------------------------------------------------------
-            st.session_state["rs_ready"] = True
-            st.session_state["rs_nombre"] = str(nombre)
-            st.session_state["rs_dt"] = float(dt)
-            st.session_state["rs_t"] = np.asarray(t_ag, dtype=float).ravel()
-
-            st.session_state["rs_ag_orig"] = np.asarray(ag_orig, dtype=float).ravel()
-            st.session_state["rs_vel_orig"] = np.asarray(vel_orig, dtype=float).ravel()
-            st.session_state["rs_disp_orig"] = np.asarray(disp_orig, dtype=float).ravel()
-
-            st.session_state["rs_ag_base"] = np.asarray(ag_base, dtype=float).ravel()
-
-            st.session_state["rs_ag_proc"] = np.asarray(ag_proc, dtype=float).ravel() if proc_disponible else None
-            st.session_state["rs_vel_proc"] = np.asarray(vel_proc, dtype=float).ravel() if proc_disponible else None
-            st.session_state["rs_disp_proc"] = np.asarray(disp_proc, dtype=float).ravel() if proc_disponible else None
-            st.session_state["rs_proc_on"] = bool(proc_disponible)
-
-            # -------------------------------------------------------------
-            # ✅ Registro final usado en el análisis
-            # -------------------------------------------------------------
-            ag_final = np.asarray(ag_base, dtype=float).ravel()
-
-            out_final = procesar_registro(
-                ag_final,
-                float(dt),
-                aplicar_proc=False
-            )
-            vel_final = np.asarray(out_final["vel_orig"], dtype=float).ravel()
-            disp_final = np.asarray(out_final["disp_orig"], dtype=float).ravel()
-
-            st.session_state["ag_filt"] = np.asarray(ag_final, dtype=float).ravel()
-            st.session_state["dt"] = float(dt)
-            st.session_state["t_ag"] = np.asarray(t_ag, dtype=float).ravel()
-
-            st.session_state["rs_ag_final"] = np.asarray(ag_final, dtype=float).ravel()
-            st.session_state["rs_vel_final"] = np.asarray(vel_final, dtype=float).ravel()
-            st.session_state["rs_disp_final"] = np.asarray(disp_final, dtype=float).ravel()
-
-# =============================================================================
-# DESCARGA FINAL DEL REGISTRO (3 OPCIONES)
-# =============================================================================
-rs_ready = bool(st.session_state.get("rs_ready", False))
-
-if geom_ok and rs_ready and ("rs_t" in st.session_state):
-    with col_right:
-        with col_ctrl:
-            st.markdown('<div class="compact-download">', unsafe_allow_html=True)
-            st.caption(f"📥 **{tr('b3_dl_hdr')}**")
-
-            opts = [tr("b3_dl_opt_orig")]
-            if bool(st.session_state.get("rs_proc_on", False)):
-                opts.append(tr("b3_dl_opt_proc"))
-            opts.append(tr("b3_dl_opt_final"))
-
-            pick = st.selectbox(
-                tr("b3_dl_pick"),
-                options=opts,
-                index=(len(opts) - 1),
-                key="b3_dl_pick_opt",
-                help=tr("h_b3_dl_pick"),
-                label_visibility="collapsed",
-            )
-
-            t_exp = np.asarray(st.session_state["rs_t"], dtype=float).ravel()
-
-            if pick == tr("b3_dl_opt_orig"):
-                a_exp = np.asarray(st.session_state["rs_ag_orig"], dtype=float).ravel()
-                v_exp = np.asarray(st.session_state["rs_vel_orig"], dtype=float).ravel()
-                u_exp = np.asarray(st.session_state["rs_disp_orig"], dtype=float).ravel()
-                tag = "orig"
-
-            elif pick == tr("b3_dl_opt_proc") and bool(st.session_state.get("rs_proc_on", False)):
-                a_exp = np.asarray(st.session_state["rs_ag_proc"], dtype=float).ravel()
-                v_exp = np.asarray(st.session_state["rs_vel_proc"], dtype=float).ravel()
-                u_exp = np.asarray(st.session_state["rs_disp_proc"], dtype=float).ravel()
-                tag = "proc"
-
-            else:
-                a_exp = np.asarray(st.session_state["rs_ag_final"], dtype=float).ravel()
-                v_exp = np.asarray(st.session_state["rs_vel_final"], dtype=float).ravel()
-                u_exp = np.asarray(st.session_state["rs_disp_final"], dtype=float).ravel()
-                tag = "final"
-
-            df_xlsx = pd.DataFrame({
-                "tiempo": t_exp,
-                "aceleracion": a_exp,
-                "velocidad": v_exp,
-                "desplazamiento": u_exp,
-            })
-
-            bio = io.BytesIO()
-            with pd.ExcelWriter(bio, engine="openpyxl") as writer:
-                df_xlsx.to_excel(writer, index=False, sheet_name="registro")
-            bio.seek(0)
-
-            safe_name = "".join([
-                c if (c.isalnum() or c in ("_", "-", ".")) else "_"
-                for c in str(st.session_state.get("rs_nombre", "registro"))
-            ])
-            file_name = f"registro_{safe_name}_{tag}.xlsx"
-
-            st.download_button(
-                label=tr("b3_dl_btn"),
-                data=bio.getvalue(),
-                file_name=file_name,
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                key="b3_dl_btn_xlsx",
-                use_container_width=True,
-            )
-
-            st.markdown('</div>', unsafe_allow_html=True)
             
 # =============================================================================
 # == BLOQUE 4: DISEÑO DEL AISLADOR LRB (MODAL + RAYLEIGH + DISEÑO + GRÁFICO) ==
@@ -3003,6 +2638,683 @@ with colR:
         plt.close(fig_ais_scheme)
 
 st.success(tr("b5_done"))
+
+# =============================================================================
+# ================= BLOQUE N: REGISTROS + ESCALADO ESPECTRAL ==================
+# =============================================================================
+import io
+import numpy as np
+import pandas as pd
+import streamlit as st
+import matplotlib.pyplot as plt
+
+from funciones_usuario import (
+    leer_archivo_bytes_a_texto,
+    procesar_registro,
+    G_STD,
+    detectar_formato_y_extraer,
+)
+
+# -------------------------------------------------------------------------
+# ✅ Textos EN/ES
+# -------------------------------------------------------------------------
+T["en"].update({
+    "bn_title": "Seismic record and spectral scaling",
+    "bn_need_nec": "First generate the NEC-24 spectrum in Block 3.",
+    "bn_need_periods": "Missing structural periods. Run the modal analysis blocks first.",
+    "bn_rec_load": "AT2 seismic record (PEER)",
+    "bn_file": "Select a PEER .at2 file",
+    "bn_file_help": "Only .at2 files already prepared by PEER are allowed in this workflow.",
+    "bn_proc": "Apply filtering + baseline correction",
+    "h_bn_proc": "Applies: linear detrend + Butterworth bandpass + baseline correction (v and u).",
+    "bn_only_at2": "Only .at2 files are accepted in this section.",
+    "bn_peer_note": "Use a PEER AT2 record prepared by the user.",
+    "bn_no_file": "Upload a PEER .at2 file to continue.",
+
+    "bn_event": "Event",
+    "bn_dt": "Time step",
+    "bn_dur": "Total duration",
+    "bn_npts": "Number of points",
+    "bn_units_in": "Input units",
+    "bn_reg_title": "Seismic record – {name}",
+    "bn_acc": "Acceleration [m/s²]",
+    "bn_vel": "Velocity [m/s]",
+    "bn_disp": "Displacement [m]",
+    "bn_time": "Time [s]",
+    "bn_orig": "Original",
+    "bn_proc_lab": "Filtered + corrected",
+
+    "bn_spec_title": "Spectral scaling check",
+    "bn_spec_period": "Period T [s]",
+    "bn_spec_sa": "Sa [g]",
+    "bn_nec_target": "NEC target",
+    "bn_fix_scaled": "Scaled spectrum – fixed",
+    "bn_ais_scaled": "Scaled spectrum – isolated",
+
+    "bn_fix_hdr": "Fixed structure",
+    "bn_ais_hdr": "Base-isolated structure",
+    "bn_range_lo": "Lower bound",
+    "bn_range_hi": "Upper bound",
+    "bn_factor": "Scale factor",
+    "bn_ok": "Complies",
+    "bn_no": "No",
+    "bn_yes": "Yes",
+
+    "bn_rule_choice": "Scaling rule",
+    "bn_rule_fix": "Fixed-base NEC range (0.8T1 to 1.2T1)",
+    "bn_rule_ais": "Isolation range (0.75T to 1.25T)",
+    "bn_rule_help": "For fixed structure: practical single-period NEC band. For isolated structure: isolation band shown in the code excerpt.",
+    "bn_factor_mode": "Scale factor criterion",
+    "bn_factor_mode_100": "Match 100% of NEC target",
+    "bn_factor_mode_090": "Match 90% of NEC target",
+    "bn_factor_help": "90% is often used as minimum threshold in spectral matching checks; 100% is more conservative.",
+
+    "bn_dl_hdr": "Download record (Excel)",
+    "bn_dl_pick": "Choose data to export",
+    "bn_dl_btn": "Download Excel (.xlsx)",
+    "h_bn_dl_pick": "Exports 4 columns: time, acceleration, velocity, displacement.",
+    "bn_dl_opt_orig": "Original",
+    "bn_dl_opt_proc": "Filtered + baseline-corrected",
+    "bn_dl_opt_final": "Final used in analysis",
+})
+
+T["es"].update({
+    "bn_title": "Registro sísmico y escalado espectral",
+    "bn_need_nec": "⚙️ Primero genera el espectro NEC-24 en el Bloque 3.",
+    "bn_need_periods": "⚙️ Faltan los períodos estructurales. Ejecuta primero los bloques modales.",
+    "bn_rec_load": "Registro sísmico AT2 (PEER)",
+    "bn_file": "📁 Selecciona un archivo PEER .at2",
+    "bn_file_help": "En este flujo solo se aceptan archivos .at2 ya preparados por PEER.",
+    "bn_proc": "Aplicar filtrado + corrección de línea base",
+    "h_bn_proc": "Aplica: detrend lineal + filtro Butterworth pasa banda + corrección de línea base (v y u).",
+    "bn_only_at2": "En esta sección solo se aceptan archivos .at2.",
+    "bn_peer_note": "Use un registro AT2 de PEER preparado por el usuario.",
+    "bn_no_file": "Cargue un archivo PEER .at2 para continuar.",
+
+    "bn_event": "Evento",
+    "bn_dt": "Paso de tiempo",
+    "bn_dur": "Duración total",
+    "bn_npts": "Número de puntos",
+    "bn_units_in": "Unidades de entrada",
+    "bn_reg_title": "Registro sísmico – {name}",
+    "bn_acc": "Aceleración [m/s²]",
+    "bn_vel": "Velocidad [m/s]",
+    "bn_disp": "Desplazamiento [m]",
+    "bn_time": "Tiempo [s]",
+    "bn_orig": "Original",
+    "bn_proc_lab": "Filtrado + corregido",
+
+    "bn_spec_title": "Verificación de escalado espectral",
+    "bn_spec_period": "Período T [s]",
+    "bn_spec_sa": "Sa [g]",
+    "bn_nec_target": "Objetivo NEC",
+    "bn_fix_scaled": "Espectro escalado – fija",
+    "bn_ais_scaled": "Espectro escalado – aislada",
+
+    "bn_fix_hdr": "Estructura fija",
+    "bn_ais_hdr": "Estructura aislada",
+    "bn_range_lo": "Límite inferior",
+    "bn_range_hi": "Límite superior",
+    "bn_factor": "Factor de escala",
+    "bn_ok": "Cumple",
+    "bn_no": "No",
+    "bn_yes": "Sí",
+
+    "bn_rule_choice": "Regla de escalado",
+    "bn_rule_fix": "Rango NEC estructura fija (0.8T1 a 1.2T1)",
+    "bn_rule_ais": "Rango de aislamiento (0.75T a 1.25T)",
+    "bn_rule_help": "Para estructura fija: banda práctica alrededor de T1. Para aislada: rango mostrado en el extracto normativo.",
+    "bn_factor_mode": "Criterio del factor de escala",
+    "bn_factor_mode_100": "Igualar 100% del objetivo NEC",
+    "bn_factor_mode_090": "Igualar 90% del objetivo NEC",
+    "bn_factor_help": "El 90% suele usarse como umbral mínimo en verificaciones de spectral matching; 100% es más conservador.",
+
+    "bn_dl_hdr": "Descargar registro (Excel)",
+    "bn_dl_pick": "Elegir datos a exportar",
+    "bn_dl_btn": "Descargar Excel (.xlsx)",
+    "h_bn_dl_pick": "Exporta 4 columnas: tiempo, aceleración, velocidad, desplazamiento.",
+    "bn_dl_opt_orig": "Original",
+    "bn_dl_opt_proc": "Filtrado + corregido (línea base)",
+    "bn_dl_opt_final": "Final usado en el análisis",
+})
+
+# -------------------------------------------------------------------------
+# ✅ Helpers numéricos
+# -------------------------------------------------------------------------
+def _safe_first_period(x):
+    x = np.asarray(x, dtype=float).ravel()
+    x = x[np.isfinite(x) & (x > 0)]
+    return float(x[0]) if len(x) else None
+
+def _interp_1d(x_new, x, y):
+    x = np.asarray(x, dtype=float).ravel()
+    y = np.asarray(y, dtype=float).ravel()
+    x_new = np.asarray(x_new, dtype=float).ravel()
+    return np.interp(x_new, x, y, left=y[0], right=y[-1])
+
+def _sdof_response_spectrum_newmark(ag_mps2, dt, T_array, zeta=0.05):
+    """
+    Espectro de pseudoaceleración Sa [g] para un registro de aceleración base.
+    Método: Newmark promedio constante (γ=0.5, β=0.25)
+    """
+    ag = np.asarray(ag_mps2, dtype=float).ravel()
+    T_array = np.asarray(T_array, dtype=float).ravel()
+
+    gamma = 0.5
+    beta = 0.25
+    m = 1.0
+
+    Sa_g = np.zeros_like(T_array, dtype=float)
+
+    for i, Tn in enumerate(T_array):
+        if Tn <= 1e-8:
+            Sa_g[i] = np.max(np.abs(ag)) / G_STD
+            continue
+
+        wn = 2.0 * np.pi / Tn
+        k = m * wn**2
+        c = 2.0 * zeta * m * wn
+
+        a0 = 1.0 / (beta * dt**2)
+        a1 = gamma / (beta * dt)
+        a2 = 1.0 / (beta * dt)
+        a3 = 1.0 / (2.0 * beta) - 1.0
+        a4 = gamma / beta - 1.0
+        a5 = dt * (gamma / (2.0 * beta) - 1.0)
+
+        k_eff = k + a0 * m + a1 * c
+
+        u = 0.0
+        v = 0.0
+        acc_rel = -ag[0]
+
+        umax = 0.0
+
+        for j in range(1, len(ag)):
+            p_j = -m * ag[j]
+
+            p_eff = (
+                p_j
+                + m * (a0 * u + a2 * v + a3 * acc_rel)
+                + c * (a1 * u + a4 * v + a5 * acc_rel)
+            )
+
+            u_new = p_eff / k_eff
+            acc_new = a0 * (u_new - u) - a2 * v - a3 * acc_rel
+            v_new = v + dt * ((1.0 - gamma) * acc_rel + gamma * acc_new)
+
+            u = u_new
+            v = v_new
+            acc_rel = acc_new
+
+            umax = max(umax, abs(u))
+
+        psa = wn**2 * umax
+        Sa_g[i] = psa / G_STD
+
+    return Sa_g
+
+def _compute_scale_factor(T_band, Sa_record, Sa_target, threshold=1.0):
+    """
+    Devuelve el menor factor tal que:
+    factor * Sa_record >= threshold * Sa_target
+    en todo el rango de T_band.
+    """
+    eps = 1e-12
+    ratio = threshold * np.asarray(Sa_target) / np.maximum(np.asarray(Sa_record), eps)
+    return float(np.max(ratio))
+
+def _band_check(T_band, Sa_scaled, Sa_target, threshold=1.0):
+    return bool(np.all(np.asarray(Sa_scaled) >= threshold * np.asarray(Sa_target)))
+
+def _build_record_excel_bytes(t_exp, a_exp, v_exp, u_exp):
+    df_xlsx = pd.DataFrame({
+        "tiempo": np.asarray(t_exp, dtype=float).ravel(),
+        "aceleracion": np.asarray(a_exp, dtype=float).ravel(),
+        "velocidad": np.asarray(v_exp, dtype=float).ravel(),
+        "desplazamiento": np.asarray(u_exp, dtype=float).ravel(),
+    })
+
+    bio = io.BytesIO()
+    with pd.ExcelWriter(bio, engine="openpyxl") as writer:
+        df_xlsx.to_excel(writer, index=False, sheet_name="registro")
+    bio.seek(0)
+    return bio.getvalue()
+
+# -------------------------------------------------------------------------
+# Header
+# -------------------------------------------------------------------------
+st.markdown(f"## 📌 {tr('bn_title')}")
+
+BG         = "#2B3141"
+COLOR_TEXT = "#E8EDF2"
+COLOR_GRID = "#5B657A"
+
+nec_ok = (
+    "rs_T_spec" in st.session_state and
+    "rs_Sa_design" in st.session_state and
+    "rs_Ie" in st.session_state
+)
+
+T_fix_1 = _safe_first_period(st.session_state.get("T_sin", []))
+T_ais_1 = _safe_first_period(st.session_state.get("T_ais", []))
+
+if not nec_ok:
+    st.info(tr("bn_need_nec"))
+    st.stop()
+
+if (T_fix_1 is None) or (T_ais_1 is None):
+    st.info(tr("bn_need_periods"))
+    st.stop()
+
+# -------------------------------------------------------------------------
+# Datos NEC guardados
+# -------------------------------------------------------------------------
+T_spec_nec = np.asarray(st.session_state["rs_T_spec"], dtype=float).ravel()
+Sa_nec_obj = np.asarray(st.session_state["rs_Sa_design"], dtype=float).ravel()
+Ie_nec = float(st.session_state.get("rs_Ie", 1.0))
+
+# -------------------------------------------------------------------------
+# Controles generales de escalado
+# -------------------------------------------------------------------------
+with st.container(border=True):
+    cA, cB = st.columns(2)
+
+    with cA:
+        regla_fix = st.selectbox(
+            tr("bn_rule_choice"),
+            [tr("bn_rule_fix"), tr("bn_rule_ais")],
+            index=0,
+            key="bn_rule_fix_choice",
+            help=tr("bn_rule_help")
+        )
+
+    with cB:
+        criterio = st.selectbox(
+            tr("bn_factor_mode"),
+            [tr("bn_factor_mode_090"), tr("bn_factor_mode_100")],
+            index=0,
+            key="bn_factor_choice",
+            help=tr("bn_factor_help")
+        )
+
+threshold = 0.90 if criterio == tr("bn_factor_mode_090") else 1.00
+
+# -------------------------------------------------------------------------
+# Layout principal
+# -------------------------------------------------------------------------
+col_left, col_right = st.columns([1.05, 1.95], gap="large")
+
+nombre = None
+unidad = None
+dt = None
+t_ag = None
+ag_orig = None
+vel_orig = None
+disp_orig = None
+ag_proc = None
+vel_proc = None
+disp_proc = None
+ag_base = None
+proc_disponible = False
+
+# =============================================================================
+# IZQUIERDA: CARGA DEL REGISTRO
+# =============================================================================
+with col_left:
+    with st.container(border=True):
+        st.markdown(f"### 〰️ {tr('bn_rec_load')}")
+        st.caption(tr("bn_peer_note"))
+
+        uploaded = st.file_uploader(
+            tr("bn_file"),
+            type=["at2"],
+            help=tr("bn_file_help"),
+            key="bn_at2_file"
+        )
+
+        aplicar_proc = st.checkbox(
+            tr("bn_proc"),
+            value=True,
+            help=tr("h_bn_proc"),
+            key="bn_proc_check"
+        )
+
+        if uploaded is None:
+            st.info(tr("bn_no_file"))
+
+# =============================================================================
+# PROCESAMIENTO
+# =============================================================================
+if uploaded is not None:
+    if not uploaded.name.lower().endswith(".at2"):
+        st.error(tr("bn_only_at2"))
+        st.stop()
+
+    try:
+        raw = uploaded.read()
+        texto = leer_archivo_bytes_a_texto(raw)
+
+        nombre, unidad, dt, ag = detectar_formato_y_extraer(texto)
+        ag = np.asarray(ag, dtype=float).ravel()
+        dt = float(dt)
+
+        if unidad == "cm/s²":
+            ag_orig = ag / 100.0
+        elif unidad == "g":
+            ag_orig = ag * G_STD
+        elif unidad == "m/s²":
+            ag_orig = ag
+        else:
+            st.error(f"Unidad no reconocida: {unidad}")
+            st.stop()
+
+    except Exception as e:
+        st.error(f"Error al leer el archivo AT2: {e}")
+        st.stop()
+
+    out = procesar_registro(ag_orig, dt, aplicar_proc=aplicar_proc)
+
+    t_ag = np.asarray(out["t"], dtype=float).ravel()
+    vel_orig = np.asarray(out["vel_orig"], dtype=float).ravel()
+    disp_orig = np.asarray(out["disp_orig"], dtype=float).ravel()
+    ag_proc = out["ag_proc"]
+    vel_proc = out["vel_proc"]
+    disp_proc = out["disp_proc"]
+    ag_base = np.asarray(out["ag_base"], dtype=float).ravel()
+
+    if ag_proc is not None:
+        ag_proc = np.asarray(ag_proc, dtype=float).ravel()
+    if vel_proc is not None:
+        vel_proc = np.asarray(vel_proc, dtype=float).ravel()
+    if disp_proc is not None:
+        disp_proc = np.asarray(disp_proc, dtype=float).ravel()
+
+    proc_disponible = bool(
+        aplicar_proc and
+        (ag_proc is not None) and
+        (vel_proc is not None) and
+        (disp_proc is not None)
+    )
+
+    ag_final = np.asarray(ag_base, dtype=float).ravel()
+
+    out_final = procesar_registro(ag_final, float(dt), aplicar_proc=False)
+    vel_final = np.asarray(out_final["vel_orig"], dtype=float).ravel()
+    disp_final = np.asarray(out_final["disp_orig"], dtype=float).ravel()
+
+    # ---------------------------------------------------------------------
+    # Guardado en session_state
+    # ---------------------------------------------------------------------
+    st.session_state["rs_ready"] = True
+    st.session_state["rs_nombre"] = str(nombre)
+    st.session_state["rs_dt"] = float(dt)
+    st.session_state["rs_t"] = np.asarray(t_ag, dtype=float).ravel()
+
+    st.session_state["rs_ag_orig"] = np.asarray(ag_orig, dtype=float).ravel()
+    st.session_state["rs_vel_orig"] = np.asarray(vel_orig, dtype=float).ravel()
+    st.session_state["rs_disp_orig"] = np.asarray(disp_orig, dtype=float).ravel()
+
+    st.session_state["rs_ag_base"] = np.asarray(ag_base, dtype=float).ravel()
+
+    st.session_state["rs_ag_proc"] = np.asarray(ag_proc, dtype=float).ravel() if proc_disponible else None
+    st.session_state["rs_vel_proc"] = np.asarray(vel_proc, dtype=float).ravel() if proc_disponible else None
+    st.session_state["rs_disp_proc"] = np.asarray(disp_proc, dtype=float).ravel() if proc_disponible else None
+    st.session_state["rs_proc_on"] = bool(proc_disponible)
+
+    st.session_state["ag_filt"] = np.asarray(ag_final, dtype=float).ravel()
+    st.session_state["dt"] = float(dt)
+    st.session_state["t_ag"] = np.asarray(t_ag, dtype=float).ravel()
+
+    st.session_state["rs_ag_final"] = np.asarray(ag_final, dtype=float).ravel()
+    st.session_state["rs_vel_final"] = np.asarray(vel_final, dtype=float).ravel()
+    st.session_state["rs_disp_final"] = np.asarray(disp_final, dtype=float).ravel()
+
+    # ---------------------------------------------------------------------
+    # ESPECTRO DEL REGISTRO
+    # ---------------------------------------------------------------------
+    T_eval = np.asarray(T_spec_nec, dtype=float).ravel()
+    Sa_reg = _sdof_response_spectrum_newmark(ag_final, dt, T_eval, zeta=0.05)
+
+    # Bandas
+    if regla_fix == tr("bn_rule_fix"):
+        Tfix_lo = 0.8 * T_fix_1
+        Tfix_hi = 1.2 * T_fix_1
+    else:
+        Tfix_lo = 0.75 * T_fix_1
+        Tfix_hi = 1.25 * T_fix_1
+
+    Tais_lo = 0.75 * T_ais_1
+    Tais_hi = 1.25 * T_ais_1
+
+    band_fix_mask = (T_eval >= Tfix_lo) & (T_eval <= Tfix_hi)
+    band_ais_mask = (T_eval >= Tais_lo) & (T_eval <= Tais_hi)
+
+    if not np.any(band_fix_mask):
+        band_fix_mask = (T_eval >= max(T_eval[0], Tfix_lo - 0.05)) & (T_eval <= min(T_eval[-1], Tfix_hi + 0.05))
+    if not np.any(band_ais_mask):
+        band_ais_mask = (T_eval >= max(T_eval[0], Tais_lo - 0.05)) & (T_eval <= min(T_eval[-1], Tais_hi + 0.05))
+
+    T_band_fix = T_eval[band_fix_mask]
+    T_band_ais = T_eval[band_ais_mask]
+
+    Sa_band_fix = Sa_reg[band_fix_mask]
+    Sa_band_ais = Sa_reg[band_ais_mask]
+
+    Sa_target_fix = Sa_nec_obj[band_fix_mask]
+    Sa_target_ais = Sa_nec_obj[band_ais_mask]
+
+    sf_fix = _compute_scale_factor(T_band_fix, Sa_band_fix, Sa_target_fix, threshold=threshold)
+    sf_ais = _compute_scale_factor(T_band_ais, Sa_band_ais, Sa_target_ais, threshold=threshold)
+
+    Sa_fix_scaled = sf_fix * Sa_reg
+    Sa_ais_scaled = sf_ais * Sa_reg
+
+    ok_fix = _band_check(T_band_fix, sf_fix * Sa_band_fix, Sa_target_fix, threshold=threshold)
+    ok_ais = _band_check(T_band_ais, sf_ais * Sa_band_ais, Sa_target_ais, threshold=threshold)
+
+    st.session_state["bn_sf_fix"] = float(sf_fix)
+    st.session_state["bn_sf_ais"] = float(sf_ais)
+    st.session_state["bn_Sa_reg"] = np.asarray(Sa_reg, dtype=float).ravel()
+    st.session_state["bn_Sa_fix_scaled"] = np.asarray(Sa_fix_scaled, dtype=float).ravel()
+    st.session_state["bn_Sa_ais_scaled"] = np.asarray(Sa_ais_scaled, dtype=float).ravel()
+    st.session_state["bn_T_eval"] = np.asarray(T_eval, dtype=float).ravel()
+
+    # =============================================================================
+    # DERECHA: GRÁFICAS
+    # =============================================================================
+    with col_right:
+        # ---------------------------------------------------------------------
+        # 1) Registro
+        # ---------------------------------------------------------------------
+        with st.container(border=True):
+            cinfo, cplot = st.columns([1.0, 2.2], gap="large")
+
+            with cinfo:
+                st.markdown(f"**{tr('bn_event')}:** {nombre}")
+                st.markdown(f"**{tr('bn_units_in')}:** {unidad}")
+                st.markdown(f"**{tr('bn_dt')}:** {dt:.4f} s")
+                st.markdown(f"**{tr('bn_dur')}:** {t_ag[-1]:.2f} s")
+                st.markdown(f"**{tr('bn_npts')}:** {len(ag_orig)}")
+
+            with cplot:
+                COLOR_ORIG = "#9DBEF7"
+                COLOR_PROC = "#FFD479"
+
+                fig, axs = plt.subplots(3, 1, figsize=(9, 10.8), sharex=True)
+                fig.patch.set_facecolor(BG)
+
+                for ax in axs:
+                    ax.set_facecolor(BG)
+                    ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
+                    ax.tick_params(colors=COLOR_TEXT)
+                    for s in ("top", "right"):
+                        ax.spines[s].set_visible(False)
+
+                axs[0].plot(
+                    t_ag, ag_orig,
+                    lw=(0.28 if proc_disponible else 0.6),
+                    color=COLOR_ORIG,
+                    label=tr("bn_orig")
+                )
+                if proc_disponible:
+                    axs[0].plot(t_ag, ag_proc, lw=0.35, color=COLOR_PROC, label=tr("bn_proc_lab"))
+                axs[0].set_ylabel(tr("bn_acc"), color=COLOR_TEXT)
+                axs[0].set_title(tr("bn_reg_title").format(name=nombre), color=COLOR_TEXT)
+
+                axs[1].plot(
+                    t_ag, vel_orig,
+                    lw=(0.28 if proc_disponible else 0.6),
+                    color=COLOR_ORIG
+                )
+                if proc_disponible:
+                    axs[1].plot(t_ag, vel_proc, lw=0.35, color=COLOR_PROC)
+                axs[1].set_ylabel(tr("bn_vel"), color=COLOR_TEXT)
+
+                axs[2].plot(
+                    t_ag, disp_orig,
+                    lw=(0.28 if proc_disponible else 0.6),
+                    color=COLOR_ORIG
+                )
+                if proc_disponible:
+                    axs[2].plot(t_ag, disp_proc, lw=0.35, color=COLOR_PROC)
+                axs[2].set_ylabel(tr("bn_disp"), color=COLOR_TEXT)
+                axs[2].set_xlabel(tr("bn_time"), color=COLOR_TEXT)
+
+                if proc_disponible:
+                    leg0 = axs[0].legend(framealpha=0.85)
+                    leg0.get_frame().set_facecolor(BG)
+                    leg0.get_frame().set_edgecolor(COLOR_GRID)
+                    for tt in leg0.get_texts():
+                        tt.set_color(COLOR_TEXT)
+
+                st.pyplot(fig, use_container_width=True)
+
+        # ---------------------------------------------------------------------
+        # 2) Espectro y escalados
+        # ---------------------------------------------------------------------
+        with st.container(border=True):
+            st.markdown(f"### 📈 {tr('bn_spec_title')}")
+
+            csum1, csum2 = st.columns(2)
+
+            with csum1:
+                st.markdown(f"**{tr('bn_fix_hdr')}**")
+                st.markdown(f"- T1 = **{T_fix_1:.4f} s**")
+                st.markdown(f"- {tr('bn_range_lo')}: **{Tfix_lo:.4f} s**")
+                st.markdown(f"- {tr('bn_range_hi')}: **{Tfix_hi:.4f} s**")
+                st.markdown(f"- {tr('bn_factor')}: **{sf_fix:.4f}**")
+                st.markdown(f"- {tr('bn_ok')}: **{tr('bn_yes') if ok_fix else tr('bn_no')}**")
+
+            with csum2:
+                st.markdown(f"**{tr('bn_ais_hdr')}**")
+                st.markdown(f"- T1 = **{T_ais_1:.4f} s**")
+                st.markdown(f"- {tr('bn_range_lo')}: **{Tais_lo:.4f} s**")
+                st.markdown(f"- {tr('bn_range_hi')}: **{Tais_hi:.4f} s**")
+                st.markdown(f"- {tr('bn_factor')}: **{sf_ais:.4f}**")
+                st.markdown(f"- {tr('bn_ok')}: **{tr('bn_yes') if ok_ais else tr('bn_no')}**")
+
+            fig2, ax = plt.subplots(figsize=(9.5, 5.8))
+            fig2.patch.set_facecolor(BG)
+            ax.set_facecolor(BG)
+
+            ax.plot(T_eval, Sa_nec_obj, lw=1.4, label=tr("bn_nec_target"))
+            ax.plot(T_eval, Sa_fix_scaled, lw=1.0, label=tr("bn_fix_scaled"))
+            ax.plot(T_eval, Sa_ais_scaled, lw=1.0, label=tr("bn_ais_scaled"))
+
+            ax.axvspan(Tfix_lo, Tfix_hi, alpha=0.12)
+            ax.axvspan(Tais_lo, Tais_hi, alpha=0.10)
+
+            ax.axvline(T_fix_1, lw=1.0, linestyle="--")
+            ax.axvline(T_ais_1, lw=1.0, linestyle="--")
+
+            # Línea de umbral visual
+            ax.plot(T_eval, threshold * Sa_nec_obj, lw=0.9, linestyle=":", alpha=0.9)
+
+            ytxt = max(
+                np.max(Sa_nec_obj),
+                np.max(Sa_fix_scaled),
+                np.max(Sa_ais_scaled)
+            ) * 0.96
+
+            ax.text(T_fix_1, ytxt, "T fija", rotation=90, va="top", ha="right", color=COLOR_TEXT)
+            ax.text(T_ais_1, ytxt, "T aislada", rotation=90, va="top", ha="left", color=COLOR_TEXT)
+
+            ax.set_xlabel(tr("bn_spec_period"), color=COLOR_TEXT)
+            ax.set_ylabel(tr("bn_spec_sa"), color=COLOR_TEXT)
+            ax.tick_params(colors=COLOR_TEXT)
+            ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
+
+            leg = ax.legend(framealpha=0.95)
+            leg.get_frame().set_facecolor(BG)
+            leg.get_frame().set_edgecolor(COLOR_GRID)
+            for t in leg.get_texts():
+                t.set_color(COLOR_TEXT)
+
+            st.pyplot(fig2, use_container_width=True)
+
+# =============================================================================
+# DESCARGA DEL REGISTRO
+# =============================================================================
+rs_ready = bool(st.session_state.get("rs_ready", False))
+
+if rs_ready and ("rs_t" in st.session_state):
+    with col_left:
+        with st.container(border=True):
+            st.caption(f"📥 **{tr('bn_dl_hdr')}**")
+
+            opts = [tr("bn_dl_opt_orig")]
+            if bool(st.session_state.get("rs_proc_on", False)):
+                opts.append(tr("bn_dl_opt_proc"))
+            opts.append(tr("bn_dl_opt_final"))
+
+            pick = st.selectbox(
+                tr("bn_dl_pick"),
+                options=opts,
+                index=(len(opts) - 1),
+                key="bn_dl_pick_opt",
+                help=tr("h_bn_dl_pick"),
+                label_visibility="collapsed",
+            )
+
+            t_exp = np.asarray(st.session_state["rs_t"], dtype=float).ravel()
+
+            if pick == tr("bn_dl_opt_orig"):
+                a_exp = np.asarray(st.session_state["rs_ag_orig"], dtype=float).ravel()
+                v_exp = np.asarray(st.session_state["rs_vel_orig"], dtype=float).ravel()
+                u_exp = np.asarray(st.session_state["rs_disp_orig"], dtype=float).ravel()
+                tag = "orig"
+
+            elif pick == tr("bn_dl_opt_proc") and bool(st.session_state.get("rs_proc_on", False)):
+                a_exp = np.asarray(st.session_state["rs_ag_proc"], dtype=float).ravel()
+                v_exp = np.asarray(st.session_state["rs_vel_proc"], dtype=float).ravel()
+                u_exp = np.asarray(st.session_state["rs_disp_proc"], dtype=float).ravel()
+                tag = "proc"
+
+            else:
+                a_exp = np.asarray(st.session_state["rs_ag_final"], dtype=float).ravel()
+                v_exp = np.asarray(st.session_state["rs_vel_final"], dtype=float).ravel()
+                u_exp = np.asarray(st.session_state["rs_disp_final"], dtype=float).ravel()
+                tag = "final"
+
+            xlsx_bytes = _build_record_excel_bytes(t_exp, a_exp, v_exp, u_exp)
+
+            safe_name = "".join([
+                c if (c.isalnum() or c in ("_", "-", ".")) else "_"
+                for c in str(st.session_state.get("rs_nombre", "registro"))
+            ])
+            file_name = f"registro_{safe_name}_{tag}.xlsx"
+
+            st.download_button(
+                label=tr("bn_dl_btn"),
+                data=xlsx_bytes,
+                file_name=file_name,
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key="bn_dl_btn_xlsx",
+                use_container_width=True,
+            )
 
 # =============================================================================
 # === BLOQUE 6: ANÁLISIS DINÁMICO (NEWMARK-β) SIMÉTRICO =======================
