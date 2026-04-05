@@ -2662,6 +2662,7 @@ T["en"].update({
     "bn_title": "Seismic record and spectral scaling",
     "bn_need_nec": "First generate the NEC-24 spectrum in Block 3.",
     "bn_need_periods": "Missing structural periods. Run the modal analysis blocks first.",
+
     "bn_rec_load": "AT2 seismic record (PEER)",
     "bn_file": "Select a PEER .at2 file",
     "bn_file_help": "Only .at2 files already prepared by PEER are allowed in this workflow.",
@@ -2676,6 +2677,7 @@ T["en"].update({
     "bn_dur": "Total duration",
     "bn_npts": "Number of points",
     "bn_units_in": "Input units",
+
     "bn_reg_title": "Seismic record – {name}",
     "bn_acc": "Acceleration [m/s²]",
     "bn_vel": "Velocity [m/s]",
@@ -2690,6 +2692,7 @@ T["en"].update({
     "bn_nec_target": "NEC target",
     "bn_fix_scaled": "Scaled spectrum – fixed",
     "bn_ais_scaled": "Scaled spectrum – isolated",
+    "bn_thr_90": "90% NEC threshold",
 
     "bn_fix_hdr": "Fixed structure",
     "bn_ais_hdr": "Base-isolated structure",
@@ -2699,15 +2702,9 @@ T["en"].update({
     "bn_ok": "Complies",
     "bn_no": "No",
     "bn_yes": "Yes",
-
-    "bn_rule_choice": "Scaling rule",
-    "bn_rule_fix": "Fixed-base NEC range (0.8T1 to 1.2T1)",
-    "bn_rule_ais": "Isolation range (0.75T to 1.25T)",
-    "bn_rule_help": "For fixed structure: practical single-period NEC band. For isolated structure: isolation band shown in the code excerpt.",
-    "bn_factor_mode": "Scale factor criterion",
-    "bn_factor_mode_100": "Match 100% of NEC target",
-    "bn_factor_mode_090": "Match 90% of NEC target",
-    "bn_factor_help": "90% is often used as minimum threshold in spectral matching checks; 100% is more conservative.",
+    "bn_target": "Target",
+    "bn_band_rule_fix": "Band: 0.8T1 to 1.2T1",
+    "bn_band_rule_ais": "Band: 0.75T to 1.25T",
 
     "bn_dl_hdr": "Download record (Excel)",
     "bn_dl_pick": "Choose data to export",
@@ -2722,6 +2719,7 @@ T["es"].update({
     "bn_title": "Registro sísmico y escalado espectral",
     "bn_need_nec": "⚙️ Primero genera el espectro NEC-24 en el Bloque 3.",
     "bn_need_periods": "⚙️ Faltan los períodos estructurales. Ejecuta primero los bloques modales.",
+
     "bn_rec_load": "Registro sísmico AT2 (PEER)",
     "bn_file": "📁 Selecciona un archivo PEER .at2",
     "bn_file_help": "En este flujo solo se aceptan archivos .at2 ya preparados por PEER.",
@@ -2736,6 +2734,7 @@ T["es"].update({
     "bn_dur": "Duración total",
     "bn_npts": "Número de puntos",
     "bn_units_in": "Unidades de entrada",
+
     "bn_reg_title": "Registro sísmico – {name}",
     "bn_acc": "Aceleración [m/s²]",
     "bn_vel": "Velocidad [m/s]",
@@ -2750,6 +2749,7 @@ T["es"].update({
     "bn_nec_target": "Objetivo NEC",
     "bn_fix_scaled": "Espectro escalado – fija",
     "bn_ais_scaled": "Espectro escalado – aislada",
+    "bn_thr_90": "Umbral 90% NEC",
 
     "bn_fix_hdr": "Estructura fija",
     "bn_ais_hdr": "Estructura aislada",
@@ -2759,15 +2759,9 @@ T["es"].update({
     "bn_ok": "Cumple",
     "bn_no": "No",
     "bn_yes": "Sí",
-
-    "bn_rule_choice": "Regla de escalado",
-    "bn_rule_fix": "Rango NEC estructura fija (0.8T1 a 1.2T1)",
-    "bn_rule_ais": "Rango de aislamiento (0.75T a 1.25T)",
-    "bn_rule_help": "Para estructura fija: banda práctica alrededor de T1. Para aislada: rango mostrado en el extracto normativo.",
-    "bn_factor_mode": "Criterio del factor de escala",
-    "bn_factor_mode_100": "Igualar 100% del objetivo NEC",
-    "bn_factor_mode_090": "Igualar 90% del objetivo NEC",
-    "bn_factor_help": "El 90% suele usarse como umbral mínimo en verificaciones de spectral matching; 100% es más conservador.",
+    "bn_target": "Objetivo",
+    "bn_band_rule_fix": "Rango: 0.8T1 a 1.2T1",
+    "bn_band_rule_ais": "Rango: 0.75T a 1.25T",
 
     "bn_dl_hdr": "Descargar registro (Excel)",
     "bn_dl_pick": "Elegir datos a exportar",
@@ -2786,16 +2780,10 @@ def _safe_first_period(x):
     x = x[np.isfinite(x) & (x > 0)]
     return float(x[0]) if len(x) else None
 
-def _interp_1d(x_new, x, y):
-    x = np.asarray(x, dtype=float).ravel()
-    y = np.asarray(y, dtype=float).ravel()
-    x_new = np.asarray(x_new, dtype=float).ravel()
-    return np.interp(x_new, x, y, left=y[0], right=y[-1])
-
 def _sdof_response_spectrum_newmark(ag_mps2, dt, T_array, zeta=0.05):
     """
-    Espectro de pseudoaceleración Sa [g] para un registro de aceleración base.
-    Método: Newmark promedio constante (γ=0.5, β=0.25)
+    Espectro de pseudoaceleración Sa [g] para aceleración base.
+    Método de Newmark promedio constante (γ=0.5, β=0.25).
     """
     ag = np.asarray(ag_mps2, dtype=float).ravel()
     T_array = np.asarray(T_array, dtype=float).ravel()
@@ -2807,7 +2795,7 @@ def _sdof_response_spectrum_newmark(ag_mps2, dt, T_array, zeta=0.05):
     Sa_g = np.zeros_like(T_array, dtype=float)
 
     for i, Tn in enumerate(T_array):
-        if Tn <= 1e-8:
+        if Tn <= 1e-10:
             Sa_g[i] = np.max(np.abs(ag)) / G_STD
             continue
 
@@ -2827,7 +2815,6 @@ def _sdof_response_spectrum_newmark(ag_mps2, dt, T_array, zeta=0.05):
         u = 0.0
         v = 0.0
         acc_rel = -ag[0]
-
         umax = 0.0
 
         for j in range(1, len(ag)):
@@ -2846,26 +2833,24 @@ def _sdof_response_spectrum_newmark(ag_mps2, dt, T_array, zeta=0.05):
             u = u_new
             v = v_new
             acc_rel = acc_new
-
             umax = max(umax, abs(u))
 
-        psa = wn**2 * umax
-        Sa_g[i] = psa / G_STD
+        Sa_g[i] = (wn**2 * umax) / G_STD
 
     return Sa_g
 
-def _compute_scale_factor(T_band, Sa_record, Sa_target, threshold=1.0):
+def _compute_scale_factor(Sa_record, Sa_target, threshold=0.90):
     """
     Devuelve el menor factor tal que:
     factor * Sa_record >= threshold * Sa_target
-    en todo el rango de T_band.
+    en todo el rango evaluado.
     """
     eps = 1e-12
-    ratio = threshold * np.asarray(Sa_target) / np.maximum(np.asarray(Sa_record), eps)
+    ratio = threshold * np.asarray(Sa_target, dtype=float) / np.maximum(np.asarray(Sa_record, dtype=float), eps)
     return float(np.max(ratio))
 
-def _band_check(T_band, Sa_scaled, Sa_target, threshold=1.0):
-    return bool(np.all(np.asarray(Sa_scaled) >= threshold * np.asarray(Sa_target)))
+def _band_check(Sa_scaled, Sa_target, threshold=0.90):
+    return bool(np.all(np.asarray(Sa_scaled, dtype=float) >= threshold * np.asarray(Sa_target, dtype=float)))
 
 def _build_record_excel_bytes(t_exp, a_exp, v_exp, u_exp):
     df_xlsx = pd.DataFrame({
@@ -2914,36 +2899,19 @@ T_spec_nec = np.asarray(st.session_state["rs_T_spec"], dtype=float).ravel()
 Sa_nec_obj = np.asarray(st.session_state["rs_Sa_design"], dtype=float).ravel()
 Ie_nec = float(st.session_state.get("rs_Ie", 1.0))
 
-# -------------------------------------------------------------------------
-# Controles generales de escalado
-# -------------------------------------------------------------------------
-with st.container(border=True):
-    cA, cB = st.columns(2)
+# Criterio fijo NEC para este bloque
+THRESHOLD_NEC = 0.90
 
-    with cA:
-        regla_fix = st.selectbox(
-            tr("bn_rule_choice"),
-            [tr("bn_rule_fix"), tr("bn_rule_ais")],
-            index=0,
-            key="bn_rule_fix_choice",
-            help=tr("bn_rule_help")
-        )
-
-    with cB:
-        criterio = st.selectbox(
-            tr("bn_factor_mode"),
-            [tr("bn_factor_mode_090"), tr("bn_factor_mode_100")],
-            index=0,
-            key="bn_factor_choice",
-            help=tr("bn_factor_help")
-        )
-
-threshold = 0.90 if criterio == tr("bn_factor_mode_090") else 1.00
+# Bandas fijas del bloque
+Tfix_lo = 0.80 * T_fix_1
+Tfix_hi = 1.20 * T_fix_1
+Tais_lo = 0.75 * T_ais_1
+Tais_hi = 1.25 * T_ais_1
 
 # -------------------------------------------------------------------------
 # Layout principal
 # -------------------------------------------------------------------------
-col_left, col_right = st.columns([1.05, 1.95], gap="large")
+col_left, col_right = st.columns([1.00, 2.00], gap="large")
 
 nombre = None
 unidad = None
@@ -2959,7 +2927,7 @@ ag_base = None
 proc_disponible = False
 
 # =============================================================================
-# IZQUIERDA: CARGA DEL REGISTRO
+# IZQUIERDA: CARGA + DATOS + CHEQUEOS + DESCARGA
 # =============================================================================
 with col_left:
     with st.container(border=True):
@@ -3076,17 +3044,6 @@ if uploaded is not None:
     T_eval = np.asarray(T_spec_nec, dtype=float).ravel()
     Sa_reg = _sdof_response_spectrum_newmark(ag_final, dt, T_eval, zeta=0.05)
 
-    # Bandas
-    if regla_fix == tr("bn_rule_fix"):
-        Tfix_lo = 0.8 * T_fix_1
-        Tfix_hi = 1.2 * T_fix_1
-    else:
-        Tfix_lo = 0.75 * T_fix_1
-        Tfix_hi = 1.25 * T_fix_1
-
-    Tais_lo = 0.75 * T_ais_1
-    Tais_hi = 1.25 * T_ais_1
-
     band_fix_mask = (T_eval >= Tfix_lo) & (T_eval <= Tfix_hi)
     band_ais_mask = (T_eval >= Tais_lo) & (T_eval <= Tais_hi)
 
@@ -3104,14 +3061,14 @@ if uploaded is not None:
     Sa_target_fix = Sa_nec_obj[band_fix_mask]
     Sa_target_ais = Sa_nec_obj[band_ais_mask]
 
-    sf_fix = _compute_scale_factor(T_band_fix, Sa_band_fix, Sa_target_fix, threshold=threshold)
-    sf_ais = _compute_scale_factor(T_band_ais, Sa_band_ais, Sa_target_ais, threshold=threshold)
+    sf_fix = _compute_scale_factor(Sa_band_fix, Sa_target_fix, threshold=THRESHOLD_NEC)
+    sf_ais = _compute_scale_factor(Sa_band_ais, Sa_target_ais, threshold=THRESHOLD_NEC)
 
     Sa_fix_scaled = sf_fix * Sa_reg
     Sa_ais_scaled = sf_ais * Sa_reg
 
-    ok_fix = _band_check(T_band_fix, sf_fix * Sa_band_fix, Sa_target_fix, threshold=threshold)
-    ok_ais = _band_check(T_band_ais, sf_ais * Sa_band_ais, Sa_target_ais, threshold=threshold)
+    ok_fix = _band_check(sf_fix * Sa_band_fix, Sa_target_fix, threshold=THRESHOLD_NEC)
+    ok_ais = _band_check(sf_ais * Sa_band_ais, Sa_target_ais, threshold=THRESHOLD_NEC)
 
     st.session_state["bn_sf_fix"] = float(sf_fix)
     st.session_state["bn_sf_ais"] = float(sf_ais)
@@ -3120,149 +3077,38 @@ if uploaded is not None:
     st.session_state["bn_Sa_ais_scaled"] = np.asarray(Sa_ais_scaled, dtype=float).ravel()
     st.session_state["bn_T_eval"] = np.asarray(T_eval, dtype=float).ravel()
 
-    # =============================================================================
-    # DERECHA: GRÁFICAS
-    # =============================================================================
-    with col_right:
-        # ---------------------------------------------------------------------
-        # 1) Registro
-        # ---------------------------------------------------------------------
-        with st.container(border=True):
-            cinfo, cplot = st.columns([1.0, 2.2], gap="large")
-
-            with cinfo:
-                st.markdown(f"**{tr('bn_event')}:** {nombre}")
-                st.markdown(f"**{tr('bn_units_in')}:** {unidad}")
-                st.markdown(f"**{tr('bn_dt')}:** {dt:.4f} s")
-                st.markdown(f"**{tr('bn_dur')}:** {t_ag[-1]:.2f} s")
-                st.markdown(f"**{tr('bn_npts')}:** {len(ag_orig)}")
-
-            with cplot:
-                COLOR_ORIG = "#9DBEF7"
-                COLOR_PROC = "#FFD479"
-
-                fig, axs = plt.subplots(3, 1, figsize=(9, 10.8), sharex=True)
-                fig.patch.set_facecolor(BG)
-
-                for ax in axs:
-                    ax.set_facecolor(BG)
-                    ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
-                    ax.tick_params(colors=COLOR_TEXT)
-                    for s in ("top", "right"):
-                        ax.spines[s].set_visible(False)
-
-                axs[0].plot(
-                    t_ag, ag_orig,
-                    lw=(0.28 if proc_disponible else 0.6),
-                    color=COLOR_ORIG,
-                    label=tr("bn_orig")
-                )
-                if proc_disponible:
-                    axs[0].plot(t_ag, ag_proc, lw=0.35, color=COLOR_PROC, label=tr("bn_proc_lab"))
-                axs[0].set_ylabel(tr("bn_acc"), color=COLOR_TEXT)
-                axs[0].set_title(tr("bn_reg_title").format(name=nombre), color=COLOR_TEXT)
-
-                axs[1].plot(
-                    t_ag, vel_orig,
-                    lw=(0.28 if proc_disponible else 0.6),
-                    color=COLOR_ORIG
-                )
-                if proc_disponible:
-                    axs[1].plot(t_ag, vel_proc, lw=0.35, color=COLOR_PROC)
-                axs[1].set_ylabel(tr("bn_vel"), color=COLOR_TEXT)
-
-                axs[2].plot(
-                    t_ag, disp_orig,
-                    lw=(0.28 if proc_disponible else 0.6),
-                    color=COLOR_ORIG
-                )
-                if proc_disponible:
-                    axs[2].plot(t_ag, disp_proc, lw=0.35, color=COLOR_PROC)
-                axs[2].set_ylabel(tr("bn_disp"), color=COLOR_TEXT)
-                axs[2].set_xlabel(tr("bn_time"), color=COLOR_TEXT)
-
-                if proc_disponible:
-                    leg0 = axs[0].legend(framealpha=0.85)
-                    leg0.get_frame().set_facecolor(BG)
-                    leg0.get_frame().set_edgecolor(COLOR_GRID)
-                    for tt in leg0.get_texts():
-                        tt.set_color(COLOR_TEXT)
-
-                st.pyplot(fig, use_container_width=True)
-
-        # ---------------------------------------------------------------------
-        # 2) Espectro y escalados
-        # ---------------------------------------------------------------------
-        with st.container(border=True):
-            st.markdown(f"### 📈 {tr('bn_spec_title')}")
-
-            csum1, csum2 = st.columns(2)
-
-            with csum1:
-                st.markdown(f"**{tr('bn_fix_hdr')}**")
-                st.markdown(f"- T1 = **{T_fix_1:.4f} s**")
-                st.markdown(f"- {tr('bn_range_lo')}: **{Tfix_lo:.4f} s**")
-                st.markdown(f"- {tr('bn_range_hi')}: **{Tfix_hi:.4f} s**")
-                st.markdown(f"- {tr('bn_factor')}: **{sf_fix:.4f}**")
-                st.markdown(f"- {tr('bn_ok')}: **{tr('bn_yes') if ok_fix else tr('bn_no')}**")
-
-            with csum2:
-                st.markdown(f"**{tr('bn_ais_hdr')}**")
-                st.markdown(f"- T1 = **{T_ais_1:.4f} s**")
-                st.markdown(f"- {tr('bn_range_lo')}: **{Tais_lo:.4f} s**")
-                st.markdown(f"- {tr('bn_range_hi')}: **{Tais_hi:.4f} s**")
-                st.markdown(f"- {tr('bn_factor')}: **{sf_ais:.4f}**")
-                st.markdown(f"- {tr('bn_ok')}: **{tr('bn_yes') if ok_ais else tr('bn_no')}**")
-
-            fig2, ax = plt.subplots(figsize=(9.5, 5.8))
-            fig2.patch.set_facecolor(BG)
-            ax.set_facecolor(BG)
-
-            ax.plot(T_eval, Sa_nec_obj, lw=1.4, label=tr("bn_nec_target"))
-            ax.plot(T_eval, Sa_fix_scaled, lw=1.0, label=tr("bn_fix_scaled"))
-            ax.plot(T_eval, Sa_ais_scaled, lw=1.0, label=tr("bn_ais_scaled"))
-
-            ax.axvspan(Tfix_lo, Tfix_hi, alpha=0.12)
-            ax.axvspan(Tais_lo, Tais_hi, alpha=0.10)
-
-            ax.axvline(T_fix_1, lw=1.0, linestyle="--")
-            ax.axvline(T_ais_1, lw=1.0, linestyle="--")
-
-            # Línea de umbral visual
-            ax.plot(T_eval, threshold * Sa_nec_obj, lw=0.9, linestyle=":", alpha=0.9)
-
-            ytxt = max(
-                np.max(Sa_nec_obj),
-                np.max(Sa_fix_scaled),
-                np.max(Sa_ais_scaled)
-            ) * 0.96
-
-            ax.text(T_fix_1, ytxt, "T fija", rotation=90, va="top", ha="right", color=COLOR_TEXT)
-            ax.text(T_ais_1, ytxt, "T aislada", rotation=90, va="top", ha="left", color=COLOR_TEXT)
-
-            ax.set_xlabel(tr("bn_spec_period"), color=COLOR_TEXT)
-            ax.set_ylabel(tr("bn_spec_sa"), color=COLOR_TEXT)
-            ax.tick_params(colors=COLOR_TEXT)
-            ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
-            ax.spines["top"].set_visible(False)
-            ax.spines["right"].set_visible(False)
-
-            leg = ax.legend(framealpha=0.95)
-            leg.get_frame().set_facecolor(BG)
-            leg.get_frame().set_edgecolor(COLOR_GRID)
-            for t in leg.get_texts():
-                t.set_color(COLOR_TEXT)
-
-            st.pyplot(fig2, use_container_width=True)
-
-# =============================================================================
-# DESCARGA DEL REGISTRO
-# =============================================================================
-rs_ready = bool(st.session_state.get("rs_ready", False))
-
-if rs_ready and ("rs_t" in st.session_state):
+    # ---------------------------------------------------------------------
+    # IZQUIERDA: DATOS + CHEQUEOS + DESCARGA
+    # ---------------------------------------------------------------------
     with col_left:
         with st.container(border=True):
+            st.markdown(f"**{tr('bn_event')}:** {nombre}")
+            st.markdown(f"**{tr('bn_units_in')}:** {unidad}")
+            st.markdown(f"**{tr('bn_dt')}:** {dt:.4f} s")
+            st.markdown(f"**{tr('bn_dur')}:** {t_ag[-1]:.2f} s")
+            st.markdown(f"**{tr('bn_npts')}:** {len(ag_orig)}")
+
+            st.markdown("---")
+            st.markdown(f"**{tr('bn_fix_hdr')}**")
+            st.markdown(f"- T1 = **{T_fix_1:.4f} s**")
+            st.markdown(f"- {tr('bn_band_rule_fix')}")
+            st.markdown(f"- {tr('bn_range_lo')}: **{Tfix_lo:.4f} s**")
+            st.markdown(f"- {tr('bn_range_hi')}: **{Tfix_hi:.4f} s**")
+            st.markdown(f"- {tr('bn_target')}: **{int(THRESHOLD_NEC*100)}% NEC**")
+            st.markdown(f"- {tr('bn_factor')}: **{sf_fix:.4f}**")
+            st.markdown(f"- {tr('bn_ok')}: **{tr('bn_yes') if ok_fix else tr('bn_no')}**")
+
+            st.markdown("---")
+            st.markdown(f"**{tr('bn_ais_hdr')}**")
+            st.markdown(f"- T1 = **{T_ais_1:.4f} s**")
+            st.markdown(f"- {tr('bn_band_rule_ais')}")
+            st.markdown(f"- {tr('bn_range_lo')}: **{Tais_lo:.4f} s**")
+            st.markdown(f"- {tr('bn_range_hi')}: **{Tais_hi:.4f} s**")
+            st.markdown(f"- {tr('bn_target')}: **{int(THRESHOLD_NEC*100)}% NEC**")
+            st.markdown(f"- {tr('bn_factor')}: **{sf_ais:.4f}**")
+            st.markdown(f"- {tr('bn_ok')}: **{tr('bn_yes') if ok_ais else tr('bn_no')}**")
+
+            st.markdown("---")
             st.caption(f"📥 **{tr('bn_dl_hdr')}**")
 
             opts = [tr("bn_dl_opt_orig")]
@@ -3315,6 +3161,105 @@ if rs_ready and ("rs_t" in st.session_state):
                 key="bn_dl_btn_xlsx",
                 use_container_width=True,
             )
+
+    # ---------------------------------------------------------------------
+    # DERECHA: REGISTROS + ESPECTROS
+    # ---------------------------------------------------------------------
+    with col_right:
+        with st.container(border=True):
+            COLOR_ORIG = "#9DBEF7"
+            COLOR_PROC = "#FFD479"
+
+            fig, axs = plt.subplots(3, 1, figsize=(9, 10.8), sharex=True)
+            fig.patch.set_facecolor(BG)
+
+            for ax in axs:
+                ax.set_facecolor(BG)
+                ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
+                ax.tick_params(colors=COLOR_TEXT)
+                for s in ("top", "right"):
+                    ax.spines[s].set_visible(False)
+
+            axs[0].plot(
+                t_ag, ag_orig,
+                lw=(0.28 if proc_disponible else 0.60),
+                color=COLOR_ORIG,
+                label=tr("bn_orig")
+            )
+            if proc_disponible:
+                axs[0].plot(t_ag, ag_proc, lw=0.35, color=COLOR_PROC, label=tr("bn_proc_lab"))
+            axs[0].set_ylabel(tr("bn_acc"), color=COLOR_TEXT)
+            axs[0].set_title(tr("bn_reg_title").format(name=nombre), color=COLOR_TEXT)
+
+            axs[1].plot(
+                t_ag, vel_orig,
+                lw=(0.28 if proc_disponible else 0.60),
+                color=COLOR_ORIG
+            )
+            if proc_disponible:
+                axs[1].plot(t_ag, vel_proc, lw=0.35, color=COLOR_PROC)
+            axs[1].set_ylabel(tr("bn_vel"), color=COLOR_TEXT)
+
+            axs[2].plot(
+                t_ag, disp_orig,
+                lw=(0.28 if proc_disponible else 0.60),
+                color=COLOR_ORIG
+            )
+            if proc_disponible:
+                axs[2].plot(t_ag, disp_proc, lw=0.35, color=COLOR_PROC)
+            axs[2].set_ylabel(tr("bn_disp"), color=COLOR_TEXT)
+            axs[2].set_xlabel(tr("bn_time"), color=COLOR_TEXT)
+
+            if proc_disponible:
+                leg0 = axs[0].legend(framealpha=0.85)
+                leg0.get_frame().set_facecolor(BG)
+                leg0.get_frame().set_edgecolor(COLOR_GRID)
+                for tt in leg0.get_texts():
+                    tt.set_color(COLOR_TEXT)
+
+            st.pyplot(fig, use_container_width=True)
+
+        with st.container(border=True):
+            st.markdown(f"### 📈 {tr('bn_spec_title')}")
+
+            fig2, ax = plt.subplots(figsize=(9.5, 5.8))
+            fig2.patch.set_facecolor(BG)
+            ax.set_facecolor(BG)
+
+            ax.plot(T_eval, Sa_nec_obj, lw=1.4, label=tr("bn_nec_target"))
+            ax.plot(T_eval, Sa_fix_scaled, lw=1.0, label=tr("bn_fix_scaled"))
+            ax.plot(T_eval, Sa_ais_scaled, lw=1.0, label=tr("bn_ais_scaled"))
+            ax.plot(T_eval, THRESHOLD_NEC * Sa_nec_obj, lw=0.9, linestyle=":", alpha=0.95, label=tr("bn_thr_90"))
+
+            ax.axvspan(Tfix_lo, Tfix_hi, alpha=0.12)
+            ax.axvspan(Tais_lo, Tais_hi, alpha=0.10)
+
+            ax.axvline(T_fix_1, lw=1.0, linestyle="--")
+            ax.axvline(T_ais_1, lw=1.0, linestyle="--")
+
+            ytxt = max(
+                np.max(Sa_nec_obj),
+                np.max(Sa_fix_scaled),
+                np.max(Sa_ais_scaled)
+            ) * 0.96
+
+            ax.text(T_fix_1, ytxt, "T fija", rotation=90, va="top", ha="right", color=COLOR_TEXT)
+            ax.text(T_ais_1, ytxt, "T aislada", rotation=90, va="top", ha="left", color=COLOR_TEXT)
+
+            ax.set_xlabel(tr("bn_spec_period"), color=COLOR_TEXT)
+            ax.set_ylabel(tr("bn_spec_sa"), color=COLOR_TEXT)
+            ax.tick_params(colors=COLOR_TEXT)
+            ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
+
+            leg = ax.legend(framealpha=0.95)
+            leg.get_frame().set_facecolor(BG)
+            leg.get_frame().set_edgecolor(COLOR_GRID)
+            for t in leg.get_texts():
+                t.set_color(COLOR_TEXT)
+
+            st.pyplot(fig2, use_container_width=True)
 
 # =============================================================================
 # === BLOQUE 6: ANÁLISIS DINÁMICO (NEWMARK-β) SIMÉTRICO =======================
