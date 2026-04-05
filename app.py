@@ -4000,11 +4000,6 @@ M_fix = st.session_state.get("M_cond", None)
 a_ais = st.session_state.get("a_t_ais", None)
 M_ais = st.session_state.get("M_cond_ais", st.session_state.get("M_cond_aislador", None))
 
-u_ais = st.session_state.get("u_t_ais", None)
-v_ais = st.session_state.get("v_t_ais", None)
-C_ais = st.session_state.get("C_ais", None)
-K_ais = st.session_state.get("K_cond_ais", None)
-
 falt = []
 if ag is None: falt.append("ag_filt")
 if a_fix is None: falt.append("a_t")
@@ -4025,17 +4020,6 @@ a_ais_rel = np.asarray(a_ais, float)
 if a_ais_rel.ndim == 1:
     a_ais_rel = a_ais_rel[np.newaxis, :]
 
-u_ais = np.asarray(u_ais, float)
-if u_ais.ndim == 1:
-    u_ais = u_ais[np.newaxis, :]
-
-v_ais = np.asarray(v_ais, float)
-if v_ais.ndim == 1:
-    v_ais = v_ais[np.newaxis, :]
-
-C_ais = np.asarray(C_ais, float)
-K_ais = np.asarray(K_ais, float)
-
 # -------------------- FIJA --------------------
 a_abs_fix = a_fix + ag.reshape(1, -1)
 
@@ -4055,19 +4039,21 @@ V_fix_max = np.max(V_fix_all, axis=1)
 V_fix_min = np.min(V_fix_all, axis=1)
 
 # -------------------- AISLADA --------------------
-if (
-    a_ais_rel.shape[0] == n_pisos + 1
-    and u_ais.shape[0] == n_pisos + 1
-    and v_ais.shape[0] == n_pisos + 1
-    and K_ais.shape[0] == n_pisos + 1
-    and C_ais.shape[0] == n_pisos + 1
-):
+if a_ais_rel.shape[0] == n_pisos + 1:
 
-    # fuerza interna equivalente del sistema condensado
-    F_int_ais = K_ais @ u_ais + C_ais @ v_ais
+    # aceleración del sistema aislado
+    a_abs_ais = a_ais_rel
+
+    # masas diagonales del sistema aislado
+    m_diag_ais = np.diag(np.asarray(M_ais, float)).reshape(-1, 1)
 
     # solo superestructura (sin DOF 0 del aislador)
-    F_sup = F_int_ais[1:, :]
+    m_sup = m_diag_ais[1:, :]
+    a_base = a_abs_ais[0:1, :]
+    a_sup = a_abs_ais[1:, :] - a_base
+
+    # fuerzas inerciales por piso
+    F_sup = m_sup * a_sup
 
     # cortantes acumulados por piso
     V_ais_all = _story_from_forces(F_sup)
