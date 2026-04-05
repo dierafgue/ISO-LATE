@@ -2939,21 +2939,14 @@ with col_left:
         with topL:
             st.markdown(f"### 〰️ {tr('bn_rec_load')}")
             st.caption(tr("bn_peer_note"))
-
+        
             uploaded = st.file_uploader(
                 tr("bn_file"),
                 type=["at2"],
                 help=tr("bn_file_help"),
                 key="bn_at2_file"
             )
-
-            aplicar_proc = st.checkbox(
-                tr("bn_proc"),
-                value=True,
-                help=tr("h_bn_proc"),
-                key="bn_proc_check"
-            )
-
+        
             if uploaded is None:
                 st.info(tr("bn_no_file"))
 
@@ -2962,8 +2955,24 @@ with col_left:
         # -----------------------------------------------------------------
         with topR:
             st.markdown(f"### ℹ️ {tr('bn_event')}")
-
+        
+            aplicar_proc = st.checkbox(
+                tr("bn_proc"),
+                value=True,
+                help=tr("h_bn_proc"),
+                key="bn_proc_check"
+            )
+        
             info_placeholder = st.empty()
+        
+            if uploaded is None:
+                with info_placeholder.container():
+                    st.caption(" ")
+                    st.markdown(f"**{tr('bn_event')}:** —")
+                    st.markdown(f"**{tr('bn_units_in')}:** —")
+                    st.markdown(f"**{tr('bn_dt')}:** —")
+                    st.markdown(f"**{tr('bn_dur')}:** —")
+                    st.markdown(f"**{tr('bn_npts')}:** —")
 
 # =============================================================================
 # PROCESAMIENTO
@@ -3241,7 +3250,68 @@ if uploaded is not None:
                 t.set_color(COLOR_TEXT)
 
             st.pyplot(fig2, use_container_width=True)
+# =============================================================================
+# DESCARGA DEL REGISTRO
+# =============================================================================
+rs_ready = bool(st.session_state.get("rs_ready", False))
 
+if rs_ready and ("rs_t" in st.session_state):
+    with col_left:
+        st.write("")
+
+        with st.container(border=True):
+            st.caption(f"📥 **{tr('bn_dl_hdr')}**")
+
+            opts = [tr("bn_dl_opt_orig")]
+            if bool(st.session_state.get("rs_proc_on", False)):
+                opts.append(tr("bn_dl_opt_proc"))
+            opts.append(tr("bn_dl_opt_final"))
+
+            pick = st.selectbox(
+                tr("bn_dl_pick"),
+                options=opts,
+                index=len(opts) - 1,
+                key="bn_dl_pick_opt",
+                help=tr("h_bn_dl_pick"),
+            )
+
+            t_exp = np.asarray(st.session_state["rs_t"], dtype=float).ravel()
+
+            if pick == tr("bn_dl_opt_orig"):
+                a_exp = np.asarray(st.session_state["rs_ag_orig"], dtype=float).ravel()
+                v_exp = np.asarray(st.session_state["rs_vel_orig"], dtype=float).ravel()
+                u_exp = np.asarray(st.session_state["rs_disp_orig"], dtype=float).ravel()
+                tag = "orig"
+
+            elif pick == tr("bn_dl_opt_proc") and bool(st.session_state.get("rs_proc_on", False)):
+                a_exp = np.asarray(st.session_state["rs_ag_proc"], dtype=float).ravel()
+                v_exp = np.asarray(st.session_state["rs_vel_proc"], dtype=float).ravel()
+                u_exp = np.asarray(st.session_state["rs_disp_proc"], dtype=float).ravel()
+                tag = "proc"
+
+            else:
+                a_exp = np.asarray(st.session_state["rs_ag_final"], dtype=float).ravel()
+                v_exp = np.asarray(st.session_state["rs_vel_final"], dtype=float).ravel()
+                u_exp = np.asarray(st.session_state["rs_disp_final"], dtype=float).ravel()
+                tag = "final"
+
+            xlsx_bytes = _build_record_excel_bytes(t_exp, a_exp, v_exp, u_exp)
+
+            safe_name = "".join(
+                c if (c.isalnum() or c in ("_", "-", ".")) else "_"
+                for c in str(st.session_state.get("rs_nombre", "registro"))
+            )
+            file_name = f"registro_{safe_name}_{tag}.xlsx"
+
+            st.download_button(
+                label=tr("bn_dl_btn"),
+                data=xlsx_bytes,
+                file_name=file_name,
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key="bn_dl_btn_xlsx",
+                use_container_width=True,
+            )
+            
 # =============================================================================
 # === BLOQUE 6: ANÁLISIS DINÁMICO (NEWMARK-β) SIMÉTRICO =======================
 # =============================================================================
