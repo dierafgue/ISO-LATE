@@ -2871,6 +2871,20 @@ def _build_record_excel_bytes(t_exp, a_exp, v_exp, u_exp):
 # -------------------------------------------------------------------------
 st.markdown(f"## 📌 {tr('bn_title')}")
 
+st.markdown("""
+<style>
+.bn-compact p {
+    margin-bottom: 0.18rem !important;
+}
+.bn-compact h3 {
+    margin-bottom: 0.35rem !important;
+}
+.bn-compact .stMarkdown {
+    margin-bottom: 0rem !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 BG         = "#2B3141"
 COLOR_TEXT = "#E8EDF2"
 COLOR_GRID = "#5B657A"
@@ -2911,7 +2925,7 @@ Tais_hi = 1.25 * T_ais_1
 # -------------------------------------------------------------------------
 # Layout principal
 # -------------------------------------------------------------------------
-col_data, col_reg, col_spec = st.columns([1.10, 1.20, 1.20], gap="large")
+col_data, col_reg, col_spec = st.columns([1.05, 1.15, 1.15], gap="medium")
 
 nombre = None
 unidad = None
@@ -3120,32 +3134,6 @@ if uploaded is not None:
         st.markdown(f"**{tr('bn_dur')}:** {t_ag[-1]:.2f} s")
         st.markdown(f"**{tr('bn_npts')}:** {len(ag_orig)}")
 
-    # ---------------------------------------------------------------------
-    # Debajo: dos subcolumnas para escalado
-    # ---------------------------------------------------------------------
-    with col_left:
-        sub_fix, sub_ais = st.columns(2, gap="medium")
-
-        with sub_fix:
-            with st.container(border=True):
-                st.markdown(f"### 📌 {tr('bn_fix_hdr')}")
-                st.markdown(f"**T1:** {T_fix_1:.4f} s")
-                st.markdown(f"**{tr('bn_range_lo')}:** {Tfix_lo:.4f} s")
-                st.markdown(f"**{tr('bn_range_hi')}:** {Tfix_hi:.4f} s")
-                st.markdown(f"**{tr('bn_factor')}:** {sf_fix:.4f}")
-                st.markdown(f"**Objetivo mínimo:** 90% NEC")
-                st.markdown(f"**{tr('bn_ok')}:** {tr('bn_yes') if ok_fix else tr('bn_no')}")
-
-        with sub_ais:
-            with st.container(border=True):
-                st.markdown(f"### 📌 {tr('bn_ais_hdr')}")
-                st.markdown(f"**T1:** {T_ais_1:.4f} s")
-                st.markdown(f"**{tr('bn_range_lo')}:** {Tais_lo:.4f} s")
-                st.markdown(f"**{tr('bn_range_hi')}:** {Tais_hi:.4f} s")
-                st.markdown(f"**{tr('bn_factor')}:** {sf_ais:.4f}")
-                st.markdown(f"**Objetivo mínimo:** 90% NEC")
-                st.markdown(f"**{tr('bn_ok')}:** {tr('bn_yes') if ok_ais else tr('bn_no')}")
-
     # =============================================================================
     # COLUMNA 2: REGISTRO SÍSMICO
     # =============================================================================
@@ -3156,7 +3144,7 @@ if uploaded is not None:
             COLOR_ORIG = "#9DBEF7"
             COLOR_PROC = "#FFD479"
     
-            fig, axs = plt.subplots(3, 1, figsize=(7.2, 10.2), sharex=True)
+            fig, axs = plt.subplots(3, 1, figsize=(6.8, 7.75), sharex=True)
             fig.patch.set_facecolor(BG)
     
             for ax in axs:
@@ -3168,14 +3156,14 @@ if uploaded is not None:
     
             axs[0].plot(
                 t_ag, ag_orig,
-                lw=(0.28 if proc_disponible else 0.6),
+                lw=(0.22 if proc_disponible else 0.45),
                 color=COLOR_ORIG,
                 label=tr("bn_orig")
             )
             if proc_disponible:
                 axs[0].plot(
                     t_ag, ag_proc,
-                    lw=0.35,
+                    lw=0.28,
                     color=COLOR_PROC,
                     label=tr("bn_proc_lab")
                 )
@@ -3183,20 +3171,20 @@ if uploaded is not None:
     
             axs[1].plot(
                 t_ag, vel_orig,
-                lw=(0.28 if proc_disponible else 0.6),
+                lw=(0.22 if proc_disponible else 0.45),
                 color=COLOR_ORIG
             )
             if proc_disponible:
-                axs[1].plot(t_ag, vel_proc, lw=0.35, color=COLOR_PROC)
+                axs[1].plot(t_ag, vel_proc, lw=0.28, color=COLOR_PROC)
             axs[1].set_ylabel(tr("bn_vel"), color=COLOR_TEXT)
     
             axs[2].plot(
                 t_ag, disp_orig,
-                lw=(0.28 if proc_disponible else 0.6),
+                lw=(0.22 if proc_disponible else 0.45),
                 color=COLOR_ORIG
             )
             if proc_disponible:
-                axs[2].plot(t_ag, disp_proc, lw=0.35, color=COLOR_PROC)
+                axs[2].plot(t_ag, disp_proc, lw=0.28, color=COLOR_PROC)
             axs[2].set_ylabel(tr("bn_disp"), color=COLOR_TEXT)
             axs[2].set_xlabel(tr("bn_time"), color=COLOR_TEXT)
     
@@ -3210,49 +3198,76 @@ if uploaded is not None:
             st.pyplot(fig, use_container_width=True)
     
     # =============================================================================
-    # COLUMNA 3: ESPECTRO
+    # COLUMNA 3: DATOS DE ESCALADO + ESPECTRO
     # =============================================================================
     with col_spec:
         with st.container(border=True):
+            top_fix, top_ais = st.columns(2, gap="medium")
+
+            with top_fix:
+                st.markdown('<div class="bn-compact">', unsafe_allow_html=True)
+                st.markdown(f"### 📌 {tr('bn_fix_hdr')}")
+                st.markdown(f"**T1:** {T_fix_1:.4f} s")
+                st.markdown(f"**{tr('bn_range_lo')}:** {Tfix_lo:.4f} s")
+                st.markdown(f"**{tr('bn_range_hi')}:** {Tfix_hi:.4f} s")
+                st.markdown(f"**{tr('bn_target')}:** 90% NEC")
+                st.markdown(f"**{tr('bn_factor')}:** {sf_fix:.4f}")
+                st.markdown(f"**{tr('bn_ok')}:** {tr('bn_yes') if ok_fix else tr('bn_no')}")
+                st.markdown('</div>', unsafe_allow_html=True)
+
+            with top_fix:
+                st.markdown('<div class="bn-compact">', unsafe_allow_html=True)
+                st.markdown(f"### 📌 {tr('bn_fix_hdr')}")
+                st.markdown(f"**T1:** {T_fix_1:.4f} s")
+                st.markdown(f"**{tr('bn_range_lo')}:** {Tfix_lo:.4f} s")
+                st.markdown(f"**{tr('bn_range_hi')}:** {Tfix_hi:.4f} s")
+                st.markdown(f"**{tr('bn_target')}:** 90% NEC")
+                st.markdown(f"**{tr('bn_factor')}:** {sf_fix:.4f}")
+                st.markdown(f"**{tr('bn_ok')}:** {tr('bn_yes') if ok_fix else tr('bn_no')}")
+                st.markdown('</div>', unsafe_allow_html=True)
+
+        st.write("")
+
+        with st.container(border=True):
             st.markdown(f"### 📈 {tr('bn_spec_title')}")
-    
-            fig2, ax = plt.subplots(figsize=(7.2, 5.7))
+
+            fig2, ax = plt.subplots(figsize=(6.8, 4.75))
             fig2.patch.set_facecolor(BG)
             ax.set_facecolor(BG)
-    
-            ax.plot(T_eval, Sa_nec_obj, lw=1.4, label=tr("bn_nec_target"))
-            ax.plot(T_eval, Sa_fix_scaled, lw=1.0, label=tr("bn_fix_scaled"))
-            ax.plot(T_eval, Sa_ais_scaled, lw=1.0, label=tr("bn_ais_scaled"))
-    
-            ax.axvspan(Tfix_lo, Tfix_hi, alpha=0.12)
-            ax.axvspan(Tais_lo, Tais_hi, alpha=0.10)
-    
-            ax.axvline(T_fix_1, lw=1.0, linestyle="--")
-            ax.axvline(T_ais_1, lw=1.0, linestyle="--")
-            ax.plot(T_eval, threshold * Sa_nec_obj, lw=0.9, linestyle=":", alpha=0.9)
-    
+
+            ax.plot(T_eval, Sa_nec_obj, lw=0.35, label=tr("bn_nec_target"))
+            ax.plot(T_eval, Sa_fix_scaled, lw=0.5, label=tr("bn_fix_scaled"))
+            ax.plot(T_eval, Sa_ais_scaled, lw=0.5, label=tr("bn_ais_scaled"))
+            ax.plot(T_eval, threshold * Sa_nec_obj, lw=0.30, linestyle=":", alpha=0.85, label=tr("bn_thr_90"))
+
+            ax.axvspan(Tfix_lo, Tfix_hi, alpha=0.06)
+            ax.axvspan(Tais_lo, Tais_hi, alpha=0.06)
+
+            ax.axvline(T_fix_1, lw=0.50, linestyle="--")
+            ax.axvline(T_ais_1, lw=0.50, linestyle="--")
+
             ytxt = max(
                 np.max(Sa_nec_obj),
                 np.max(Sa_fix_scaled),
                 np.max(Sa_ais_scaled)
             ) * 0.96
-    
-            ax.text(T_fix_1, ytxt, "T fija", rotation=90, va="top", ha="right", color=COLOR_TEXT)
-            ax.text(T_ais_1, ytxt, "T aislada", rotation=90, va="top", ha="left", color=COLOR_TEXT)
-    
+
+            ax.text(T_fix_1, ytxt, "T fija", rotation=90, va="top", ha="right", color=COLOR_TEXT, fontsize=8)
+            ax.text(T_ais_1, ytxt, "T aislada", rotation=90, va="top", ha="left", color=COLOR_TEXT, fontsize=8)
+
             ax.set_xlabel(tr("bn_spec_period"), color=COLOR_TEXT)
             ax.set_ylabel(tr("bn_spec_sa"), color=COLOR_TEXT)
             ax.tick_params(colors=COLOR_TEXT)
-            ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
+            ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.35)
             ax.spines["top"].set_visible(False)
             ax.spines["right"].set_visible(False)
-    
-            leg = ax.legend(framealpha=0.95)
+
+            leg = ax.legend(framealpha=0.95, fontsize=8)
             leg.get_frame().set_facecolor(BG)
             leg.get_frame().set_edgecolor(COLOR_GRID)
             for t in leg.get_texts():
                 t.set_color(COLOR_TEXT)
-    
+
             st.pyplot(fig2, use_container_width=True)
             
 # =============================================================================
@@ -3262,7 +3277,7 @@ rs_ready = bool(st.session_state.get("rs_ready", False))
 
 if rs_ready and ("rs_t" in st.session_state):
     with col_data:
-        st.write("")
+        st.markdown("<div style='height:0.20rem;'></div>", unsafe_allow_html=True)
 
         with st.container(border=True):
             st.caption(f"📥 **{tr('bn_dl_hdr')}**")
