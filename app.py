@@ -4042,7 +4042,7 @@ V_fix_min = np.min(V_fix_all, axis=1)
 if a_ais_rel.shape[0] == n_pisos + 1:
 
     # aceleración absoluta del sistema aislado
-    a_abs_ais = a_ais_rel + ag.reshape(1, -1)
+    a_abs_ais = a_ais_rel
 
     # masas diagonales del sistema aislado
     m_diag_ais = np.diag(np.asarray(M_ais, float)).reshape(-1, 1)
