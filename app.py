@@ -4116,6 +4116,116 @@ if a_ais.shape[0] == n_pisos + 1:
     V_ais_max = np.max(V_story_t, axis=1)
     V_ais_min = np.min(V_story_t, axis=1)
 
+    # -------------------------------------------------
+    # DEBUG ETABS vs APP
+    # -------------------------------------------------
+    with st.expander("DEBUG THA AISLADA vs ETABS", expanded=False):
+
+        st.write("n_pisos =", n_pisos)
+        st.write("shape a_ais_rel =", np.asarray(a_ais_rel).shape)
+        st.write("shape u_ais =", np.asarray(u_ais).shape)
+        st.write("shape v_ais =", np.asarray(v_ais).shape)
+        st.write("shape M_ais =", np.asarray(M_ais).shape)
+        st.write("shape K_ais_arr =", np.asarray(K_ais_arr).shape)
+        st.write("shape C_ais_arr =", np.asarray(C_ais_arr).shape)
+
+        # -------------------------------
+        # 1) Masas por DOF
+        # -------------------------------
+        M_ais_arr = np.asarray(M_ais, float)
+        m_diag = np.diag(M_ais_arr).ravel()
+
+        dbg_mass = pd.DataFrame({
+            "DOF": np.arange(len(m_diag)),
+            "m": np.round(m_diag, 6),
+        })
+        st.write("Masas diagonales del sistema aislado")
+        st.dataframe(dbg_mass, hide_index=True, use_container_width=True)
+
+        # -------------------------------
+        # 2) Aceleraciones relativas y absolutas
+        # -------------------------------
+        a_rel = np.asarray(a_ais_rel, float)
+        a_abs = a_rel + ag.reshape(1, -1)
+
+        dbg_acc = pd.DataFrame({
+            "DOF": np.arange(a_rel.shape[0]),
+            "a_rel_max": np.round(np.max(a_rel, axis=1), 6),
+            "a_rel_min": np.round(np.min(a_rel, axis=1), 6),
+            "a_abs_max": np.round(np.max(a_abs, axis=1), 6),
+            "a_abs_min": np.round(np.min(a_abs, axis=1), 6),
+        })
+        st.write("Aceleraciones relativas y absolutas por DOF")
+        st.dataframe(dbg_acc, hide_index=True, use_container_width=True)
+
+        # -------------------------------
+        # 3) Desplazamientos y velocidades
+        # -------------------------------
+        dbg_uv = pd.DataFrame({
+            "DOF": np.arange(u_ais.shape[0]),
+            "u_max": np.round(np.max(u_ais, axis=1), 6),
+            "u_min": np.round(np.min(u_ais, axis=1), 6),
+            "v_max": np.round(np.max(v_ais, axis=1), 6),
+            "v_min": np.round(np.min(v_ais, axis=1), 6),
+        })
+        st.write("Desplazamientos y velocidades por DOF")
+        st.dataframe(dbg_uv, hide_index=True, use_container_width=True)
+
+        # -------------------------------
+        # 4) Fuerzas inerciales puras
+        # -------------------------------
+        F_inercial = m_diag.reshape(-1, 1) * a_abs
+
+        dbg_fin = pd.DataFrame({
+            "DOF": np.arange(F_inercial.shape[0]),
+            "F_iner_max": np.round(np.max(F_inercial, axis=1), 6),
+            "F_iner_min": np.round(np.min(F_inercial, axis=1), 6),
+        })
+        st.write("Fuerzas inerciales por DOF")
+        st.dataframe(dbg_fin, hide_index=True, use_container_width=True)
+
+        # -------------------------------
+        # 5) Fuerza dinámica completa
+        # -------------------------------
+        F_dyn = (M_ais_arr @ a_abs) + (C_ais_arr @ v_ais) + (K_ais_arr @ u_ais)
+
+        dbg_fdyn = pd.DataFrame({
+            "DOF": np.arange(F_dyn.shape[0]),
+            "F_dyn_max": np.round(np.max(F_dyn, axis=1), 6),
+            "F_dyn_min": np.round(np.min(F_dyn, axis=1), 6),
+        })
+        st.write("Fuerza dinámica completa por DOF")
+        st.dataframe(dbg_fdyn, hide_index=True, use_container_width=True)
+
+        # -------------------------------
+        # 6) Solo superestructura
+        # -------------------------------
+        F_iner_sup = F_inercial[1:, :]
+        F_dyn_sup = F_dyn[1:, :]
+
+        dbg_sup = pd.DataFrame({
+            "Story": [f"Story{i}" for i in range(1, n_pisos + 1)],
+            "F_iner_max": np.round(np.max(F_iner_sup, axis=1), 6),
+            "F_iner_min": np.round(np.min(F_iner_sup, axis=1), 6),
+            "F_dyn_max": np.round(np.max(F_dyn_sup, axis=1), 6),
+            "F_dyn_min": np.round(np.min(F_dyn_sup, axis=1), 6),
+            "V_story_max": np.round(V_ais_max, 6),
+            "V_story_min": np.round(V_ais_min, 6),
+        })
+        st.write("Comparación solo superestructura")
+        st.dataframe(dbg_sup, hide_index=True, use_container_width=True)
+
+        # -------------------------------
+        # 7) Story stiffness equivalente extraída
+        # -------------------------------
+        dbg_kc = pd.DataFrame({
+            "Story": [f"Story{i}" for i in range(1, n_pisos + 1)],
+            "k_story": np.round(k_story, 6),
+            "c_story": np.round(c_story, 6),
+        })
+        st.write("Rigideces y amortiguamientos de story extraídos")
+        st.dataframe(dbg_kc, hide_index=True, use_container_width=True)
+
 else:
     st.error("❌ THA AISLADA: dimensiones incorrectas.")
     st.stop()
