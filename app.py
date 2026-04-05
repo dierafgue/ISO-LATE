@@ -3201,41 +3201,37 @@ if uploaded is not None:
     # COLUMNA 3: DATOS DE ESCALADO + ESPECTRO
     # =============================================================================
     with col_spec:
-    with st.container(border=True):
+        with st.container(border=True):
 
-        col_fix, col_ais = st.columns(2, gap="small")
+            col_fix, col_ais = st.columns(2, gap="small")
 
-        # -------------------------------
-        # FIXED
-        # -------------------------------
-        with col_fix:
-            st.markdown("<div style='height:0.25rem;'></div>", unsafe_allow_html=True)
+            # -------------------------------
+            # FIJA
+            # -------------------------------
+            with col_fix:
+                st.markdown("<div style='height:0.25rem;'></div>", unsafe_allow_html=True)
 
-            st.markdown(f"**{tr('bn_fix_hdr')}**")
-            st.markdown(f"T1: {T_fix_1:.3f} s")
-            st.markdown(f"{tr('bn_range_lo')}: {Tfix_lo:.3f}")
-            st.markdown(f"{tr('bn_range_hi')}: {Tfix_hi:.3f}")
-            st.markdown(f"SF: {sf_fix:.3f}")
-            st.markdown(f"{tr('bn_ok')}: {'✔️' if ok_fix else '✖️'}")
+                st.markdown(f"**{tr('bn_fix_hdr')}**")
+                st.markdown(f"T1: {T_fix_1:.3f} s")
+                st.markdown(f"{tr('bn_range_lo')}: {Tfix_lo:.3f}")
+                st.markdown(f"{tr('bn_range_hi')}: {Tfix_hi:.3f}")
+                st.markdown(f"SF: {sf_fix:.3f}")
+                st.markdown(f"{tr('bn_ok')}: {'✔️' if ok_fix else '✖️'}")
 
-            st.markdown('</div>', unsafe_allow_html=True)
+            # -------------------------------
+            # AISLADA
+            # -------------------------------
+            with col_ais:
+                st.markdown("<div style='height:0.25rem;'></div>", unsafe_allow_html=True)
 
-        # -------------------------------
-        # AISLADO
-        # -------------------------------
-        with col_ais:
-            st.markdown("<div style='height:0.25rem;'></div>", unsafe_allow_html=True)
+                st.markdown(f"**{tr('bn_ais_hdr')}**")
+                st.markdown(f"T1: {T_ais_1:.3f} s")
+                st.markdown(f"{tr('bn_range_lo')}: {Tais_lo:.3f}")
+                st.markdown(f"{tr('bn_range_hi')}: {Tais_hi:.3f}")
+                st.markdown(f"SF: {sf_ais:.3f}")
+                st.markdown(f"{tr('bn_ok')}: {'✔️' if ok_ais else '✖️'}")
 
-            st.markdown(f"**{tr('bn_ais_hdr')}**")
-            st.markdown(f"T1: {T_ais_1:.3f} s")
-            st.markdown(f"{tr('bn_range_lo')}: {Tais_lo:.3f}")
-            st.markdown(f"{tr('bn_range_hi')}: {Tais_hi:.3f}")
-            st.markdown(f"SF: {sf_ais:.3f}")
-            st.markdown(f"{tr('bn_ok')}: {'✔️' if ok_ais else '✖️'}")
-
-            st.markdown('</div>', unsafe_allow_html=True)
-
-        st.write("")
+        st.markdown("<div style='height:0.20rem;'></div>", unsafe_allow_html=True)
 
         with st.container(border=True):
             st.markdown(f"### 📈 {tr('bn_spec_title')}")
@@ -3245,9 +3241,16 @@ if uploaded is not None:
             ax.set_facecolor(BG)
 
             ax.plot(T_eval, Sa_nec_obj, lw=0.35, label=tr("bn_nec_target"))
-            ax.plot(T_eval, Sa_fix_scaled, lw=0.5, label=tr("bn_fix_scaled"))
-            ax.plot(T_eval, Sa_ais_scaled, lw=0.5, label=tr("bn_ais_scaled"))
-            ax.plot(T_eval, threshold * Sa_nec_obj, lw=0.30, linestyle=":", alpha=0.85, label=tr("bn_thr_90"))
+            ax.plot(T_eval, Sa_fix_scaled, lw=0.50, label=tr("bn_fix_scaled"))
+            ax.plot(T_eval, Sa_ais_scaled, lw=0.50, label=tr("bn_ais_scaled"))
+            ax.plot(
+                T_eval,
+                threshold * Sa_nec_obj,
+                lw=0.30,
+                linestyle=":",
+                alpha=0.85,
+                label=tr("bn_thr_90")
+            )
 
             ax.axvspan(Tfix_lo, Tfix_hi, alpha=0.06)
             ax.axvspan(Tais_lo, Tais_hi, alpha=0.06)
@@ -3261,8 +3264,16 @@ if uploaded is not None:
                 np.max(Sa_ais_scaled)
             ) * 0.96
 
-            ax.text(T_fix_1, ytxt, "T fija", rotation=90, va="top", ha="right", color=COLOR_TEXT, fontsize=8)
-            ax.text(T_ais_1, ytxt, "T aislada", rotation=90, va="top", ha="left", color=COLOR_TEXT, fontsize=8)
+            ax.text(
+                T_fix_1, ytxt, "T fija",
+                rotation=90, va="top", ha="right",
+                color=COLOR_TEXT, fontsize=8
+            )
+            ax.text(
+                T_ais_1, ytxt, "T aislada",
+                rotation=90, va="top", ha="left",
+                color=COLOR_TEXT, fontsize=8
+            )
 
             ax.set_xlabel(tr("bn_spec_period"), color=COLOR_TEXT)
             ax.set_ylabel(tr("bn_spec_sa"), color=COLOR_TEXT)
