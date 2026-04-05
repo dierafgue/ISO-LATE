@@ -3201,30 +3201,39 @@ if uploaded is not None:
     # COLUMNA 3: DATOS DE ESCALADO + ESPECTRO
     # =============================================================================
     with col_spec:
-        with st.container(border=True):
-            top_fix, top_ais = st.columns(2, gap="medium")
+    with st.container(border=True):
 
-            with top_fix:
-                st.markdown('<div class="bn-compact">', unsafe_allow_html=True)
-                st.markdown(f"### 📌 {tr('bn_fix_hdr')}")
-                st.markdown(f"**T1:** {T_fix_1:.4f} s")
-                st.markdown(f"**{tr('bn_range_lo')}:** {Tfix_lo:.4f} s")
-                st.markdown(f"**{tr('bn_range_hi')}:** {Tfix_hi:.4f} s")
-                st.markdown(f"**{tr('bn_target')}:** 90% NEC")
-                st.markdown(f"**{tr('bn_factor')}:** {sf_fix:.4f}")
-                st.markdown(f"**{tr('bn_ok')}:** {tr('bn_yes') if ok_fix else tr('bn_no')}")
-                st.markdown('</div>', unsafe_allow_html=True)
+        col_fix, col_ais = st.columns(2, gap="small")
 
-            with top_fix:
-                st.markdown('<div class="bn-compact">', unsafe_allow_html=True)
-                st.markdown(f"### 📌 {tr('bn_fix_hdr')}")
-                st.markdown(f"**T1:** {T_fix_1:.4f} s")
-                st.markdown(f"**{tr('bn_range_lo')}:** {Tfix_lo:.4f} s")
-                st.markdown(f"**{tr('bn_range_hi')}:** {Tfix_hi:.4f} s")
-                st.markdown(f"**{tr('bn_target')}:** 90% NEC")
-                st.markdown(f"**{tr('bn_factor')}:** {sf_fix:.4f}")
-                st.markdown(f"**{tr('bn_ok')}:** {tr('bn_yes') if ok_fix else tr('bn_no')}")
-                st.markdown('</div>', unsafe_allow_html=True)
+        # -------------------------------
+        # FIXED
+        # -------------------------------
+        with col_fix:
+            st.markdown("<div style='height:0.25rem;'></div>", unsafe_allow_html=True)
+
+            st.markdown(f"**{tr('bn_fix_hdr')}**")
+            st.markdown(f"T1: {T_fix_1:.3f} s")
+            st.markdown(f"{tr('bn_range_lo')}: {Tfix_lo:.3f}")
+            st.markdown(f"{tr('bn_range_hi')}: {Tfix_hi:.3f}")
+            st.markdown(f"SF: {sf_fix:.3f}")
+            st.markdown(f"{tr('bn_ok')}: {'✔️' if ok_fix else '✖️'}")
+
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        # -------------------------------
+        # AISLADO
+        # -------------------------------
+        with col_ais:
+            st.markdown("<div style='height:0.25rem;'></div>", unsafe_allow_html=True)
+
+            st.markdown(f"**{tr('bn_ais_hdr')}**")
+            st.markdown(f"T1: {T_ais_1:.3f} s")
+            st.markdown(f"{tr('bn_range_lo')}: {Tais_lo:.3f}")
+            st.markdown(f"{tr('bn_range_hi')}: {Tais_hi:.3f}")
+            st.markdown(f"SF: {sf_ais:.3f}")
+            st.markdown(f"{tr('bn_ok')}: {'✔️' if ok_ais else '✖️'}")
+
+            st.markdown('</div>', unsafe_allow_html=True)
 
         st.write("")
 
