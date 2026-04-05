@@ -2911,7 +2911,7 @@ Tais_hi = 1.25 * T_ais_1
 # -------------------------------------------------------------------------
 # Layout principal
 # -------------------------------------------------------------------------
-col_left, col_right = st.columns([1.40, 1.40], gap="large")
+col_data, col_reg, col_spec = st.columns([1.10, 1.20, 1.20], gap="large")
 
 nombre = None
 unidad = None
@@ -2929,7 +2929,7 @@ proc_disponible = False
 # =============================================================================
 # IZQUIERDA: PANEL DE CONTROL + DATOS + ESCALADO
 # =============================================================================
-with col_left:
+with col_data:
     with st.container(border=True):
         topL, topR = st.columns([1.05, 1.00], gap="medium")
 
@@ -3147,26 +3147,25 @@ if uploaded is not None:
                 st.markdown(f"**{tr('bn_ok')}:** {tr('bn_yes') if ok_ais else tr('bn_no')}")
 
     # =============================================================================
-    # DERECHA: GRÁFICAS
+    # COLUMNA 2: REGISTRO SÍSMICO
     # =============================================================================
-    with col_right:
-        # ---------------------------------------------------------------------
-        # 1) Registro
-        # ---------------------------------------------------------------------
+    with col_reg:
         with st.container(border=True):
+            st.markdown(f"### 〰️ {tr('bn_reg_title').format(name=nombre)}")
+    
             COLOR_ORIG = "#9DBEF7"
             COLOR_PROC = "#FFD479"
-
-            fig, axs = plt.subplots(3, 1, figsize=(9, 10.8), sharex=True)
+    
+            fig, axs = plt.subplots(3, 1, figsize=(7.2, 10.2), sharex=True)
             fig.patch.set_facecolor(BG)
-
+    
             for ax in axs:
                 ax.set_facecolor(BG)
                 ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
                 ax.tick_params(colors=COLOR_TEXT)
                 for s in ("top", "right"):
                     ax.spines[s].set_visible(False)
-
+    
             axs[0].plot(
                 t_ag, ag_orig,
                 lw=(0.28 if proc_disponible else 0.6),
@@ -3174,10 +3173,14 @@ if uploaded is not None:
                 label=tr("bn_orig")
             )
             if proc_disponible:
-                axs[0].plot(t_ag, ag_proc, lw=0.35, color=COLOR_PROC, label=tr("bn_proc_lab"))
+                axs[0].plot(
+                    t_ag, ag_proc,
+                    lw=0.35,
+                    color=COLOR_PROC,
+                    label=tr("bn_proc_lab")
+                )
             axs[0].set_ylabel(tr("bn_acc"), color=COLOR_TEXT)
-            axs[0].set_title(tr("bn_reg_title").format(name=nombre), color=COLOR_TEXT)
-
+    
             axs[1].plot(
                 t_ag, vel_orig,
                 lw=(0.28 if proc_disponible else 0.6),
@@ -3186,7 +3189,7 @@ if uploaded is not None:
             if proc_disponible:
                 axs[1].plot(t_ag, vel_proc, lw=0.35, color=COLOR_PROC)
             axs[1].set_ylabel(tr("bn_vel"), color=COLOR_TEXT)
-
+    
             axs[2].plot(
                 t_ag, disp_orig,
                 lw=(0.28 if proc_disponible else 0.6),
@@ -3196,67 +3199,69 @@ if uploaded is not None:
                 axs[2].plot(t_ag, disp_proc, lw=0.35, color=COLOR_PROC)
             axs[2].set_ylabel(tr("bn_disp"), color=COLOR_TEXT)
             axs[2].set_xlabel(tr("bn_time"), color=COLOR_TEXT)
-
+    
             if proc_disponible:
                 leg0 = axs[0].legend(framealpha=0.85)
                 leg0.get_frame().set_facecolor(BG)
                 leg0.get_frame().set_edgecolor(COLOR_GRID)
                 for tt in leg0.get_texts():
                     tt.set_color(COLOR_TEXT)
-
+    
             st.pyplot(fig, use_container_width=True)
-
-        # ---------------------------------------------------------------------
-        # 2) Espectro y escalados
-        # ---------------------------------------------------------------------
+    
+    # =============================================================================
+    # COLUMNA 3: ESPECTRO
+    # =============================================================================
+    with col_spec:
         with st.container(border=True):
             st.markdown(f"### 📈 {tr('bn_spec_title')}")
-
-            fig2, ax = plt.subplots(figsize=(9.5, 5.8))
+    
+            fig2, ax = plt.subplots(figsize=(7.2, 5.7))
             fig2.patch.set_facecolor(BG)
             ax.set_facecolor(BG)
-
+    
             ax.plot(T_eval, Sa_nec_obj, lw=1.4, label=tr("bn_nec_target"))
             ax.plot(T_eval, Sa_fix_scaled, lw=1.0, label=tr("bn_fix_scaled"))
             ax.plot(T_eval, Sa_ais_scaled, lw=1.0, label=tr("bn_ais_scaled"))
-
+    
             ax.axvspan(Tfix_lo, Tfix_hi, alpha=0.12)
             ax.axvspan(Tais_lo, Tais_hi, alpha=0.10)
-
+    
             ax.axvline(T_fix_1, lw=1.0, linestyle="--")
             ax.axvline(T_ais_1, lw=1.0, linestyle="--")
             ax.plot(T_eval, threshold * Sa_nec_obj, lw=0.9, linestyle=":", alpha=0.9)
-
+    
             ytxt = max(
                 np.max(Sa_nec_obj),
                 np.max(Sa_fix_scaled),
                 np.max(Sa_ais_scaled)
             ) * 0.96
-
+    
             ax.text(T_fix_1, ytxt, "T fija", rotation=90, va="top", ha="right", color=COLOR_TEXT)
             ax.text(T_ais_1, ytxt, "T aislada", rotation=90, va="top", ha="left", color=COLOR_TEXT)
-
+    
             ax.set_xlabel(tr("bn_spec_period"), color=COLOR_TEXT)
             ax.set_ylabel(tr("bn_spec_sa"), color=COLOR_TEXT)
             ax.tick_params(colors=COLOR_TEXT)
             ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
             ax.spines["top"].set_visible(False)
             ax.spines["right"].set_visible(False)
-
+    
             leg = ax.legend(framealpha=0.95)
             leg.get_frame().set_facecolor(BG)
             leg.get_frame().set_edgecolor(COLOR_GRID)
             for t in leg.get_texts():
                 t.set_color(COLOR_TEXT)
-
+    
             st.pyplot(fig2, use_container_width=True)
+            
 # =============================================================================
 # DESCARGA DEL REGISTRO
 # =============================================================================
 rs_ready = bool(st.session_state.get("rs_ready", False))
 
 if rs_ready and ("rs_t" in st.session_state):
-    with col_left:
+    with col_data:
         st.write("")
 
         with st.container(border=True):
