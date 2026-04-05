@@ -3144,7 +3144,7 @@ if uploaded is not None:
             COLOR_ORIG = "#9DBEF7"
             COLOR_PROC = "#FFD479"
     
-            fig, axs = plt.subplots(3, 1, figsize=(6.8, 7.75), sharex=True)
+            fig, axs = plt.subplots(3, 1, figsize=(6.8, 7.8), sharex=True)
             fig.patch.set_facecolor(BG)
     
             for ax in axs:
