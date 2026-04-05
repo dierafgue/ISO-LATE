@@ -1365,7 +1365,7 @@ with col_right:
         )
 
 # =============================================================================
-# ========== BLOQUE 3: NEC-24 (izq) + REGISTRO AT2 PEER (der) =================
+# ========== BLOQUE 3: NEC-24 + REGISTROS THA (FIJA / AISLADA) ===============
 # =============================================================================
 import io
 import numpy as np
@@ -1385,7 +1385,7 @@ from funciones_usuario import (
 # ✅ Textos EN/ES (solo para este bloque)
 # -------------------------------------------------------------------------
 T["en"].update({
-    "b3_title": "NEC-24 + Seismic record",
+    "b3_title": "NEC-24 + Seismic records",
 
     "b3_nec_params": "NEC-24 spectrum parameters",
     "b3_need_model_nec": "First generate the **structural model** in Section 2 to enable NEC-24.",
@@ -1406,7 +1406,6 @@ T["en"].update({
     "b3_T": "Period T [s]",
     "b3_Sa": "Sa [g]",
     "b3_placeholder": "(placeholder)",
-    "b3_elastic": "Elastic",
     "b3_design_spec": "Design spectrum",
     "b3_sds_sd1": "SDS = {SDS:.3f} g, SD1 = {SD1:.3f} g·s, Ie = {Ie:.2f}",
     "b3_coeffs": "Coefficients: Fa={Fa:.2f}, Fd={Fd:.2f}, Fs={Fs:.2f}",
@@ -1418,40 +1417,49 @@ T["en"].update({
     "b3_region_sierra": "Highlands and Amazon",
     "h_b3_region": "Defines exponent r for the NEC-24 descending branch.",
 
-    "b3_rec_load": "AT2 seismic record (PEER)",
-    "b3_file": "Select a PEER .at2 file",
+    "b3_rec_fix": "AT2 seismic record – FIXED",
+    "b3_rec_iso": "AT2 seismic record – ISOLATED",
+    "b3_file_fix": "Select PEER .at2 file (FIXED)",
+    "b3_file_iso": "Select PEER .at2 file (ISOLATED)",
     "b3_file_help": "Only .at2 files already prepared by PEER are allowed in this simplified workflow.",
-    "b3_proc": "Apply filtering + baseline correction",
+    "b3_proc_fix": "Apply filtering + baseline correction (FIXED)",
+    "b3_proc_iso": "Apply filtering + baseline correction (ISOLATED)",
     "h_b3_proc": "Applies: linear detrend + Butterworth bandpass + baseline correction (v and u).",
     "b3_only_at2": "Only .at2 files are accepted in this section.",
-    "b3_peer_note": "Use a PEER AT2 record already selected and prepared by the user.",
-    "b3_need_model_rec": "First generate the **structural model** (Section 2) to enable the record.",
-    "b3_no_file": "Upload a PEER .at2 file to continue.",
+    "b3_need_model_rec": "First generate the **structural model** (Section 2) to enable the records.",
+    "b3_no_file_fix": "Upload a PEER .at2 file for FIXED.",
+    "b3_no_file_iso": "Upload a PEER .at2 file for ISOLATED.",
 
     "b3_event": "Event",
     "b3_dt": "Time step",
     "b3_dur": "Total duration",
     "b3_npts": "Number of points",
     "b3_units_in": "Input units",
-    "b3_reg_title": "Seismic record – {name}",
-    "b3_acc": "Acceleration [m/s²]",
-    "b3_vel": "Velocity [m/s]",
-    "b3_disp": "Displacement [m]",
     "b3_time": "Time [s]",
+    "b3_acc": "Acceleration [m/s²]",
     "b3_orig": "Original",
     "b3_proc_lab": "Filtered + corrected",
 
-    "b3_dl_hdr": "Download record (Excel)",
-    "b3_dl_pick": "Choose data to export",
-    "b3_dl_btn": "Download Excel (.xlsx)",
-    "h_b3_dl_pick": "Exports 4 columns: time, acceleration, velocity, displacement.",
-    "b3_dl_opt_orig": "Original",
-    "b3_dl_opt_proc": "Filtered + baseline-corrected",
-    "b3_dl_opt_final": "Final used in analysis",
+    "b3_val_hdr": "Spectral validation of records",
+    "b3_val_target": "NEC target",
+    "b3_val_fix": "FIXED scaled record",
+    "b3_val_iso": "ISOLATED scaled record",
+    "b3_band_fix": "Fixed check band",
+    "b3_band_iso": "Isolated check band",
+
+    "b3_scale_fix": "Scale factor – FIXED",
+    "b3_scale_iso": "Scale factor – ISOLATED",
+    "b3_check_fix": "Fixed validation",
+    "b3_check_iso": "Isolated validation",
+    "b3_ok": "OK",
+    "b3_no": "No",
+    "b3_prelim": "Preliminary 2D / one-component validation only.",
+    "b3_fix_rule": "Fixed THA: preliminary amplitude scaling in band 0.8T1–1.2T1.",
+    "b3_iso_rule": "Isolated THA: preliminary amplitude scaling in band 0.75Tm–1.25Tm.",
 })
 
 T["es"].update({
-    "b3_title": "NEC-24 + Registro sísmico",
+    "b3_title": "NEC-24 + Registros sísmicos",
 
     "b3_nec_params": "Parámetros del espectro NEC-24",
     "b3_need_model_nec": "⚙️ Primero genera el **modelo estructural** en la Sección 2 para habilitar NEC-24.",
@@ -1472,7 +1480,6 @@ T["es"].update({
     "b3_T": "Período T [s]",
     "b3_Sa": "Sa [g]",
     "b3_placeholder": "(placeholder)",
-    "b3_elastic": "Elástico",
     "b3_design_spec": "Espectro de diseño",
     "b3_sds_sd1": "SDS = {SDS:.3f} g, SD1 = {SD1:.3f} g·s, Ie = {Ie:.2f}",
     "b3_coeffs": "Coeficientes: Fa={Fa:.2f}, Fd={Fd:.2f}, Fs={Fs:.2f}",
@@ -1484,40 +1491,49 @@ T["es"].update({
     "b3_region_sierra": "Sierra y oriente",
     "h_b3_region": "Define el exponente r para la rama descendente del espectro NEC-24.",
 
-    "b3_rec_load": "Registro sísmico AT2 (PEER)",
-    "b3_file": "📁 Selecciona un archivo PEER .at2",
+    "b3_rec_fix": "Registro sísmico AT2 – FIJA",
+    "b3_rec_iso": "Registro sísmico AT2 – AISLADA",
+    "b3_file_fix": "Selecciona archivo PEER .at2 (FIJA)",
+    "b3_file_iso": "Selecciona archivo PEER .at2 (AISLADA)",
     "b3_file_help": "En este flujo simplificado solo se aceptan archivos .at2 ya preparados por PEER.",
-    "b3_proc": "Aplicar filtrado + corrección de línea base",
+    "b3_proc_fix": "Aplicar filtrado + corrección de línea base (FIJA)",
+    "b3_proc_iso": "Aplicar filtrado + corrección de línea base (AISLADA)",
     "h_b3_proc": "Aplica: detrend lineal + filtro Butterworth pasa banda + corrección de línea base (v y u).",
     "b3_only_at2": "En esta sección solo se aceptan archivos .at2.",
-    "b3_peer_note": "Use un registro AT2 de PEER ya seleccionado y preparado por el usuario.",
-    "b3_need_model_rec": "⚙️ Primero genera el **modelo estructural** (Sección 2) para habilitar el registro.",
-    "b3_no_file": "Cargue un archivo PEER .at2 para continuar.",
+    "b3_need_model_rec": "⚙️ Primero genera el **modelo estructural** (Sección 2) para habilitar los registros.",
+    "b3_no_file_fix": "Cargue un archivo PEER .at2 para FIJA.",
+    "b3_no_file_iso": "Cargue un archivo PEER .at2 para AISLADA.",
 
     "b3_event": "Evento",
     "b3_dt": "Paso de tiempo",
     "b3_dur": "Duración total",
     "b3_npts": "Número de puntos",
     "b3_units_in": "Unidades de entrada",
-    "b3_reg_title": "Registro sísmico – {name}",
-    "b3_acc": "Aceleración [m/s²]",
-    "b3_vel": "Velocidad [m/s]",
-    "b3_disp": "Desplazamiento [m]",
     "b3_time": "Tiempo [s]",
+    "b3_acc": "Aceleración [m/s²]",
     "b3_orig": "Original",
     "b3_proc_lab": "Filtrado + corregido",
 
-    "b3_dl_hdr": "Descargar registro (Excel)",
-    "b3_dl_pick": "Elegir datos a exportar",
-    "b3_dl_btn": "Descargar Excel (.xlsx)",
-    "h_b3_dl_pick": "Exporta 4 columnas: tiempo, aceleracion, velocidad, desplazamiento.",
-    "b3_dl_opt_orig": "Original",
-    "b3_dl_opt_proc": "Filtrado + corregido (línea base)",
-    "b3_dl_opt_final": "Final usado en el análisis",
+    "b3_val_hdr": "Validación espectral de registros",
+    "b3_val_target": "Objetivo NEC",
+    "b3_val_fix": "Registro escalado – FIJA",
+    "b3_val_iso": "Registro escalado – AISLADA",
+    "b3_band_fix": "Banda de chequeo fija",
+    "b3_band_iso": "Banda de chequeo aislada",
+
+    "b3_scale_fix": "Factor de escala – FIJA",
+    "b3_scale_iso": "Factor de escala – AISLADA",
+    "b3_check_fix": "Validación fija",
+    "b3_check_iso": "Validación aislada",
+    "b3_ok": "Cumple",
+    "b3_no": "No cumple",
+    "b3_prelim": "Validación preliminar 2D / un solo componente.",
+    "b3_fix_rule": "THA fija: escalamiento preliminar por amplitud en la banda 0.8T1–1.2T1.",
+    "b3_iso_rule": "THA aislada: escalamiento preliminar por amplitud en la banda 0.75Tm–1.25Tm.",
 })
 
 # -------------------------------------------------------------------------
-# ✅ Helper: Excel NEC-24
+# ✅ Helpers
 # -------------------------------------------------------------------------
 def build_nec24_excel_bytes(T_spec, Sa_design):
     df_nec = pd.DataFrame({
@@ -1530,6 +1546,202 @@ def build_nec24_excel_bytes(T_spec, Sa_design):
         df_nec.to_excel(writer, index=False, sheet_name="NEC24")
     bio.seek(0)
     return bio.getvalue()
+
+def _newmark_psa(acc, dt, Tn, zeta=0.05):
+    """
+    Retorna PSA [m/s²] de un SDOF con Newmark promedio constante.
+    """
+    acc = np.asarray(acc, float).ravel()
+    if len(acc) < 2:
+        return np.nan
+    if Tn <= 0:
+        return np.max(np.abs(acc))
+
+    wn = 2.0 * np.pi / float(Tn)
+    m = 1.0
+    k = wn**2 * m
+    c = 2.0 * zeta * wn * m
+
+    beta = 0.25
+    gamma = 0.5
+
+    n = len(acc)
+    u = np.zeros(n, float)
+    v = np.zeros(n, float)
+    a = np.zeros(n, float)
+
+    p0 = -m * acc[0]
+    a[0] = (p0 - c * v[0] - k * u[0]) / m
+
+    a0 = 1.0 / (beta * dt**2)
+    a1 = gamma / (beta * dt)
+    a2 = 1.0 / (beta * dt)
+    a3 = 1.0 / (2.0 * beta) - 1.0
+    a4 = gamma / beta - 1.0
+    a5 = dt * (gamma / (2.0 * beta) - 1.0)
+
+    k_eff = k + a0 * m + a1 * c
+
+    for i in range(n - 1):
+        p_next = -m * acc[i + 1]
+
+        rhs = (
+            p_next
+            + m * (a0 * u[i] + a2 * v[i] + a3 * a[i])
+            + c * (a1 * u[i] + a4 * v[i] + a5 * a[i])
+        )
+
+        u[i + 1] = rhs / k_eff
+        a[i + 1] = a0 * (u[i + 1] - u[i]) - a2 * v[i] - a3 * a[i]
+        v[i + 1] = v[i] + dt * ((1.0 - gamma) * a[i] + gamma * a[i + 1])
+
+    psa = wn**2 * np.max(np.abs(u))
+    return float(psa)
+
+def _response_spectrum_5pct(acc, dt, Tvec):
+    Tvec = np.asarray(Tvec, float).ravel()
+    Sa = np.zeros_like(Tvec, dtype=float)
+    for i, Ti in enumerate(Tvec):
+        Sa[i] = _newmark_psa(acc, dt, float(Ti), zeta=0.05)
+    return Sa
+
+def _safe_interp(x, xp, fp):
+    x = np.asarray(x, float).ravel()
+    xp = np.asarray(xp, float).ravel()
+    fp = np.asarray(fp, float).ravel()
+    return np.interp(x, xp, fp)
+
+def _geom_mean_ratio(target, rec):
+    target = np.asarray(target, float).ravel()
+    rec = np.asarray(rec, float).ravel()
+    mask = (target > 1e-12) & (rec > 1e-12) & np.isfinite(target) & np.isfinite(rec)
+    if not np.any(mask):
+        return np.nan
+    return float(np.exp(np.mean(np.log(target[mask] / rec[mask]))))
+
+def _validate_fixed_single(T_rs, Sa_rs, T_tar, Sa_tar, T1):
+    """
+    Preliminar 2D / un componente:
+    banda = [0.8T1, 1.2T1]
+    factor = media geométrica target/record en banda
+    chequeo = scaled/target dentro de ±10%
+    """
+    T1 = float(T1)
+    Tlo = 0.8 * T1
+    Thi = 1.2 * T1
+
+    band = (T_rs >= Tlo) & (T_rs <= Thi)
+    if not np.any(band):
+        return np.nan, False, Tlo, Thi, None, None
+
+    T_band = T_rs[band]
+    target_band = _safe_interp(T_band, T_tar, Sa_tar)
+    rec_band = Sa_rs[band]
+
+    sf = _geom_mean_ratio(target_band, rec_band)
+    if not np.isfinite(sf):
+        return np.nan, False, Tlo, Thi, target_band, rec_band
+
+    ratio = (sf * rec_band) / np.maximum(target_band, 1e-12)
+    ok = bool(np.all((ratio >= 0.90) & (ratio <= 1.10)))
+    return float(sf), ok, Tlo, Thi, target_band, rec_band
+
+def _validate_iso_single(T_rs, Sa_rs, T_tar, Sa_tar, Tm):
+    """
+    Preliminar 2D / un componente:
+    banda = [0.75Tm, 1.25Tm]
+    factor = max(target/record) en banda para no quedar por debajo
+    """
+    Tm = float(Tm)
+    Tlo = 0.75 * Tm
+    Thi = 1.25 * Tm
+
+    band = (T_rs >= Tlo) & (T_rs <= Thi)
+    if not np.any(band):
+        return np.nan, False, Tlo, Thi, None, None
+
+    T_band = T_rs[band]
+    target_band = _safe_interp(T_band, T_tar, Sa_tar)
+    rec_band = Sa_rs[band]
+
+    mask = (rec_band > 1e-12) & np.isfinite(target_band) & np.isfinite(rec_band)
+    if not np.any(mask):
+        return np.nan, False, Tlo, Thi, target_band, rec_band
+
+    sf = float(np.max(target_band[mask] / rec_band[mask]))
+    ratio = (sf * rec_band) / np.maximum(target_band, 1e-12)
+    ok = bool(np.all(ratio >= 1.0 - 1e-8))
+    return float(sf), ok, Tlo, Thi, target_band, rec_band
+
+def _read_at2_to_mps2(uploaded_file):
+    raw = uploaded_file.read()
+    texto = leer_archivo_bytes_a_texto(raw)
+
+    nombre, unidad, dt, ag = detectar_formato_y_extraer(texto)
+    ag = np.asarray(ag, dtype=float).ravel()
+    dt = float(dt)
+
+    if unidad == "cm/s²":
+        ag_mps2 = ag / 100.0
+    elif unidad == "g":
+        ag_mps2 = ag * G_STD
+    elif unidad == "m/s²":
+        ag_mps2 = ag
+    else:
+        raise ValueError(f"Unidad no reconocida: {unidad}")
+
+    return nombre, unidad, dt, ag_mps2
+
+def _process_record(uploaded_file, aplicar_proc):
+    nombre, unidad, dt, ag_orig = _read_at2_to_mps2(uploaded_file)
+
+    out = procesar_registro(ag_orig, dt, aplicar_proc=aplicar_proc)
+
+    t = np.asarray(out["t"], dtype=float).ravel()
+    vel_orig = np.asarray(out["vel_orig"], dtype=float).ravel()
+    disp_orig = np.asarray(out["disp_orig"], dtype=float).ravel()
+
+    ag_proc = out["ag_proc"]
+    vel_proc = out["vel_proc"]
+    disp_proc = out["disp_proc"]
+    ag_base = np.asarray(out["ag_base"], dtype=float).ravel()
+
+    if ag_proc is not None:
+        ag_proc = np.asarray(ag_proc, dtype=float).ravel()
+    if vel_proc is not None:
+        vel_proc = np.asarray(vel_proc, dtype=float).ravel()
+    if disp_proc is not None:
+        disp_proc = np.asarray(disp_proc, dtype=float).ravel()
+
+    proc_on = bool(
+        aplicar_proc and
+        (ag_proc is not None) and
+        (vel_proc is not None) and
+        (disp_proc is not None)
+    )
+
+    ag_final = np.asarray(ag_base, dtype=float).ravel()
+    out_final = procesar_registro(ag_final, float(dt), aplicar_proc=False)
+    vel_final = np.asarray(out_final["vel_orig"], dtype=float).ravel()
+    disp_final = np.asarray(out_final["disp_orig"], dtype=float).ravel()
+
+    return {
+        "nombre": nombre,
+        "unidad": unidad,
+        "dt": dt,
+        "t": t,
+        "ag_orig": ag_orig,
+        "vel_orig": vel_orig,
+        "disp_orig": disp_orig,
+        "ag_proc": ag_proc,
+        "vel_proc": vel_proc,
+        "disp_proc": disp_proc,
+        "ag_base": ag_base,
+        "proc_on": proc_on,
+        "ag_final": ag_final,
+        "vel_final": vel_final,
+        "disp_final": disp_final,
+    }
 
 # -------------------------------------------------------------------------
 # Header
@@ -1673,6 +1885,7 @@ with col_left:
             )
 
             Sa_design_plot = np.asarray(Sa_elast, dtype=float).ravel()
+            Sa_target = Sa_design_plot * float(Ie)
 
             st.session_state["SDS"] = float(SDS)
             st.session_state["SD1"] = float(SD1)
@@ -1689,7 +1902,7 @@ with col_left:
                 st.caption(tr("b3_coeffs").format(Fa=Fa, Fd=Fd, Fs=Fs))
 
             with colB:
-                nec24_xlsx_bytes = build_nec24_excel_bytes(T_spec, Sa_design_plot)
+                nec24_xlsx_bytes = build_nec24_excel_bytes(T_spec, Sa_target)
                 st.download_button(
                     label=tr("b3_nec_dl_btn"),
                     data=nec24_xlsx_bytes,
@@ -1703,7 +1916,7 @@ with col_left:
             fig, ax = plt.subplots(figsize=(6.0, NEC24_FIG_H))
             fig.patch.set_facecolor(BG)
             ax.set_facecolor(BG)
-            ax.plot(T_spec, Sa_design_plot, lw=1.0, label=tr("b3_design_spec"))
+            ax.plot(T_spec, Sa_target, lw=1.0, label=tr("b3_design_spec"))
             ax.set_xlabel(tr("b3_T"), color=COLOR_TEXT)
             ax.set_ylabel(tr("b3_Sa"), color=COLOR_TEXT)
             ax.tick_params(colors=COLOR_TEXT)
@@ -1721,284 +1934,292 @@ with col_left:
             st.markdown('<div class="nec24-equalizer"></div>', unsafe_allow_html=True)
 
 # =============================================================================
-# DERECHA: REGISTRO AT2
+# DERECHA: 2 REGISTROS (FIJA / AISLADA)
 # =============================================================================
+rec_fix = None
+rec_iso = None
+
 with col_right:
     with st.container(border=True):
-        st.markdown(f"### 〰️ {tr('b3_rec_load')}")
+        c_fix, c_iso = st.columns(2, gap="large")
 
-        col_ctrl, col_graf = st.columns([1.15, 2.55], gap="large")
+        with c_fix:
+            st.markdown(f"### 〰️ {tr('b3_rec_fix')}")
 
-        nombre = None
-        unidad = None
-        dt = None
-        t_ag = None
-        ag_orig = None
-        vel_orig = None
-        disp_orig = None
-        ag_proc = None
-        vel_proc = None
-        disp_proc = None
-        ag_base = None
-        proc_disponible = False
-
-        with col_ctrl:
-            st.caption(tr("b3_peer_note"))
-
-            uploaded = st.file_uploader(
-                tr("b3_file"),
+            uploaded_fix = st.file_uploader(
+                tr("b3_file_fix"),
                 type=["at2"],
                 disabled=not geom_ok,
                 help=tr("b3_file_help"),
-                key="b3_at2_file"
+                key="b3_at2_file_fix"
             )
-
-            aplicar_proc = st.checkbox(
-                tr("b3_proc"),
+            aplicar_proc_fix = st.checkbox(
+                tr("b3_proc_fix"),
                 value=False,
                 disabled=not geom_ok,
                 help=tr("h_b3_proc"),
-                key="b3_proc_check"
+                key="b3_proc_check_fix"
             )
 
             if not geom_ok:
                 st.info(tr("b3_need_model_rec"))
-            elif uploaded is None:
-                st.info(tr("b3_no_file"))
-
-        if geom_ok and uploaded is not None:
-            if not uploaded.name.lower().endswith(".at2"):
-                st.error(tr("b3_only_at2"))
-                st.stop()
-
-            try:
-                raw = uploaded.read()
-                texto = leer_archivo_bytes_a_texto(raw)
-
-                nombre, unidad, dt, ag = detectar_formato_y_extraer(texto)
-                ag = np.asarray(ag, dtype=float).ravel()
-                dt = float(dt)
-
-                if unidad == "cm/s²":
-                    ag_orig = ag / 100.0
-                elif unidad == "g":
-                    ag_orig = ag * G_STD
-                elif unidad == "m/s²":
-                    ag_orig = ag
-                else:
-                    st.error(f"Unidad no reconocida: {unidad}")
-                    st.stop()
-
-            except Exception as e:
-                st.error(f"Error al leer el archivo AT2: {e}")
-                st.stop()
-
-            out = procesar_registro(ag_orig, dt, aplicar_proc=aplicar_proc)
-
-            t_ag = np.asarray(out["t"], dtype=float).ravel()
-            vel_orig = np.asarray(out["vel_orig"], dtype=float).ravel()
-            disp_orig = np.asarray(out["disp_orig"], dtype=float).ravel()
-            ag_proc = out["ag_proc"]
-            vel_proc = out["vel_proc"]
-            disp_proc = out["disp_proc"]
-            ag_base = np.asarray(out["ag_base"], dtype=float).ravel()
-
-            if ag_proc is not None:
-                ag_proc = np.asarray(ag_proc, dtype=float).ravel()
-            if vel_proc is not None:
-                vel_proc = np.asarray(vel_proc, dtype=float).ravel()
-            if disp_proc is not None:
-                disp_proc = np.asarray(disp_proc, dtype=float).ravel()
-
-            proc_disponible = bool(
-                aplicar_proc and
-                (ag_proc is not None) and
-                (vel_proc is not None) and
-                (disp_proc is not None)
-            )
-
-            with col_ctrl:
-                st.markdown(f"**{tr('b3_event')}:** {nombre}")
-                st.markdown(f"**{tr('b3_units_in')}:** {unidad}")
-                st.markdown(f"**{tr('b3_dt')}:** {dt:.4f} s")
-                st.markdown(f"**{tr('b3_dur')}:** {t_ag[-1]:.2f} s")
-                st.markdown(f"**{tr('b3_npts')}:** {len(ag_orig)}")
-
-            COLOR_ORIG = "#9DBEF7"
-            COLOR_PROC = "#FFD479"
-            LW_ORIG_SOLO = 0.55
-            LW_ORIG_OVER = 0.28
-            LW_PROC = 0.28
-
-            with col_graf:
-                fig, axs = plt.subplots(3, 1, figsize=(9, 11.2), sharex=True)
-                fig.patch.set_facecolor(BG)
-
-                for ax in axs:
-                    ax.set_facecolor(BG)
-                    ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
-                    ax.tick_params(colors=COLOR_TEXT)
-                    for s in ("top", "right"):
-                        ax.spines[s].set_visible(False)
-
-                axs[0].plot(
-                    t_ag, ag_orig,
-                    lw=(LW_ORIG_OVER if proc_disponible else LW_ORIG_SOLO),
-                    color=COLOR_ORIG,
-                    label=tr("b3_orig")
-                )
-                if proc_disponible:
-                    axs[0].plot(
-                        t_ag, ag_proc,
-                        lw=LW_PROC, color=COLOR_PROC, label=tr("b3_proc_lab")
-                    )
-                axs[0].set_ylabel(tr("b3_acc"), color=COLOR_TEXT)
-                axs[0].set_title(tr("b3_reg_title").format(name=nombre), color=COLOR_TEXT)
-
-                axs[1].plot(
-                    t_ag, vel_orig,
-                    lw=(LW_ORIG_OVER if proc_disponible else LW_ORIG_SOLO),
-                    color=COLOR_ORIG
-                )
-                if proc_disponible:
-                    axs[1].plot(t_ag, vel_proc, lw=LW_PROC, color=COLOR_PROC)
-                axs[1].set_ylabel(tr("b3_vel"), color=COLOR_TEXT)
-
-                axs[2].plot(
-                    t_ag, disp_orig,
-                    lw=(LW_ORIG_OVER if proc_disponible else LW_ORIG_SOLO),
-                    color=COLOR_ORIG
-                )
-                if proc_disponible:
-                    axs[2].plot(t_ag, disp_proc, lw=LW_PROC, color=COLOR_PROC)
-                axs[2].set_ylabel(tr("b3_disp"), color=COLOR_TEXT)
-                axs[2].set_xlabel(tr("b3_time"), color=COLOR_TEXT)
-
-                if proc_disponible:
-                    leg0 = axs[0].legend(framealpha=0.85)
-                    leg0.get_frame().set_facecolor(BG)
-                    leg0.get_frame().set_edgecolor(COLOR_GRID)
-                    for tt in leg0.get_texts():
-                        tt.set_color(COLOR_TEXT)
-
-                st.pyplot(fig, use_container_width=True)
-
-            # -------------------------------------------------------------
-            # ✅ Guardado principal en session_state
-            # -------------------------------------------------------------
-            st.session_state["rs_ready"] = True
-            st.session_state["rs_nombre"] = str(nombre)
-            st.session_state["rs_dt"] = float(dt)
-            st.session_state["rs_t"] = np.asarray(t_ag, dtype=float).ravel()
-
-            st.session_state["rs_ag_orig"] = np.asarray(ag_orig, dtype=float).ravel()
-            st.session_state["rs_vel_orig"] = np.asarray(vel_orig, dtype=float).ravel()
-            st.session_state["rs_disp_orig"] = np.asarray(disp_orig, dtype=float).ravel()
-
-            st.session_state["rs_ag_base"] = np.asarray(ag_base, dtype=float).ravel()
-
-            st.session_state["rs_ag_proc"] = np.asarray(ag_proc, dtype=float).ravel() if proc_disponible else None
-            st.session_state["rs_vel_proc"] = np.asarray(vel_proc, dtype=float).ravel() if proc_disponible else None
-            st.session_state["rs_disp_proc"] = np.asarray(disp_proc, dtype=float).ravel() if proc_disponible else None
-            st.session_state["rs_proc_on"] = bool(proc_disponible)
-
-            # -------------------------------------------------------------
-            # ✅ Registro final usado en el análisis
-            #    Si hay procesamiento activo, usa la señal procesada.
-            #    Si no, usa la original convertida a m/s².
-            # -------------------------------------------------------------
-            ag_final = np.asarray(ag_base, dtype=float).ravel()
-
-            out_final = procesar_registro(
-                ag_final,
-                float(dt),
-                aplicar_proc=False
-            )
-            vel_final = np.asarray(out_final["vel_orig"], dtype=float).ravel()
-            disp_final = np.asarray(out_final["disp_orig"], dtype=float).ravel()
-
-            st.session_state["ag_filt"] = np.asarray(ag_final, dtype=float).ravel()
-            st.session_state["dt"] = float(dt)
-            st.session_state["t_ag"] = np.asarray(t_ag, dtype=float).ravel()
-
-            st.session_state["rs_ag_final"] = np.asarray(ag_final, dtype=float).ravel()
-            st.session_state["rs_vel_final"] = np.asarray(vel_final, dtype=float).ravel()
-            st.session_state["rs_disp_final"] = np.asarray(disp_final, dtype=float).ravel()
-
-# =============================================================================
-# DESCARGA FINAL DEL REGISTRO (3 OPCIONES)
-# =============================================================================
-rs_ready = bool(st.session_state.get("rs_ready", False))
-
-if geom_ok and rs_ready and ("rs_t" in st.session_state):
-    with col_right:
-        with col_ctrl:
-            st.markdown('<div class="compact-download">', unsafe_allow_html=True)
-            st.caption(f"📥 **{tr('b3_dl_hdr')}**")
-
-            opts = [tr("b3_dl_opt_orig")]
-            if bool(st.session_state.get("rs_proc_on", False)):
-                opts.append(tr("b3_dl_opt_proc"))
-            opts.append(tr("b3_dl_opt_final"))
-
-            pick = st.selectbox(
-                tr("b3_dl_pick"),
-                options=opts,
-                index=(len(opts) - 1),
-                key="b3_dl_pick_opt",
-                help=tr("h_b3_dl_pick"),
-                label_visibility="collapsed",
-            )
-
-            t_exp = np.asarray(st.session_state["rs_t"], dtype=float).ravel()
-
-            if pick == tr("b3_dl_opt_orig"):
-                a_exp = np.asarray(st.session_state["rs_ag_orig"], dtype=float).ravel()
-                v_exp = np.asarray(st.session_state["rs_vel_orig"], dtype=float).ravel()
-                u_exp = np.asarray(st.session_state["rs_disp_orig"], dtype=float).ravel()
-                tag = "orig"
-
-            elif pick == tr("b3_dl_opt_proc") and bool(st.session_state.get("rs_proc_on", False)):
-                a_exp = np.asarray(st.session_state["rs_ag_proc"], dtype=float).ravel()
-                v_exp = np.asarray(st.session_state["rs_vel_proc"], dtype=float).ravel()
-                u_exp = np.asarray(st.session_state["rs_disp_proc"], dtype=float).ravel()
-                tag = "proc"
-
+            elif uploaded_fix is None:
+                st.info(tr("b3_no_file_fix"))
             else:
-                a_exp = np.asarray(st.session_state["rs_ag_final"], dtype=float).ravel()
-                v_exp = np.asarray(st.session_state["rs_vel_final"], dtype=float).ravel()
-                u_exp = np.asarray(st.session_state["rs_disp_final"], dtype=float).ravel()
-                tag = "final"
+                if not uploaded_fix.name.lower().endswith(".at2"):
+                    st.error(tr("b3_only_at2"))
+                else:
+                    try:
+                        rec_fix = _process_record(uploaded_fix, aplicar_proc_fix)
 
-            df_xlsx = pd.DataFrame({
-                "tiempo": t_exp,
-                "aceleracion": a_exp,
-                "velocidad": v_exp,
-                "desplazamiento": u_exp,
-            })
+                        st.markdown(f"**{tr('b3_event')}:** {rec_fix['nombre']}")
+                        st.markdown(f"**{tr('b3_units_in')}:** {rec_fix['unidad']}")
+                        st.markdown(f"**{tr('b3_dt')}:** {rec_fix['dt']:.4f} s")
+                        st.markdown(f"**{tr('b3_dur')}:** {rec_fix['t'][-1]:.2f} s")
+                        st.markdown(f"**{tr('b3_npts')}:** {len(rec_fix['ag_orig'])}")
 
-            bio = io.BytesIO()
-            with pd.ExcelWriter(bio, engine="openpyxl") as writer:
-                df_xlsx.to_excel(writer, index=False, sheet_name="registro")
-            bio.seek(0)
+                        fig, ax = plt.subplots(figsize=(5.5, 2.7))
+                        fig.patch.set_facecolor(BG)
+                        ax.set_facecolor(BG)
+                        ax.plot(rec_fix["t"], rec_fix["ag_orig"], lw=0.55, label=tr("b3_orig"))
+                        if rec_fix["proc_on"]:
+                            ax.plot(rec_fix["t"], rec_fix["ag_proc"], lw=0.35, label=tr("b3_proc_lab"))
+                        ax.set_xlabel(tr("b3_time"), color=COLOR_TEXT)
+                        ax.set_ylabel(tr("b3_acc"), color=COLOR_TEXT)
+                        ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
+                        ax.tick_params(colors=COLOR_TEXT)
+                        ax.spines["top"].set_visible(False)
+                        ax.spines["right"].set_visible(False)
+                        leg = ax.legend(framealpha=0.95)
+                        leg.get_frame().set_facecolor(BG)
+                        leg.get_frame().set_edgecolor(COLOR_GRID)
+                        for tt in leg.get_texts():
+                            tt.set_color(COLOR_TEXT)
+                        st.pyplot(fig, use_container_width=True)
 
-            safe_name = "".join([
-                c if (c.isalnum() or c in ("_", "-", ".")) else "_"
-                for c in str(st.session_state.get("rs_nombre", "registro"))
-            ])
-            file_name = f"registro_{safe_name}_{tag}.xlsx"
+                    except Exception as e:
+                        st.error(f"Error al leer el registro FIJO: {e}")
 
-            st.download_button(
-                label=tr("b3_dl_btn"),
-                data=bio.getvalue(),
-                file_name=file_name,
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                key="b3_dl_btn_xlsx",
-                use_container_width=True,
+        with c_iso:
+            st.markdown(f"### 〰️ {tr('b3_rec_iso')}")
+
+            uploaded_iso = st.file_uploader(
+                tr("b3_file_iso"),
+                type=["at2"],
+                disabled=not geom_ok,
+                help=tr("b3_file_help"),
+                key="b3_at2_file_iso"
+            )
+            aplicar_proc_iso = st.checkbox(
+                tr("b3_proc_iso"),
+                value=False,
+                disabled=not geom_ok,
+                help=tr("h_b3_proc"),
+                key="b3_proc_check_iso"
             )
 
-            st.markdown('</div>', unsafe_allow_html=True)
+            if not geom_ok:
+                st.info(tr("b3_need_model_rec"))
+            elif uploaded_iso is None:
+                st.info(tr("b3_no_file_iso"))
+            else:
+                if not uploaded_iso.name.lower().endswith(".at2"):
+                    st.error(tr("b3_only_at2"))
+                else:
+                    try:
+                        rec_iso = _process_record(uploaded_iso, aplicar_proc_iso)
 
+                        st.markdown(f"**{tr('b3_event')}:** {rec_iso['nombre']}")
+                        st.markdown(f"**{tr('b3_units_in')}:** {rec_iso['unidad']}")
+                        st.markdown(f"**{tr('b3_dt')}:** {rec_iso['dt']:.4f} s")
+                        st.markdown(f"**{tr('b3_dur')}:** {rec_iso['t'][-1]:.2f} s")
+                        st.markdown(f"**{tr('b3_npts')}:** {len(rec_iso['ag_orig'])}")
+
+                        fig, ax = plt.subplots(figsize=(5.5, 2.7))
+                        fig.patch.set_facecolor(BG)
+                        ax.set_facecolor(BG)
+                        ax.plot(rec_iso["t"], rec_iso["ag_orig"], lw=0.55, label=tr("b3_orig"))
+                        if rec_iso["proc_on"]:
+                            ax.plot(rec_iso["t"], rec_iso["ag_proc"], lw=0.35, label=tr("b3_proc_lab"))
+                        ax.set_xlabel(tr("b3_time"), color=COLOR_TEXT)
+                        ax.set_ylabel(tr("b3_acc"), color=COLOR_TEXT)
+                        ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
+                        ax.tick_params(colors=COLOR_TEXT)
+                        ax.spines["top"].set_visible(False)
+                        ax.spines["right"].set_visible(False)
+                        leg = ax.legend(framealpha=0.95)
+                        leg.get_frame().set_facecolor(BG)
+                        leg.get_frame().set_edgecolor(COLOR_GRID)
+                        for tt in leg.get_texts():
+                            tt.set_color(COLOR_TEXT)
+                        st.pyplot(fig, use_container_width=True)
+
+                    except Exception as e:
+                        st.error(f"Error al leer el registro AISLADO: {e}")
+
+# =============================================================================
+# VALIDADOR ESPECTRAL ANCHO
+# =============================================================================
+if geom_ok and (st.session_state.get("rs_T_spec", None) is not None):
+    T_target = np.asarray(st.session_state["rs_T_spec"], float).ravel()
+    Sa_target = np.asarray(st.session_state["rs_Sa_design"], float).ravel() * float(st.session_state.get("rs_Ie", 1.0))
+
+    T_rs = np.linspace(0.02, min(5.0, float(np.max(T_target))), 120)
+
+    fix_ready = rec_fix is not None
+    iso_ready = rec_iso is not None
+
+    T1_fix = np.nan
+    if st.session_state.get("T_sin", None) is not None:
+        T_sin = np.asarray(st.session_state.get("T_sin"), float).ravel()
+        if len(T_sin):
+            T1_fix = float(T_sin[0])
+
+    Tm_iso = np.nan
+    if st.session_state.get("Tm", None) is not None:
+        try:
+            Tm_iso = float(st.session_state.get("Tm"))
+        except Exception:
+            Tm_iso = np.nan
+    if not np.isfinite(Tm_iso):
+        T_ais = np.asarray(st.session_state.get("T_ais", []), float).ravel()
+        if len(T_ais):
+            Tm_iso = float(T_ais[0])
+
+    Sa_fix = None
+    Sa_iso = None
+    sf_fix = np.nan
+    sf_iso = np.nan
+    ok_fix = False
+    ok_iso = False
+    Tlo_fix = Thi_fix = np.nan
+    Tlo_iso = Thi_iso = np.nan
+
+    if fix_ready:
+        Sa_fix = _response_spectrum_5pct(rec_fix["ag_final"], rec_fix["dt"], T_rs)
+        if np.isfinite(T1_fix) and T1_fix > 0:
+            sf_fix, ok_fix, Tlo_fix, Thi_fix, _, _ = _validate_fixed_single(
+                T_rs, Sa_fix, T_target, Sa_target, T1_fix
+            )
+        if not np.isfinite(sf_fix):
+            sf_fix = 1.0
+
+        rec_fix["Sa_rs"] = Sa_fix
+        rec_fix["sf"] = float(sf_fix)
+        rec_fix["ok"] = bool(ok_fix)
+
+    if iso_ready:
+        Sa_iso = _response_spectrum_5pct(rec_iso["ag_final"], rec_iso["dt"], T_rs)
+        if np.isfinite(Tm_iso) and Tm_iso > 0:
+            sf_iso, ok_iso, Tlo_iso, Thi_iso, _, _ = _validate_iso_single(
+                T_rs, Sa_iso, T_target, Sa_target, Tm_iso
+            )
+        if not np.isfinite(sf_iso):
+            sf_iso = 1.0
+
+        rec_iso["Sa_rs"] = Sa_iso
+        rec_iso["sf"] = float(sf_iso)
+        rec_iso["ok"] = bool(ok_iso)
+
+    with st.container(border=True):
+        st.markdown(f"### 📊 {tr('b3_val_hdr')}")
+        st.caption(tr("b3_prelim"))
+        st.caption(tr("b3_fix_rule"))
+        st.caption(tr("b3_iso_rule"))
+
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            st.metric(tr("b3_scale_fix"), f"{sf_fix:.3f}" if np.isfinite(sf_fix) else "—")
+        with c2:
+            st.metric(tr("b3_check_fix"), tr("b3_ok") if ok_fix else tr("b3_no"))
+        with c3:
+            st.metric(tr("b3_scale_iso"), f"{sf_iso:.3f}" if np.isfinite(sf_iso) else "—")
+        with c4:
+            st.metric(tr("b3_check_iso"), tr("b3_ok") if ok_iso else tr("b3_no"))
+
+        fig, ax = plt.subplots(figsize=(12.0, 4.8))
+        fig.patch.set_facecolor(BG)
+        ax.set_facecolor(BG)
+
+        ax.plot(T_target, Sa_target, lw=1.2, label=tr("b3_val_target"))
+
+        if fix_ready and Sa_fix is not None:
+            ax.plot(T_rs, sf_fix * Sa_fix, lw=1.0, label=tr("b3_val_fix"))
+            if np.isfinite(Tlo_fix) and np.isfinite(Thi_fix):
+                ax.axvspan(Tlo_fix, Thi_fix, alpha=0.10, label=tr("b3_band_fix"))
+
+        if iso_ready and Sa_iso is not None:
+            ax.plot(T_rs, sf_iso * Sa_iso, lw=1.0, label=tr("b3_val_iso"))
+            if np.isfinite(Tlo_iso) and np.isfinite(Thi_iso):
+                ax.axvspan(Tlo_iso, Thi_iso, alpha=0.10, label=tr("b3_band_iso"))
+
+        ax.set_xlabel(tr("b3_T"), color=COLOR_TEXT)
+        ax.set_ylabel(tr("b3_Sa"), color=COLOR_TEXT)
+        ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
+        ax.tick_params(colors=COLOR_TEXT)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+
+        leg = ax.legend(framealpha=0.95, loc="best")
+        leg.get_frame().set_facecolor(BG)
+        leg.get_frame().set_edgecolor(COLOR_GRID)
+        for tt in leg.get_texts():
+            tt.set_color(COLOR_TEXT)
+
+        st.pyplot(fig, use_container_width=True)
+
+        # -------------------------------------------------------------
+        # Guardado FIXED
+        # -------------------------------------------------------------
+        if fix_ready:
+            st.session_state["rs_ready_fix"] = True
+            st.session_state["rs_nombre_fix"] = str(rec_fix["nombre"])
+            st.session_state["rs_dt_fix"] = float(rec_fix["dt"])
+            st.session_state["rs_t_fix"] = np.asarray(rec_fix["t"], float).ravel()
+
+            st.session_state["rs_ag_orig_fix"] = np.asarray(rec_fix["ag_orig"], float).ravel()
+            st.session_state["rs_vel_orig_fix"] = np.asarray(rec_fix["vel_orig"], float).ravel()
+            st.session_state["rs_disp_orig_fix"] = np.asarray(rec_fix["disp_orig"], float).ravel()
+
+            st.session_state["rs_ag_final_fix"] = np.asarray(rec_fix["ag_final"] * sf_fix, float).ravel()
+            st.session_state["rs_vel_final_fix"] = np.asarray(rec_fix["vel_final"] * sf_fix, float).ravel()
+            st.session_state["rs_disp_final_fix"] = np.asarray(rec_fix["disp_final"] * sf_fix, float).ravel()
+            st.session_state["rs_scale_fix"] = float(sf_fix)
+            st.session_state["rs_check_fix"] = bool(ok_fix)
+            st.session_state["rs_spec_fix_T"] = np.asarray(T_rs, float).ravel()
+            st.session_state["rs_spec_fix_Sa_scaled"] = np.asarray(sf_fix * Sa_fix, float).ravel()
+
+            # compatibilidad actual con tus bloques existentes:
+            st.session_state["ag_filt"] = np.asarray(rec_fix["ag_final"] * sf_fix, float).ravel()
+            st.session_state["dt"] = float(rec_fix["dt"])
+            st.session_state["t_ag"] = np.asarray(rec_fix["t"], float).ravel()
+
+        # -------------------------------------------------------------
+        # Guardado ISOLATED
+        # -------------------------------------------------------------
+        if iso_ready:
+            st.session_state["rs_ready_iso"] = True
+            st.session_state["rs_nombre_iso"] = str(rec_iso["nombre"])
+            st.session_state["rs_dt_iso"] = float(rec_iso["dt"])
+            st.session_state["rs_t_iso"] = np.asarray(rec_iso["t"], float).ravel()
+
+            st.session_state["rs_ag_orig_iso"] = np.asarray(rec_iso["ag_orig"], float).ravel()
+            st.session_state["rs_vel_orig_iso"] = np.asarray(rec_iso["vel_orig"], float).ravel()
+            st.session_state["rs_disp_orig_iso"] = np.asarray(rec_iso["disp_orig"], float).ravel()
+
+            st.session_state["rs_ag_final_iso"] = np.asarray(rec_iso["ag_final"] * sf_iso, float).ravel()
+            st.session_state["rs_vel_final_iso"] = np.asarray(rec_iso["vel_final"] * sf_iso, float).ravel()
+            st.session_state["rs_disp_final_iso"] = np.asarray(rec_iso["disp_final"] * sf_iso, float).ravel()
+            st.session_state["rs_scale_iso"] = float(sf_iso)
+            st.session_state["rs_check_iso"] = bool(ok_iso)
+            st.session_state["rs_spec_iso_T"] = np.asarray(T_rs, float).ravel()
+            st.session_state["rs_spec_iso_Sa_scaled"] = np.asarray(sf_iso * Sa_iso, float).ravel()
+
+            # ya listo para cuando cambies tus bloques THA:
+            st.session_state["ag_filt_iso"] = np.asarray(rec_iso["ag_final"] * sf_iso, float).ravel()
+            st.session_state["dt_iso"] = float(rec_iso["dt"])
+            st.session_state["t_ag_iso"] = np.asarray(rec_iso["t"], float).ravel()
+            
 # =============================================================================
 # == BLOQUE 4: DISEÑO DEL AISLADOR LRB (MODAL + RAYLEIGH + DISEÑO + GRÁFICO) ==
 # =============================================================================
