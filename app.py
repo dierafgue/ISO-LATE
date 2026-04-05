@@ -4039,82 +4039,27 @@ V_fix_max = np.max(V_fix_all, axis=1)
 V_fix_min = np.min(V_fix_all, axis=1)
 
 # -------------------- AISLADA --------------------
-if a_ais.shape[0] == n_pisos + 1:
+if a_ais_rel.shape[0] == n_pisos + 1:
 
-    u_ais = np.asarray(st.session_state.get("u_t_ais"), float)
-    v_ais = np.asarray(st.session_state.get("v_t_ais"), float)
+    # aceleración absoluta del sistema aislado
+    a_abs_ais = a_ais_rel + ag.reshape(1, -1)
 
-    if u_ais.ndim == 1:
-        u_ais = u_ais[np.newaxis, :]
-    if v_ais.ndim == 1:
-        v_ais = v_ais[np.newaxis, :]
+    # masas diagonales del sistema aislado
+    m_diag_ais = np.diag(np.asarray(M_ais, float)).reshape(-1, 1)
 
-    K_ais_arr = np.asarray(st.session_state.get("K_cond_ais"), float)
+    # SOLO superestructura (sin DOF 0 del aislador)
+    m_sup = m_diag_ais[1:, :]
+    a_sup = a_abs_ais[1:, :]
 
-    C_ais_arr = st.session_state.get("C_ais", st.session_state.get("C_ais_used", None))
-    if C_ais_arr is None:
-        C_ais_arr = np.zeros_like(K_ais_arr)
-    else:
-        C_ais_arr = np.asarray(C_ais_arr, float)
+    # fuerzas inerciales por piso
+    F_sup = m_sup * a_sup
 
-    # -------------------------------------------------
-    # 1) Respuesta relativa de la superestructura
-    # -------------------------------------------------
-    u0 = u_ais[0, :]
-    v0 = v_ais[0, :]
+    # cortantes acumulados por piso
+    V_ais_all = _story_from_forces(F_sup)
 
-    x  = u_ais[1:, :] - u0.reshape(1, -1)   # desplazamientos relativos al aislador
-    xd = v_ais[1:, :] - v0.reshape(1, -1)   # velocidades relativas al aislador
-
-    n = n_pisos
-
-    # -------------------------------------------------
-    # 2) Submatrices de superestructura
-    # -------------------------------------------------
-    K_sup = np.asarray(K_ais_arr[1:, 1:], float)
-    C_sup = np.asarray(C_ais_arr[1:, 1:], float)
-
-    # -------------------------------------------------
-    # 3) Extraer rigideces y amortiguamientos de story
-    #    desde matriz tridiagonal tipo shear-building
-    # -------------------------------------------------
-    k_story = np.zeros(n, dtype=float)
-    c_story = np.zeros(n, dtype=float)
-
-    if n == 1:
-        k_story[0] = K_sup[0, 0]
-        c_story[0] = C_sup[0, 0]
-    else:
-        # story 2..N desde off-diagonals
-        for i in range(1, n):
-            k_story[i] = -K_sup[i - 1, i]
-            c_story[i] = -C_sup[i - 1, i]
-
-        # story 1 desde equilibrio de la primera diagonal
-        k_story[0] = K_sup[0, 0] - k_story[1]
-        c_story[0] = C_sup[0, 0] - c_story[1]
-
-        # último story por diagonal superior
-        k_story[-1] = K_sup[-1, -1]
-        c_story[-1] = C_sup[-1, -1]
-
-    # -------------------------------------------------
-    # 4) Fuerzas de story = resorte + amortiguador
-    # -------------------------------------------------
-    V_story_t = np.zeros_like(x)
-
-    # Story 1
-    V_story_t[0, :] = k_story[0] * x[0, :] + c_story[0] * xd[0, :]
-
-    # Story 2..N
-    for i in range(1, n):
-        dx = x[i, :] - x[i - 1, :]
-        dv = xd[i, :] - xd[i - 1, :]
-        V_story_t[i, :] = k_story[i] * dx + c_story[i] * dv
-
-    # Envolventes
-    V_ais_max = np.max(V_story_t, axis=1)
-    V_ais_min = np.min(V_story_t, axis=1)
+    # envolventes
+    V_ais_max = np.max(V_ais_all, axis=1)
+    V_ais_min = np.min(V_ais_all, axis=1)
 
     # -------------------------------------------------
     # DEBUG ETABS vs APP
@@ -4123,113 +4068,39 @@ if a_ais.shape[0] == n_pisos + 1:
 
         st.write("n_pisos =", n_pisos)
         st.write("shape a_ais_rel =", np.asarray(a_ais_rel).shape)
-        st.write("shape u_ais =", np.asarray(u_ais).shape)
-        st.write("shape v_ais =", np.asarray(v_ais).shape)
         st.write("shape M_ais =", np.asarray(M_ais).shape)
-        st.write("shape K_ais_arr =", np.asarray(K_ais_arr).shape)
-        st.write("shape C_ais_arr =", np.asarray(C_ais_arr).shape)
-
-        # -------------------------------
-        # 1) Masas por DOF
-        # -------------------------------
-        M_ais_arr = np.asarray(M_ais, float)
-        m_diag = np.diag(M_ais_arr).ravel()
 
         dbg_mass = pd.DataFrame({
-            "DOF": np.arange(len(m_diag)),
-            "m": np.round(m_diag, 6),
+            "DOF": np.arange(len(m_diag_ais)),
+            "m": np.round(m_diag_ais.ravel(), 6),
         })
         st.write("Masas diagonales del sistema aislado")
         st.dataframe(dbg_mass, hide_index=True, use_container_width=True)
 
-        # -------------------------------
-        # 2) Aceleraciones relativas y absolutas
-        # -------------------------------
-        a_rel = np.asarray(a_ais_rel, float)
-        a_abs = a_rel + ag.reshape(1, -1)
-
         dbg_acc = pd.DataFrame({
-            "DOF": np.arange(a_rel.shape[0]),
-            "a_rel_max": np.round(np.max(a_rel, axis=1), 6),
-            "a_rel_min": np.round(np.min(a_rel, axis=1), 6),
-            "a_abs_max": np.round(np.max(a_abs, axis=1), 6),
-            "a_abs_min": np.round(np.min(a_abs, axis=1), 6),
+            "DOF": np.arange(a_ais_rel.shape[0]),
+            "a_rel_max": np.round(np.max(a_ais_rel, axis=1), 6),
+            "a_rel_min": np.round(np.min(a_ais_rel, axis=1), 6),
+            "a_abs_max": np.round(np.max(a_abs_ais, axis=1), 6),
+            "a_abs_min": np.round(np.min(a_abs_ais, axis=1), 6),
         })
         st.write("Aceleraciones relativas y absolutas por DOF")
         st.dataframe(dbg_acc, hide_index=True, use_container_width=True)
 
-        # -------------------------------
-        # 3) Desplazamientos y velocidades
-        # -------------------------------
-        dbg_uv = pd.DataFrame({
-            "DOF": np.arange(u_ais.shape[0]),
-            "u_max": np.round(np.max(u_ais, axis=1), 6),
-            "u_min": np.round(np.min(u_ais, axis=1), 6),
-            "v_max": np.round(np.max(v_ais, axis=1), 6),
-            "v_min": np.round(np.min(v_ais, axis=1), 6),
-        })
-        st.write("Desplazamientos y velocidades por DOF")
-        st.dataframe(dbg_uv, hide_index=True, use_container_width=True)
-
-        # -------------------------------
-        # 4) Fuerzas inerciales puras
-        # -------------------------------
-        F_inercial = m_diag.reshape(-1, 1) * a_abs
-
-        dbg_fin = pd.DataFrame({
-            "DOF": np.arange(F_inercial.shape[0]),
-            "F_iner_max": np.round(np.max(F_inercial, axis=1), 6),
-            "F_iner_min": np.round(np.min(F_inercial, axis=1), 6),
-        })
-        st.write("Fuerzas inerciales por DOF")
-        st.dataframe(dbg_fin, hide_index=True, use_container_width=True)
-
-        # -------------------------------
-        # 5) Fuerza dinámica completa
-        # -------------------------------
-        F_dyn = (M_ais_arr @ a_abs) + (C_ais_arr @ v_ais) + (K_ais_arr @ u_ais)
-
-        dbg_fdyn = pd.DataFrame({
-            "DOF": np.arange(F_dyn.shape[0]),
-            "F_dyn_max": np.round(np.max(F_dyn, axis=1), 6),
-            "F_dyn_min": np.round(np.min(F_dyn, axis=1), 6),
-        })
-        st.write("Fuerza dinámica completa por DOF")
-        st.dataframe(dbg_fdyn, hide_index=True, use_container_width=True)
-
-        # -------------------------------
-        # 6) Solo superestructura
-        # -------------------------------
-        F_iner_sup = F_inercial[1:, :]
-        F_dyn_sup = F_dyn[1:, :]
-
         dbg_sup = pd.DataFrame({
             "Story": [f"Story{i}" for i in range(1, n_pisos + 1)],
-            "F_iner_max": np.round(np.max(F_iner_sup, axis=1), 6),
-            "F_iner_min": np.round(np.min(F_iner_sup, axis=1), 6),
-            "F_dyn_max": np.round(np.max(F_dyn_sup, axis=1), 6),
-            "F_dyn_min": np.round(np.min(F_dyn_sup, axis=1), 6),
+            "F_iner_max": np.round(np.max(F_sup, axis=1), 6),
+            "F_iner_min": np.round(np.min(F_sup, axis=1), 6),
             "V_story_max": np.round(V_ais_max, 6),
             "V_story_min": np.round(V_ais_min, 6),
         })
         st.write("Comparación solo superestructura")
         st.dataframe(dbg_sup, hide_index=True, use_container_width=True)
 
-        # -------------------------------
-        # 7) Story stiffness equivalente extraída
-        # -------------------------------
-        dbg_kc = pd.DataFrame({
-            "Story": [f"Story{i}" for i in range(1, n_pisos + 1)],
-            "k_story": np.round(k_story, 6),
-            "c_story": np.round(c_story, 6),
-        })
-        st.write("Rigideces y amortiguamientos de story extraídos")
-        st.dataframe(dbg_kc, hide_index=True, use_container_width=True)
-
 else:
     st.error("❌ THA AISLADA: dimensiones incorrectas.")
     st.stop()
-
+    
 # -------------------- Layout resultados --------------------
 colL, colR = st.columns([1, 1], gap="large")
 
