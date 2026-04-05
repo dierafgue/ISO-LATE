@@ -1448,22 +1448,6 @@ T["en"].update({
     "b3_dl_opt_orig": "Original",
     "b3_dl_opt_proc": "Filtered + baseline-corrected",
     "b3_dl_opt_final": "Final used in analysis",
-
-    "b3_val_hdr": "Spectral validation of record",
-    "b3_val_target": "NEC target",
-    "b3_val_fix": "Scaled record – FIXED",
-    "b3_val_iso": "Scaled record – ISOLATED",
-    "b3_band_fix": "Fixed check band",
-    "b3_band_iso": "Isolated check band",
-    "b3_scale_fix": "Scale factor – FIXED",
-    "b3_scale_iso": "Scale factor – ISOLATED",
-    "b3_check_fix": "Meets criterion for FIXED",
-    "b3_check_iso": "Meets criterion for ISOLATED",
-    "b3_ok": "Yes",
-    "b3_no": "No",
-    "b3_prelim": "Single-record preliminary validation.",
-    "b3_fix_rule": "Fixed: band 0.8T1–1.2T1 and scale factor between 0.25 and 4.0.",
-    "b3_iso_rule": "Isolated: band 0.75Tm–1.25Tm and scale factor between 0.25 and 4.0.",
 })
 
 T["es"].update({
@@ -1530,22 +1514,6 @@ T["es"].update({
     "b3_dl_opt_orig": "Original",
     "b3_dl_opt_proc": "Filtrado + corregido (línea base)",
     "b3_dl_opt_final": "Final usado en el análisis",
-
-    "b3_val_hdr": "Validación espectral del registro",
-    "b3_val_target": "Objetivo NEC",
-    "b3_val_fix": "Registro escalado – FIJA",
-    "b3_val_iso": "Registro escalado – AISLADA",
-    "b3_band_fix": "Banda de chequeo fija",
-    "b3_band_iso": "Banda de chequeo aislada",
-    "b3_scale_fix": "Factor de escala – FIJA",
-    "b3_scale_iso": "Factor de escala – AISLADA",
-    "b3_check_fix": "Cumple criterio para FIJA",
-    "b3_check_iso": "Cumple criterio para AISLADA",
-    "b3_ok": "Sí",
-    "b3_no": "No",
-    "b3_prelim": "Validación preliminar con un solo registro.",
-    "b3_fix_rule": "Fija: banda 0.8T1–1.2T1 y factor de escala entre 0.25 y 4.0.",
-    "b3_iso_rule": "Aislada: banda 0.75Tm–1.25Tm y factor de escala entre 0.25 y 4.0.",
 })
 
 # -------------------------------------------------------------------------
@@ -1562,126 +1530,6 @@ def build_nec24_excel_bytes(T_spec, Sa_design):
         df_nec.to_excel(writer, index=False, sheet_name="NEC24")
     bio.seek(0)
     return bio.getvalue()
-
-# -------------------------------------------------------------------------
-# ✅ Helpers nuevos para validación espectral
-# -------------------------------------------------------------------------
-def _newmark_psa(acc, dt, Tn, zeta=0.05):
-    acc = np.asarray(acc, float).ravel()
-    if len(acc) < 2:
-        return np.nan
-    if Tn <= 0:
-        return np.max(np.abs(acc))
-
-    wn = 2.0 * np.pi / float(Tn)
-    m = 1.0
-    k = wn**2 * m
-    c = 2.0 * zeta * wn * m
-
-    beta = 0.25
-    gamma = 0.5
-
-    n = len(acc)
-    u = np.zeros(n, float)
-    v = np.zeros(n, float)
-    a = np.zeros(n, float)
-
-    p0 = -m * acc[0]
-    a[0] = (p0 - c * v[0] - k * u[0]) / m
-
-    a0 = 1.0 / (beta * dt**2)
-    a1 = gamma / (beta * dt)
-    a2 = 1.0 / (beta * dt)
-    a3 = 1.0 / (2.0 * beta) - 1.0
-    a4 = gamma / beta - 1.0
-    a5 = dt * (gamma / (2.0 * beta) - 1.0)
-
-    k_eff = k + a0 * m + a1 * c
-
-    for i in range(n - 1):
-        p_next = -m * acc[i + 1]
-        rhs = (
-            p_next
-            + m * (a0 * u[i] + a2 * v[i] + a3 * a[i])
-            + c * (a1 * u[i] + a4 * v[i] + a5 * a[i])
-        )
-
-        u[i + 1] = rhs / k_eff
-        a[i + 1] = a0 * (u[i + 1] - u[i]) - a2 * v[i] - a3 * a[i]
-        v[i + 1] = v[i] + dt * ((1.0 - gamma) * a[i] + gamma * a[i + 1])
-
-    return float(wn**2 * np.max(np.abs(u)))
-
-def _response_spectrum_5pct(acc, dt, Tvec):
-    Tvec = np.asarray(Tvec, float).ravel()
-    Sa = np.zeros_like(Tvec, dtype=float)
-    for i, Ti in enumerate(Tvec):
-        Sa[i] = _newmark_psa(acc, dt, float(Ti), zeta=0.05)
-    return Sa
-
-def _safe_interp(x, xp, fp):
-    x = np.asarray(x, float).ravel()
-    xp = np.asarray(xp, float).ravel()
-    fp = np.asarray(fp, float).ravel()
-    return np.interp(x, xp, fp)
-
-def _geom_mean_ratio(target, rec):
-    target = np.asarray(target, float).ravel()
-    rec = np.asarray(rec, float).ravel()
-    mask = (target > 1e-12) & (rec > 1e-12) & np.isfinite(target) & np.isfinite(rec)
-    if not np.any(mask):
-        return np.nan
-    return float(np.exp(np.mean(np.log(target[mask] / rec[mask]))))
-
-def _validate_fixed_single(T_rs, Sa_rs, T_tar, Sa_tar, T1):
-    T1 = float(T1)
-    Tlo = 0.8 * T1
-    Thi = 1.2 * T1
-
-    band = (T_rs >= Tlo) & (T_rs <= Thi)
-    if not np.any(band):
-        return np.nan, False, Tlo, Thi
-
-    T_band = T_rs[band]
-    target_band = _safe_interp(T_band, T_tar, Sa_tar)
-    rec_band = Sa_rs[band]
-
-    sf = _geom_mean_ratio(target_band, rec_band)
-    if not np.isfinite(sf):
-        return np.nan, False, Tlo, Thi
-
-    ratio = (sf * rec_band) / np.maximum(target_band, 1e-12)
-    ok_spec = bool(np.all((ratio >= 0.90) & (ratio <= 1.10)))
-    return float(sf), ok_spec, Tlo, Thi
-
-def _validate_iso_single(T_rs, Sa_rs, T_tar, Sa_tar, Tm):
-    Tm = float(Tm)
-    Tlo = 0.75 * Tm
-    Thi = 1.25 * Tm
-
-    band = (T_rs >= Tlo) & (T_rs <= Thi)
-    if not np.any(band):
-        return np.nan, False, Tlo, Thi
-
-    T_band = T_rs[band]
-    target_band = _safe_interp(T_band, T_tar, Sa_tar)
-    rec_band = Sa_rs[band]
-
-    mask = (rec_band > 1e-12) & np.isfinite(target_band) & np.isfinite(rec_band)
-    if not np.any(mask):
-        return np.nan, False, Tlo, Thi
-
-    sf = float(np.max(target_band[mask] / rec_band[mask]))
-    ratio = (sf * rec_band) / np.maximum(target_band, 1e-12)
-    ok_spec = bool(np.all(ratio >= 1.0 - 1e-8))
-    return float(sf), ok_spec, Tlo, Thi
-
-def _scale_factor_ok(sf):
-    try:
-        sf = float(sf)
-        return np.isfinite(sf) and (sf >= 0.25) and (sf <= 4.0)
-    except Exception:
-        return False
 
 # -------------------------------------------------------------------------
 # Header
@@ -2056,8 +1904,6 @@ with col_right:
 
             # -------------------------------------------------------------
             # ✅ Registro final usado en el análisis
-            #    Si hay procesamiento activo, usa la señal procesada.
-            #    Si no, usa la original convertida a m/s².
             # -------------------------------------------------------------
             ag_final = np.asarray(ag_base, dtype=float).ravel()
 
@@ -2150,137 +1996,7 @@ if geom_ok and rs_ready and ("rs_t" in st.session_state):
             )
 
             st.markdown('</div>', unsafe_allow_html=True)
-
-# =============================================================================
-# NUEVO: VALIDACIÓN ESPECTRAL ABAJO (ANCHO COMPLETO)
-# =============================================================================
-if geom_ok and rs_ready and (st.session_state.get("rs_T_spec", None) is not None):
-    T_target = np.asarray(st.session_state["rs_T_spec"], float).ravel()
-    Sa_target = np.asarray(st.session_state["rs_Sa_design"], float).ravel() * float(st.session_state.get("rs_Ie", 1.0))
-
-    ag_val = np.asarray(st.session_state.get("rs_ag_final", []), float).ravel()
-    dt_val = float(st.session_state.get("dt", np.nan))
-
-    if len(ag_val) >= 2 and np.isfinite(dt_val) and dt_val > 0:
-        T_rs = np.linspace(0.02, min(5.0, float(np.max(T_target))), 120)
-        Sa_rs = _response_spectrum_5pct(ag_val, dt_val, T_rs)
-
-        T1_fix = np.nan
-        if st.session_state.get("T_sin", None) is not None:
-            T_sin = np.asarray(st.session_state.get("T_sin"), float).ravel()
-            if len(T_sin):
-                T1_fix = float(T_sin[0])
-
-        Tm_iso = np.nan
-        if st.session_state.get("Tm", None) is not None:
-            try:
-                Tm_iso = float(st.session_state.get("Tm"))
-            except Exception:
-                Tm_iso = np.nan
-        if not np.isfinite(Tm_iso):
-            T_ais = np.asarray(st.session_state.get("T_ais", []), float).ravel()
-            if len(T_ais):
-                Tm_iso = float(T_ais[0])
-
-        sf_fix = np.nan
-        sf_iso = np.nan
-        ok_fix_spec = False
-        ok_iso_spec = False
-        ok_fix = False
-        ok_iso = False
-        Tlo_fix = Thi_fix = np.nan
-        Tlo_iso = Thi_iso = np.nan
-
-        if np.isfinite(T1_fix) and T1_fix > 0:
-            sf_fix, ok_fix_spec, Tlo_fix, Thi_fix = _validate_fixed_single(
-                T_rs, Sa_rs, T_target, Sa_target, T1_fix
-            )
-            if not np.isfinite(sf_fix):
-                sf_fix = 1.0
-            ok_fix = bool(ok_fix_spec and _scale_factor_ok(sf_fix))
-
-        if np.isfinite(Tm_iso) and Tm_iso > 0:
-            sf_iso, ok_iso_spec, Tlo_iso, Thi_iso = _validate_iso_single(
-                T_rs, Sa_rs, T_target, Sa_target, Tm_iso
-            )
-            if not np.isfinite(sf_iso):
-                sf_iso = 1.0
-            ok_iso = bool(ok_iso_spec and _scale_factor_ok(sf_iso))
-
-        st.write("")
-        with st.container(border=True):
-            st.markdown(f"### 📊 {tr('b3_val_hdr')}")
-            st.caption(tr("b3_prelim"))
-            st.caption(tr("b3_fix_rule"))
-            st.caption(tr("b3_iso_rule"))
-
-            c1, c2, c3, c4 = st.columns(4)
-
-            with c1:
-                st.metric(tr("b3_scale_fix"), f"{sf_fix:.3f}" if np.isfinite(sf_fix) else "—")
-
-            with c2:
-                txt_fix = tr("b3_ok") if ok_fix else tr("b3_no")
-                color_fix = "green" if ok_fix else "red"
-                st.markdown(
-                    f"<div style='font-weight:600; color:{color_fix};'>{tr('b3_check_fix')}: {txt_fix}</div>",
-                    unsafe_allow_html=True
-                )
-
-            with c3:
-                st.metric(tr("b3_scale_iso"), f"{sf_iso:.3f}" if np.isfinite(sf_iso) else "—")
-
-            with c4:
-                txt_iso = tr("b3_ok") if ok_iso else tr("b3_no")
-                color_iso = "green" if ok_iso else "red"
-                st.markdown(
-                    f"<div style='font-weight:600; color:{color_iso};'>{tr('b3_check_iso')}: {txt_iso}</div>",
-                    unsafe_allow_html=True
-                )
-
-            fig, ax = plt.subplots(figsize=(12.0, 4.8))
-            fig.patch.set_facecolor(BG)
-            ax.set_facecolor(BG)
-
-            ax.plot(T_target, Sa_target, lw=1.2, label=tr("b3_val_target"))
-
-            if np.isfinite(sf_fix):
-                ax.plot(T_rs, sf_fix * Sa_rs, lw=1.0, label=tr("b3_val_fix"))
-                if np.isfinite(Tlo_fix) and np.isfinite(Thi_fix):
-                    ax.axvspan(Tlo_fix, Thi_fix, alpha=0.10, label=tr("b3_band_fix"))
-
-            if np.isfinite(sf_iso):
-                ax.plot(T_rs, sf_iso * Sa_rs, lw=1.0, label=tr("b3_val_iso"))
-                if np.isfinite(Tlo_iso) and np.isfinite(Thi_iso):
-                    ax.axvspan(Tlo_iso, Thi_iso, alpha=0.10, label=tr("b3_band_iso"))
-
-            ax.set_xlabel(tr("b3_T"), color=COLOR_TEXT)
-            ax.set_ylabel(tr("b3_Sa"), color=COLOR_TEXT)
-            ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.45)
-            ax.tick_params(colors=COLOR_TEXT)
-            ax.spines["top"].set_visible(False)
-            ax.spines["right"].set_visible(False)
-
-            leg = ax.legend(framealpha=0.95, loc="best")
-            leg.get_frame().set_facecolor(BG)
-            leg.get_frame().set_edgecolor(COLOR_GRID)
-            for tt in leg.get_texts():
-                tt.set_color(COLOR_TEXT)
-
-            st.pyplot(fig, use_container_width=True)
-
-        # -------------------------------------------------------------
-        # Guardado extra
-        # -------------------------------------------------------------
-        st.session_state["rs_scale_fix"] = float(sf_fix) if np.isfinite(sf_fix) else np.nan
-        st.session_state["rs_scale_iso"] = float(sf_iso) if np.isfinite(sf_iso) else np.nan
-        st.session_state["rs_check_fix"] = bool(ok_fix)
-        st.session_state["rs_check_iso"] = bool(ok_iso)
-
-        st.session_state["rs_spec_val_T"] = np.asarray(T_rs, float).ravel()
-        st.session_state["rs_spec_val_fix_scaled"] = np.asarray(sf_fix * Sa_rs, float).ravel() if np.isfinite(sf_fix) else None
-        st.session_state["rs_spec_val_iso_scaled"] = np.asarray(sf_iso * Sa_rs, float).ravel() if np.isfinite(sf_iso) else None
-        
+            
 # =============================================================================
 # == BLOQUE 4: DISEÑO DEL AISLADOR LRB (MODAL + RAYLEIGH + DISEÑO + GRÁFICO) ==
 # =============================================================================
