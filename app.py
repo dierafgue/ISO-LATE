@@ -3209,16 +3209,17 @@ if uploaded is not None:
             # FIJA
             # -------------------------------
             with col_fix:
-                st.markdown("<div style='height:0.25rem;'></div>", unsafe_allow_html=True)
-
                 st.markdown(f"""
-                <div style="line-height:1.15; font-size:0.92rem">
+                <div style="line-height:1.10; font-size:0.92rem">
                 <b>{tr('bn_fix_hdr')}</b><br>
-                T1: {T_fix_1:.3f} s<br>
-                {tr('bn_range_lo')}: {Tfix_lo:.3f}<br>
-                {tr('bn_range_hi')}: {Tfix_hi:.3f}<br>
-                SF: {sf_fix:.3f}<br>
-                {tr('bn_ok')}: {'✔️' if ok_fix else '✖️'}
+                T1 = {T_fix_1:.3f} s<br>
+                {tr('bn_range_lo')} = {Tfix_lo:.3f}<br>
+                {tr('bn_range_hi')} = {Tfix_hi:.3f}<br>
+                SF = {sf_fix:.3f}
+                </div>
+            
+                <div style="line-height:1.4; font-size:0.92rem">
+                <b>{tr('bn_ok')}:</b> {'✔️' if ok_fix else '✖️'}
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -3226,16 +3227,17 @@ if uploaded is not None:
             # AISLADA
             # -------------------------------
             with col_ais:
-                st.markdown("<div style='height:0.25rem;'></div>", unsafe_allow_html=True)
-
                 st.markdown(f"""
-                <div style="line-height:1.15; font-size:0.92rem">
+                <div style="line-height:1.10; font-size:0.92rem">
                 <b>{tr('bn_ais_hdr')}</b><br>
-                T1: {T_ais_1:.3f} s<br>
-                {tr('bn_range_lo')}: {Tais_lo:.3f}<br>
-                {tr('bn_range_hi')}: {Tais_hi:.3f}<br>
-                SF: {sf_ais:.3f}<br>
-                {tr('bn_ok')}: {'✔️' if ok_ais else '✖️'}
+                T1 = {T_ais_1:.3f} s<br>
+                {tr('bn_range_lo')} = {Tais_lo:.3f}<br>
+                {tr('bn_range_hi')} = {Tais_hi:.3f}<br>
+                SF = {sf_ais:.3f}
+                </div>
+            
+                <div style="line-height:1.4; font-size:0.92rem">
+                <b>{tr('bn_ok')}:</b> {'✔️' if ok_ais else '✖️'}
                 </div>
                 """, unsafe_allow_html=True)
 
