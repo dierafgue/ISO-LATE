@@ -2911,7 +2911,7 @@ Tais_hi = 1.25 * T_ais_1
 # -------------------------------------------------------------------------
 # Layout principal
 # -------------------------------------------------------------------------
-col_left, col_right = st.columns([1.00, 1.00], gap="large")
+col_left, col_right = st.columns([1.10, 1.90], gap="large")
 
 nombre = None
 unidad = None
@@ -2927,29 +2927,43 @@ ag_base = None
 proc_disponible = False
 
 # =============================================================================
-# IZQUIERDA: CARGA + DATOS + CHEQUEOS + DESCARGA
+# IZQUIERDA: PANEL DE CONTROL + DATOS + ESCALADO
 # =============================================================================
 with col_left:
     with st.container(border=True):
-        st.markdown(f"### 〰️ {tr('bn_rec_load')}")
-        st.caption(tr("bn_peer_note"))
+        topL, topR = st.columns([1.05, 1.00], gap="medium")
 
-        uploaded = st.file_uploader(
-            tr("bn_file"),
-            type=["at2"],
-            help=tr("bn_file_help"),
-            key="bn_at2_file"
-        )
+        # -----------------------------------------------------------------
+        # Subcolumna 1: carga del registro
+        # -----------------------------------------------------------------
+        with topL:
+            st.markdown(f"### 〰️ {tr('bn_rec_load')}")
+            st.caption(tr("bn_peer_note"))
 
-        aplicar_proc = st.checkbox(
-            tr("bn_proc"),
-            value=True,
-            help=tr("h_bn_proc"),
-            key="bn_proc_check"
-        )
+            uploaded = st.file_uploader(
+                tr("bn_file"),
+                type=["at2"],
+                help=tr("bn_file_help"),
+                key="bn_at2_file"
+            )
 
-        if uploaded is None:
-            st.info(tr("bn_no_file"))
+            aplicar_proc = st.checkbox(
+                tr("bn_proc"),
+                value=True,
+                help=tr("h_bn_proc"),
+                key="bn_proc_check"
+            )
+
+            if uploaded is None:
+                st.info(tr("bn_no_file"))
+
+        # -----------------------------------------------------------------
+        # Subcolumna 2: datos del registro
+        # -----------------------------------------------------------------
+        with topR:
+            st.markdown(f"### ℹ️ {tr('bn_event')}")
+
+            info_placeholder = st.empty()
 
 # =============================================================================
 # PROCESAMIENTO
@@ -3044,6 +3058,16 @@ if uploaded is not None:
     T_eval = np.asarray(T_spec_nec, dtype=float).ravel()
     Sa_reg = _sdof_response_spectrum_newmark(ag_final, dt, T_eval, zeta=0.05)
 
+    # NEC fijo: 0.8T1 a 1.2T1
+    Tfix_lo = 0.8 * T_fix_1
+    Tfix_hi = 1.2 * T_fix_1
+
+    # Aislado: 0.75T a 1.25T
+    Tais_lo = 0.75 * T_ais_1
+    Tais_hi = 1.25 * T_ais_1
+
+    threshold = 0.90
+
     band_fix_mask = (T_eval >= Tfix_lo) & (T_eval <= Tfix_hi)
     band_ais_mask = (T_eval >= Tais_lo) & (T_eval <= Tais_hi)
 
@@ -3061,14 +3085,14 @@ if uploaded is not None:
     Sa_target_fix = Sa_nec_obj[band_fix_mask]
     Sa_target_ais = Sa_nec_obj[band_ais_mask]
 
-    sf_fix = _compute_scale_factor(Sa_band_fix, Sa_target_fix, threshold=THRESHOLD_NEC)
-    sf_ais = _compute_scale_factor(Sa_band_ais, Sa_target_ais, threshold=THRESHOLD_NEC)
+    sf_fix = _compute_scale_factor(T_band_fix, Sa_band_fix, Sa_target_fix, threshold=threshold)
+    sf_ais = _compute_scale_factor(T_band_ais, Sa_band_ais, Sa_target_ais, threshold=threshold)
 
     Sa_fix_scaled = sf_fix * Sa_reg
     Sa_ais_scaled = sf_ais * Sa_reg
 
-    ok_fix = _band_check(sf_fix * Sa_band_fix, Sa_target_fix, threshold=THRESHOLD_NEC)
-    ok_ais = _band_check(sf_ais * Sa_band_ais, Sa_target_ais, threshold=THRESHOLD_NEC)
+    ok_fix = _band_check(T_band_fix, sf_fix * Sa_band_fix, Sa_target_fix, threshold=threshold)
+    ok_ais = _band_check(T_band_ais, sf_ais * Sa_band_ais, Sa_target_ais, threshold=threshold)
 
     st.session_state["bn_sf_fix"] = float(sf_fix)
     st.session_state["bn_sf_ais"] = float(sf_ais)
@@ -3078,94 +3102,48 @@ if uploaded is not None:
     st.session_state["bn_T_eval"] = np.asarray(T_eval, dtype=float).ravel()
 
     # ---------------------------------------------------------------------
-    # IZQUIERDA: DATOS + CHEQUEOS + DESCARGA
+    # Rellenar datos del registro en subcolumna derecha superior
+    # ---------------------------------------------------------------------
+    with info_placeholder.container():
+        st.markdown(f"**{tr('bn_event')}:** {nombre}")
+        st.markdown(f"**{tr('bn_units_in')}:** {unidad}")
+        st.markdown(f"**{tr('bn_dt')}:** {dt:.4f} s")
+        st.markdown(f"**{tr('bn_dur')}:** {t_ag[-1]:.2f} s")
+        st.markdown(f"**{tr('bn_npts')}:** {len(ag_orig)}")
+
+    # ---------------------------------------------------------------------
+    # Debajo: dos subcolumnas para escalado
     # ---------------------------------------------------------------------
     with col_left:
-        with st.container(border=True):
-            st.markdown(f"**{tr('bn_event')}:** {nombre}")
-            st.markdown(f"**{tr('bn_units_in')}:** {unidad}")
-            st.markdown(f"**{tr('bn_dt')}:** {dt:.4f} s")
-            st.markdown(f"**{tr('bn_dur')}:** {t_ag[-1]:.2f} s")
-            st.markdown(f"**{tr('bn_npts')}:** {len(ag_orig)}")
+        sub_fix, sub_ais = st.columns(2, gap="medium")
 
-            st.markdown("---")
-            st.markdown(f"**{tr('bn_fix_hdr')}**")
-            st.markdown(f"- T1 = **{T_fix_1:.4f} s**")
-            st.markdown(f"- {tr('bn_band_rule_fix')}")
-            st.markdown(f"- {tr('bn_range_lo')}: **{Tfix_lo:.4f} s**")
-            st.markdown(f"- {tr('bn_range_hi')}: **{Tfix_hi:.4f} s**")
-            st.markdown(f"- {tr('bn_target')}: **{int(THRESHOLD_NEC*100)}% NEC**")
-            st.markdown(f"- {tr('bn_factor')}: **{sf_fix:.4f}**")
-            st.markdown(f"- {tr('bn_ok')}: **{tr('bn_yes') if ok_fix else tr('bn_no')}**")
+        with sub_fix:
+            with st.container(border=True):
+                st.markdown(f"### 📌 {tr('bn_fix_hdr')}")
+                st.markdown(f"**T1:** {T_fix_1:.4f} s")
+                st.markdown(f"**{tr('bn_range_lo')}:** {Tfix_lo:.4f} s")
+                st.markdown(f"**{tr('bn_range_hi')}:** {Tfix_hi:.4f} s")
+                st.markdown(f"**{tr('bn_factor')}:** {sf_fix:.4f}")
+                st.markdown(f"**Objetivo mínimo:** 90% NEC")
+                st.markdown(f"**{tr('bn_ok')}:** {tr('bn_yes') if ok_fix else tr('bn_no')}")
 
-            st.markdown("---")
-            st.markdown(f"**{tr('bn_ais_hdr')}**")
-            st.markdown(f"- T1 = **{T_ais_1:.4f} s**")
-            st.markdown(f"- {tr('bn_band_rule_ais')}")
-            st.markdown(f"- {tr('bn_range_lo')}: **{Tais_lo:.4f} s**")
-            st.markdown(f"- {tr('bn_range_hi')}: **{Tais_hi:.4f} s**")
-            st.markdown(f"- {tr('bn_target')}: **{int(THRESHOLD_NEC*100)}% NEC**")
-            st.markdown(f"- {tr('bn_factor')}: **{sf_ais:.4f}**")
-            st.markdown(f"- {tr('bn_ok')}: **{tr('bn_yes') if ok_ais else tr('bn_no')}**")
+        with sub_ais:
+            with st.container(border=True):
+                st.markdown(f"### 📌 {tr('bn_ais_hdr')}")
+                st.markdown(f"**T1:** {T_ais_1:.4f} s")
+                st.markdown(f"**{tr('bn_range_lo')}:** {Tais_lo:.4f} s")
+                st.markdown(f"**{tr('bn_range_hi')}:** {Tais_hi:.4f} s")
+                st.markdown(f"**{tr('bn_factor')}:** {sf_ais:.4f}")
+                st.markdown(f"**Objetivo mínimo:** 90% NEC")
+                st.markdown(f"**{tr('bn_ok')}:** {tr('bn_yes') if ok_ais else tr('bn_no')}")
 
-            st.markdown("---")
-            st.caption(f"📥 **{tr('bn_dl_hdr')}**")
-
-            opts = [tr("bn_dl_opt_orig")]
-            if bool(st.session_state.get("rs_proc_on", False)):
-                opts.append(tr("bn_dl_opt_proc"))
-            opts.append(tr("bn_dl_opt_final"))
-
-            pick = st.selectbox(
-                tr("bn_dl_pick"),
-                options=opts,
-                index=(len(opts) - 1),
-                key="bn_dl_pick_opt",
-                help=tr("h_bn_dl_pick"),
-                label_visibility="collapsed",
-            )
-
-            t_exp = np.asarray(st.session_state["rs_t"], dtype=float).ravel()
-
-            if pick == tr("bn_dl_opt_orig"):
-                a_exp = np.asarray(st.session_state["rs_ag_orig"], dtype=float).ravel()
-                v_exp = np.asarray(st.session_state["rs_vel_orig"], dtype=float).ravel()
-                u_exp = np.asarray(st.session_state["rs_disp_orig"], dtype=float).ravel()
-                tag = "orig"
-
-            elif pick == tr("bn_dl_opt_proc") and bool(st.session_state.get("rs_proc_on", False)):
-                a_exp = np.asarray(st.session_state["rs_ag_proc"], dtype=float).ravel()
-                v_exp = np.asarray(st.session_state["rs_vel_proc"], dtype=float).ravel()
-                u_exp = np.asarray(st.session_state["rs_disp_proc"], dtype=float).ravel()
-                tag = "proc"
-
-            else:
-                a_exp = np.asarray(st.session_state["rs_ag_final"], dtype=float).ravel()
-                v_exp = np.asarray(st.session_state["rs_vel_final"], dtype=float).ravel()
-                u_exp = np.asarray(st.session_state["rs_disp_final"], dtype=float).ravel()
-                tag = "final"
-
-            xlsx_bytes = _build_record_excel_bytes(t_exp, a_exp, v_exp, u_exp)
-
-            safe_name = "".join([
-                c if (c.isalnum() or c in ("_", "-", ".")) else "_"
-                for c in str(st.session_state.get("rs_nombre", "registro"))
-            ])
-            file_name = f"registro_{safe_name}_{tag}.xlsx"
-
-            st.download_button(
-                label=tr("bn_dl_btn"),
-                data=xlsx_bytes,
-                file_name=file_name,
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                key="bn_dl_btn_xlsx",
-                use_container_width=True,
-            )
-
-    # ---------------------------------------------------------------------
-    # DERECHA: REGISTROS + ESPECTROS
-    # ---------------------------------------------------------------------
+    # =============================================================================
+    # DERECHA: GRÁFICAS
+    # =============================================================================
     with col_right:
+        # ---------------------------------------------------------------------
+        # 1) Registro
+        # ---------------------------------------------------------------------
         with st.container(border=True):
             COLOR_ORIG = "#9DBEF7"
             COLOR_PROC = "#FFD479"
@@ -3182,7 +3160,7 @@ if uploaded is not None:
 
             axs[0].plot(
                 t_ag, ag_orig,
-                lw=(0.28 if proc_disponible else 0.60),
+                lw=(0.28 if proc_disponible else 0.6),
                 color=COLOR_ORIG,
                 label=tr("bn_orig")
             )
@@ -3193,7 +3171,7 @@ if uploaded is not None:
 
             axs[1].plot(
                 t_ag, vel_orig,
-                lw=(0.28 if proc_disponible else 0.60),
+                lw=(0.28 if proc_disponible else 0.6),
                 color=COLOR_ORIG
             )
             if proc_disponible:
@@ -3202,7 +3180,7 @@ if uploaded is not None:
 
             axs[2].plot(
                 t_ag, disp_orig,
-                lw=(0.28 if proc_disponible else 0.60),
+                lw=(0.28 if proc_disponible else 0.6),
                 color=COLOR_ORIG
             )
             if proc_disponible:
@@ -3219,6 +3197,9 @@ if uploaded is not None:
 
             st.pyplot(fig, use_container_width=True)
 
+        # ---------------------------------------------------------------------
+        # 2) Espectro y escalados
+        # ---------------------------------------------------------------------
         with st.container(border=True):
             st.markdown(f"### 📈 {tr('bn_spec_title')}")
 
@@ -3229,13 +3210,13 @@ if uploaded is not None:
             ax.plot(T_eval, Sa_nec_obj, lw=1.4, label=tr("bn_nec_target"))
             ax.plot(T_eval, Sa_fix_scaled, lw=1.0, label=tr("bn_fix_scaled"))
             ax.plot(T_eval, Sa_ais_scaled, lw=1.0, label=tr("bn_ais_scaled"))
-            ax.plot(T_eval, THRESHOLD_NEC * Sa_nec_obj, lw=0.9, linestyle=":", alpha=0.95, label=tr("bn_thr_90"))
 
             ax.axvspan(Tfix_lo, Tfix_hi, alpha=0.12)
             ax.axvspan(Tais_lo, Tais_hi, alpha=0.10)
 
             ax.axvline(T_fix_1, lw=1.0, linestyle="--")
             ax.axvline(T_ais_1, lw=1.0, linestyle="--")
+            ax.plot(T_eval, threshold * Sa_nec_obj, lw=0.9, linestyle=":", alpha=0.9)
 
             ytxt = max(
                 np.max(Sa_nec_obj),
