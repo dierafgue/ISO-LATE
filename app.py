@@ -4016,7 +4016,7 @@ required = [
     "M_cond_ais",
     "K_cond_ais",
     "dt",
-    "ag_filt",
+    "rs_ag_final_ais",
     "c_1ais",
     "res_aislador",
 ]
@@ -4118,8 +4118,9 @@ with col_right:
 
         # -------------------------------------------------------------
         # Entrada sísmica en m/s² para Newmark lineal
+        # → usar registro FINAL ESCALADO para AISLADA
         # -------------------------------------------------------------
-        ag_mps2 = np.asarray(st.session_state["ag_filt"], dtype=float).ravel()
+        ag_mps2 = np.asarray(st.session_state["rs_ag_final_ais"], dtype=float).ravel()
 
         M_ais = np.array(st.session_state["M_cond_ais"], dtype=float)
         K_ais = np.array(st.session_state["K_cond_ais"], dtype=float)
@@ -4182,7 +4183,7 @@ with col_right:
         U_lin, V_lin, A_lin = ensure_2d(U_lin, V_lin, A_lin)
 
         # -------------------------------------------------------------
-        # Fuerza de UN link equivalente individual, tipo ETABS
+        # Fuerza de UN link equivalente individual
         # mismo desplazamiento base, misma velocidad base
         # -------------------------------------------------------------
         u_iso = np.asarray(U_lin[0, :], dtype=float).ravel()
@@ -4194,6 +4195,7 @@ with col_right:
         st.session_state["V_lin_b7"] = V_lin
         st.session_state["A_lin_b7"] = A_lin
         st.session_state["Fiso_hist_1ais_b7"] = np.asarray(F_link_1, dtype=float).ravel()
+        st.session_state["ag_used_b7_ais"] = np.asarray(ag_mps2, dtype=float).ravel()
 
         st.session_state["dbg_n_aisladores"] = n_aisladores
         st.session_state["dbg_keff_1ais"] = keff_1ais
@@ -4433,7 +4435,8 @@ y_levels_ais = np.r_[0.0, alt_fix]
 # =============================================================================
 # THA – SOLO Max/Min
 # =============================================================================
-ag = st.session_state.get("ag_filt", None)
+ag_fix = st.session_state.get("ag_used_fix", None)
+ag_ais = st.session_state.get("ag_used_ais", None)
 
 a_fix = st.session_state.get("a_t", None)
 M_fix = st.session_state.get("M_cond", None)
@@ -4442,7 +4445,8 @@ a_ais = st.session_state.get("a_t_ais", None)
 M_ais = st.session_state.get("M_cond_ais", st.session_state.get("M_cond_aislador", None))
 
 falt = []
-if ag is None: falt.append("ag_filt")
+if ag_fix is None: falt.append("ag_used_fix")
+if ag_ais is None: falt.append("ag_used_ais")
 if a_fix is None: falt.append("a_t")
 if M_fix is None: falt.append("M_cond")
 if a_ais is None: falt.append("a_t_ais")
@@ -4451,7 +4455,8 @@ if falt:
     st.error(tr("b8_need_tha").format(keys=", ".join(falt)))
     st.stop()
 
-ag = np.asarray(ag, float).ravel()
+ag_fix = np.asarray(ag_fix, float).ravel()
+ag_ais = np.asarray(ag_ais, float).ravel()
 
 a_fix = np.asarray(a_fix, float)
 if a_fix.ndim == 1:
@@ -4462,7 +4467,7 @@ if a_ais_rel.ndim == 1:
     a_ais_rel = a_ais_rel[np.newaxis, :]
 
 # -------------------- FIJA --------------------
-a_abs_fix = a_fix + ag.reshape(1, -1)
+a_abs_fix = a_fix + ag_fix.reshape(1, -1)
 
 m_fix = np.diag(np.asarray(M_fix, float)).reshape(n_pisos, 1)
 F_fix = m_fix * a_abs_fix
@@ -4574,6 +4579,9 @@ st.session_state["cmp_V_ais_story_min"] = V_ais_min
 
 st.session_state["cmp_Vb_fix"] = float(V_fix_max[0]) if len(V_fix_max) else np.nan
 st.session_state["cmp_Vb_ais"] = float(V_ais_max[0]) if len(V_ais_max) else np.nan
+
+st.session_state["cmp_ag_used_fix"] = np.asarray(ag_fix, float).ravel()
+st.session_state["cmp_ag_used_ais"] = np.asarray(ag_ais, float).ravel()
 
 # =============================================================================
 # === BLOQUE 9: DESPLAZAMIENTOS LATERALES (SOLO THA MAX/MIN) ==================
@@ -4737,6 +4745,10 @@ U_fix_plot_min = np.r_[0.0, U_fix_min]
 st.session_state["cmp_U_fix_levels"] = np.maximum(np.abs(U_fix_plot_max), np.abs(U_fix_plot_min))
 st.session_state["cmp_U_ais_levels"] = np.maximum(np.abs(U_ais_max), np.abs(U_ais_min))
 st.session_state["cmp_tag_disp"]     = f"THA ({tr('b9_tha_tag_maxmin')})"
+
+# trazabilidad: estos desplazamientos ya provienen del análisis con registros escalados
+st.session_state["cmp_u_used_fix"] = np.asarray(u_fix, float)
+st.session_state["cmp_u_used_ais"] = np.asarray(u_ais_use, float)
 
 # -----------------------------------------------------------------
 # historias completas por nivel para derivas THA exactas
@@ -5118,6 +5130,10 @@ st.session_state["cmp_tag_drift"] = (
     else "NEC24"
 )
 
+# trazabilidad
+st.session_state["cmp_drift_used_fix_hist"] = np.asarray(u_fix_hist, float)
+st.session_state["cmp_drift_used_ais_hist"] = np.asarray(u_ais_hist, float)
+
 st.session_state["cmp_drift_fix_levels"] = np.asarray(drift_fix_plot, float).ravel()
 st.session_state["cmp_drift_ais_levels"] = np.asarray(drift_ais_plot, float).ravel()
 st.session_state["cmp_drift_y_fix_levels"] = np.asarray(y_plot_fix, float).ravel()
@@ -5458,8 +5474,11 @@ n_pisos = int(len(alt_fix))
 y_levels = np.r_[0.0, alt_fix]
 
 # Tags
-tagV = str(st.session_state.get("cmp_tag_shear", "THA"))
-tagU = str(st.session_state.get("cmp_tag_disp", "THA"))
+lang_now_tags = st.session_state.get("lang", "en")
+default_tha_tag = "THA (scaled)" if lang_now_tags == "en" else "THA (escalado)"
+
+tagV = str(st.session_state.get("cmp_tag_shear", default_tha_tag))
+tagU = str(st.session_state.get("cmp_tag_disp", default_tha_tag))
 tagD = str(st.session_state.get("cmp_tag_drift", "NEC-24"))
 
 # -------------------------------------------------------------------------
@@ -5736,3 +5755,21 @@ with colD:
 
         st.markdown(table_html, unsafe_allow_html=True)
         st.markdown("<div style='height: 110px;'></div>", unsafe_allow_html=True)
+        
+        # trazabilidad del comparativo final
+        st.session_state["cmp_final_tag_shear"] = str(tagV)
+        st.session_state["cmp_final_tag_disp"]  = str(tagU)
+        st.session_state["cmp_final_tag_drift"] = str(tagD)
+        
+        st.session_state["cmp_final_V_fix_max"] = np.asarray(V_fix_max, float).ravel()
+        st.session_state["cmp_final_V_fix_min"] = np.asarray(V_fix_min, float).ravel()
+        st.session_state["cmp_final_V_ais_max"] = np.asarray(V_ais_max, float).ravel()
+        st.session_state["cmp_final_V_ais_min"] = np.asarray(V_ais_min, float).ravel()
+        
+        st.session_state["cmp_final_U_fix_max"] = np.asarray(U_fix_max, float).ravel()
+        st.session_state["cmp_final_U_fix_min"] = np.asarray(U_fix_min, float).ravel()
+        st.session_state["cmp_final_U_ais_max"] = np.asarray(U_ais_max, float).ravel()
+        st.session_state["cmp_final_U_ais_min"] = np.asarray(U_ais_min, float).ravel()
+        
+        st.session_state["cmp_final_D_fix"] = np.asarray(D_fix_levels, float).ravel()
+        st.session_state["cmp_final_D_ais"] = np.asarray(D_ais_levels, float).ravel()
