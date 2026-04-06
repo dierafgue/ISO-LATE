@@ -1614,7 +1614,7 @@ with col_right:
                     use_container_width=True,
                 )
 
-            fig, ax = plt.subplots(figsize=(8.5, 3.0))
+            fig, ax = plt.subplots(figsize=(8.5, 2.8))
             fig.patch.set_facecolor(BG)
             ax.set_facecolor(BG)
 
