@@ -1542,6 +1542,10 @@ with col_left:
                 "r": float(r_nec),
             }
 
+        st.markdown("<div style='height:0.30rem;'></div>", unsafe_allow_html=True)
+        nec_info_placeholder = st.empty()
+        nec_dl_placeholder = st.empty()
+
 # =============================================================================
 # DERECHA: ESPECTRO NEC
 # =============================================================================
@@ -1593,15 +1597,13 @@ with col_right:
             st.session_state["Fd"] = float(Fd)
             st.session_state["Fs"] = float(Fs)
 
-            st.caption(tr("b3_sds_sd1").format(SDS=SDS, SD1=SD1, Ie=Ie))
+            nec24_xlsx_bytes = build_nec24_excel_bytes(T_spec, Sa_design_plot)
 
-            cA, cB = st.columns([1.5, 1.0])
-
-            with cA:
+            with nec_info_placeholder.container():
+                st.caption(tr("b3_sds_sd1").format(SDS=SDS, SD1=SD1, Ie=Ie))
                 st.caption(tr("b3_coeffs").format(Fa=Fa, Fd=Fd, Fs=Fs))
 
-            with cB:
-                nec24_xlsx_bytes = build_nec24_excel_bytes(T_spec, Sa_design_plot)
+            with nec_dl_placeholder.container():
                 st.download_button(
                     label=tr("b3_nec_dl_btn"),
                     data=nec24_xlsx_bytes,
@@ -1612,7 +1614,7 @@ with col_right:
                     use_container_width=True,
                 )
 
-            fig, ax = plt.subplots(figsize=(8.5, 4.8))
+            fig, ax = plt.subplots(figsize=(8.5, 4.0))
             fig.patch.set_facecolor(BG)
             ax.set_facecolor(BG)
 
