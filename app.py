@@ -5541,8 +5541,27 @@ else:
 V0_fix = float(st.session_state.get("cmp_Vb_fix", np.nan))
 V0_ais = float(st.session_state.get("cmp_Vb_ais", np.nan))
 
-uH_fix = float(U_fix_max[-1]) if len(U_fix_max) else np.nan
-uH_ais = float(U_ais_max[-1]) if len(U_ais_max) else np.nan
+# FIJA: techo absoluto (equivale al relativo porque la base es 0)
+if U_fix_hist is not None:
+    U_fix_hist = np.asarray(U_fix_hist, float)
+    if U_fix_hist.ndim == 2 and U_fix_hist.shape[0] >= 2:
+        u_roof_fix_t = U_fix_hist[-1, :]
+        uH_fix = float(np.max(np.abs(u_roof_fix_t)))
+    else:
+        uH_fix = np.nan
+else:
+    uH_fix = np.nan
+
+# AISLADA: techo relativo a la base aislada
+if U_ais_hist is not None:
+    U_ais_hist = np.asarray(U_ais_hist, float)
+    if U_ais_hist.ndim == 2 and U_ais_hist.shape[0] >= 2:
+        u_roof_rel_ais_t = U_ais_hist[-1, :] - U_ais_hist[0, :]
+        uH_ais = float(np.max(np.abs(u_roof_rel_ais_t)))
+    else:
+        uH_ais = np.nan
+else:
+    uH_ais = np.nan
 
 dmax_fix = float(np.max(np.asarray(D_fix_levels, float).ravel())) if len(D_fix_levels) else np.nan
 dmax_ais = float(np.max(np.asarray(D_ais_levels, float).ravel())) if len(D_ais_levels) else np.nan
