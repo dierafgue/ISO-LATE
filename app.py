@@ -3240,7 +3240,7 @@ if uploaded is not None:
         with st.container(border=True):
             st.markdown(f"### 📈 {tr('bn_spec_title')}")
 
-            fig2, ax = plt.subplots(figsize=(6.8, 5.0))
+            fig2, ax = plt.subplots(figsize=(6.8, 4.98))
             fig2.patch.set_facecolor(BG)
             ax.set_facecolor(BG)
 
