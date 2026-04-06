@@ -5187,7 +5187,7 @@ T["en"].update({
     "b11_help_pfa": "Maximum absolute floor acceleration in g (a_abs = a_rel + ag).",
     "b11_help_lT": "λT: ratio between the 1st-mode period of isolated vs fixed models.",
     "b11_help_eV": "ηV: ratio between isolated and fixed base shear (smaller is typically better).",
-    "b11_help_use": "Isolator use: demand/capacity at the isolator DOF (u_max/u_cap).",
+    "b11_help_use": "Ratio between maximum isolator displacement demand and the displacement capacity adopted for the isolator model.",
     "b11_help_u_iso_max": "Peak absolute isolator displacement demand (DOF 0) from time-history: u_iso_max = max|u_iso(t)|.",
 
     "b11_u_iso_max": "u_iso_max [m]",
@@ -5197,7 +5197,7 @@ T["en"].update({
     "b11_pfa_max": "Max PFA (abs) [g]",
     "b11_lambdaT": "λT = T_iso/T_fix (mode 1)",
     "b11_etaV": "ηV = Vb_iso/Vb_fix",
-    "b11_iso_use": "Isolator use (u_max/u_cap)",
+    "b11_iso_use": "Isolator demand ratio",
 
     "b11_ok": "Comparison ready.",
 })
@@ -5229,7 +5229,7 @@ T["es"].update({
     "b11_help_pfa": "Máxima aceleración absoluta de piso en g (a_abs = a_rel + ag).",
     "b11_help_lT": "λT: relación entre el periodo del modo 1 aislado y el fijo.",
     "b11_help_eV": "ηV: relación entre el cortante basal aislado y el fijo (menor suele ser mejor).",
-    "b11_help_use": "Uso del aislador: demanda/capacidad en el GDL del aislador (u_max/u_cap).",
+    "b11_help_use": "Relación entre la demanda máxima de desplazamiento del aislador y la capacidad de desplazamiento adoptada para el modelo del aislador.",
     "b11_help_u_iso_max": "Demanda máxima absoluta de desplazamiento del aislador (GDL 0) desde tiempo-historia: u_iso_max = max|u_iso(t)|.",
 
     "b11_u_iso_max": "u_iso_max [m]",
@@ -5239,7 +5239,7 @@ T["es"].update({
     "b11_pfa_max": "PFA máx (abs) [g]",
     "b11_lambdaT": "λT = T_iso/T_fix (modo 1)",
     "b11_etaV": "ηV = Vb_iso/Vb_fix",
-    "b11_iso_use": "Uso del aislador (u_max/u_cap)",
+    "b11_iso_use": "Relación de demanda del aislador",
 
     "b11_ok": "Comparativo listo.",
 })
@@ -5673,25 +5673,15 @@ with colD:
         lang_now = st.session_state.get("lang", "en")
         shear_reduction = chg_V if np.isfinite(chg_V) else np.nan
 
-        if np.isfinite(iso_use):
-            if iso_use <= 0.80:
-                iso_status = "Acceptable" if lang_now == "en" else "Aceptable"
-            elif iso_use <= 1.00:
-                iso_status = "Near limit" if lang_now == "en" else "Cerca del límite"
-            else:
-                iso_status = "High demand" if lang_now == "en" else "Alta demanda"
-        else:
-            iso_status = "—"
-
         if np.isfinite(etaV) and np.isfinite(iso_use):
-            if etaV <= 0.30 and iso_use <= 0.80:
-                final_msg = "Effective and feasible isolation" if lang_now == "en" else "Aislamiento efectivo y viable"
-            elif etaV <= 0.30 and iso_use > 0.80:
-                final_msg = "Effective, but with high isolation demand" if lang_now == "en" else "Efectivo, pero con alta demanda en el aislamiento"
-            elif etaV > 0.30:
-                final_msg = "Limited benefit for this configuration" if lang_now == "en" else "Beneficio limitado para esta configuración"
+            if etaV <= 0.30 and iso_use <= 1.00:
+                final_msg = "Isolation reduces base shear and remains within the adopted displacement capacity." if lang_now == "en" else "El aislamiento reduce el cortante basal y se mantiene dentro de la capacidad de desplazamiento adoptada."
+            elif etaV <= 0.30 and iso_use > 1.00:
+                final_msg = "Isolation reduces base shear, but the isolator displacement demand exceeds the adopted capacity." if lang_now == "en" else "El aislamiento reduce el cortante basal, pero la demanda de desplazamiento del aislador supera la capacidad adoptada."
+            elif etaV > 0.30 and iso_use <= 1.00:
+                final_msg = "The isolation system remains within the adopted displacement capacity, but the reduction in base shear is limited." if lang_now == "en" else "El sistema de aislamiento se mantiene dentro de la capacidad de desplazamiento adoptada, pero la reducción del cortante basal es limitada."
             else:
-                final_msg = "Check isolation performance" if lang_now == "en" else "Revisar desempeño del aislamiento"
+                final_msg = "Review the isolation design assumptions and displacement capacity adopted for the bilinear model." if lang_now == "en" else "Revisar las hipótesis de diseño del aislamiento y la capacidad de desplazamiento adoptada para el modelo bilineal."
         else:
             final_msg = "—"
 
@@ -5703,8 +5693,8 @@ with colD:
             )
         with c2:
             st.metric(
-                "Isolation demand" if lang_now == "en" else "Demanda del aislamiento",
-                iso_status
+                "Isolator demand ratio" if lang_now == "en" else "Relación de demanda del aislador",
+                f"{iso_use:.3f}" if np.isfinite(iso_use) else "—"
             )
 
         st.markdown(f"**{'Interpretation' if lang_now == 'en' else 'Interpretación'}**")
