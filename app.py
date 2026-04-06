@@ -3527,7 +3527,12 @@ st.caption(tr("h_b6_title"))
 # -----------------------------------------------------------------
 # ✅ PRERREQUISITOS (mínimos y coherentes con este bloque)
 # -----------------------------------------------------------------
-req_keys = ["K_cond", "M_cond", "K_cond_ais", "M_cond_ais", "ag_filt", "t_ag", "dt"]
+req_keys = [
+    "K_cond", "M_cond",
+    "K_cond_ais", "M_cond_ais",
+    "rs_ag_final_fix", "rs_ag_final_ais",
+    "t_ag", "dt"
+]
 missing = [k for k in req_keys if k not in st.session_state]
 if missing:
     st.info(tr("b6_need_prev").format(keys=", ".join(missing)))
@@ -3584,9 +3589,10 @@ M_fix = np.array(st.session_state["M_cond"], dtype=float)
 K_ais_eff = np.array(st.session_state["K_cond_ais"], dtype=float)
 M_ais_eff = np.array(st.session_state["M_cond_ais"], dtype=float)
 
-ag_filt = np.asarray(st.session_state["ag_filt"], float).ravel()
-t_ag    = np.asarray(st.session_state["t_ag"], float).ravel()
-dt      = float(st.session_state["dt"])
+ag_fix = np.asarray(st.session_state["rs_ag_final_fix"], float).ravel()
+ag_ais = np.asarray(st.session_state["rs_ag_final_ais"], float).ravel()
+t_ag   = np.asarray(st.session_state["t_ag"], float).ravel()
+dt     = float(st.session_state["dt"])
 
 # -----------------------------------------------------------------
 # ✅ ζ desde Bloque 4 (o default 5%) — SIN pedir input
@@ -3604,12 +3610,14 @@ beta_n  = 0.25
 # tiempo EXACTO del registro
 t_total = float(t_ag[-1])
 t = t_ag.copy()
-ag_ext = ag_filt.copy()
+ag_ext_fix = ag_fix.copy()
+ag_ext_ais = ag_ais.copy()
 
 # guardar para bloques siguientes
-st.session_state["t_dyn"]   = t
-st.session_state["ag_ext"]  = ag_ext
-st.session_state["t_total"] = float(t_total)
+st.session_state["t_dyn"]      = t
+st.session_state["ag_ext_fix"] = ag_ext_fix
+st.session_state["ag_ext_ais"] = ag_ext_ais
+st.session_state["t_total"]    = float(t_total)
 
 # alturas (si hay nodes)
 pisos_y = None
@@ -3649,12 +3657,12 @@ with colL:
         m4.metric(tr("b6_metrics_dur"), f"{t_total:.2f}", "s")
 
         r_fix = np.ones((M_fix.shape[0], 1))
-        P_fix = -(M_fix @ r_fix) @ ag_ext[np.newaxis, :]
+        P_fix = -(M_fix @ r_fix) @ ag_ext_fix[np.newaxis, :]
 
         U0 = np.zeros(K_fix.shape[0])
         V0 = np.zeros(K_fix.shape[0])
 
-        sig_fix = _sig(K_fix, M_fix, ag_ext, extra=(dt, zeta, gamma_n, beta_n, alpha_fix, beta_fix))
+        sig_fix = _sig(K_fix, M_fix, ag_ext_fix, extra=(dt, zeta, gamma_n, beta_n, alpha_fix, beta_fix))
         cache_fix = st.session_state.get("b6_cache_fix", {})
 
         if cache_fix.get("sig") != sig_fix:
@@ -3676,14 +3684,15 @@ with colL:
             v_fix_t = cache_fix["v"]
             a_fix_t = cache_fix["a"]
 
-        st.session_state["u_t"]   = u_fix
-        st.session_state["v_t"]   = v_fix_t
-        st.session_state["a_t"]   = a_fix_t
-        st.session_state["t_fix"] = t
-        st.session_state["C_fix"] = C_fix
+        st.session_state["u_t"]        = u_fix
+        st.session_state["v_t"]        = v_fix_t
+        st.session_state["a_t"]        = a_fix_t
+        st.session_state["t_fix"]      = t
+        st.session_state["C_fix"]      = C_fix
+        st.session_state["ag_used_fix"] = ag_ext_fix.copy()
 
         # PFA FIJA (a_abs = a_rel + ag)
-        a_abs_fix = a_fix_t + ag_ext.reshape(1, -1)
+        a_abs_fix = a_fix_t + ag_ext_fix.reshape(1, -1)
         pfa_fix_mps2 = np.max(np.abs(a_abs_fix), axis=1)
         st.session_state["pfa_fix_mps2"] = np.asarray(pfa_fix_mps2, float).ravel()
         st.session_state["pfa_fix_g"]    = st.session_state["pfa_fix_mps2"] / 9.8066500000
@@ -3780,12 +3789,12 @@ with colR:
         # ---------------------------------------------------------
         # Newmark
         # ---------------------------------------------------------
-        sig_ais = _sig(K_ais_eff, M_ais_eff, C_ais, ag_ext, extra=(dt, zeta, gamma_n, beta_n))
+        sig_ais = _sig(K_ais_eff, M_ais_eff, C_ais, ag_ext_ais, extra=(dt, zeta, gamma_n, beta_n))
         cache_ais = st.session_state.get("b6_cache_ais", {})
 
         if cache_ais.get("sig") != sig_ais:
             r_ais = np.ones((M_ais_eff.shape[0], 1))
-            P_ais = -(M_ais_eff @ r_ais) @ ag_ext[np.newaxis, :]
+            P_ais = -(M_ais_eff @ r_ais) @ ag_ext_ais[np.newaxis, :]
 
             U0_ais = np.zeros(K_ais_eff.shape[0])
             V0_ais = np.zeros(K_ais_eff.shape[0])
@@ -3810,14 +3819,15 @@ with colR:
             a_ais_t = cache_ais["a"]
 
         # guardar resultados
-        st.session_state["u_t_ais"] = u_ais
-        st.session_state["v_t_ais"] = v_ais_t
-        st.session_state["a_t_ais"] = a_ais_t
-        st.session_state["t_ais"]   = t
-        st.session_state["C_ais"]   = C_ais
+        st.session_state["u_t_ais"]     = u_ais
+        st.session_state["v_t_ais"]     = v_ais_t
+        st.session_state["a_t_ais"]     = a_ais_t
+        st.session_state["t_ais"]       = t
+        st.session_state["C_ais"]       = C_ais
+        st.session_state["ag_used_ais"] = ag_ext_ais.copy()
 
         # PFA
-        a_abs_ais = a_ais_t + ag_ext.reshape(1, -1)
+        a_abs_ais = a_ais_t + ag_ext_ais.reshape(1, -1)
         pfa_ais_mps2 = np.max(np.abs(a_abs_ais), axis=1)
 
         st.session_state["pfa_ais_mps2"] = np.asarray(pfa_ais_mps2, float).ravel()
