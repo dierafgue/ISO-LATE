@@ -5712,6 +5712,7 @@ with colD:
 
         hdr_indicator = "Indicator" if lang_now == "en" else "Indicador"
         hdr_change = "Change" if lang_now == "en" else "Cambio"
+        label_iso = "Only isolated" if lang_now == "en" else "Solo aislada"
 
         row_v_fix = _fmt(V0_fix, 4)
         row_v_ais = _fmt(V0_ais, 4)
@@ -5772,7 +5773,6 @@ with colD:
                     <tr>
                         <td style="padding:10px 12px;">{tr("b11_iso_use")}</td>
                         <td colspan="3" style="padding:10px 12px; text-align:center; font-weight:500;">
-                        label_iso = "Only isolated" if lang_now == "en" else "Solo aislada"
                         {row_i_ais} &nbsp; ({label_iso})
                     </td>
                     </tr>
