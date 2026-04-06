@@ -5771,9 +5771,10 @@ with colD:
                     </tr>
                     <tr>
                         <td style="padding:10px 12px;">{tr("b11_iso_use")}</td>
-                        <td style="padding:10px 12px;">{row_i_fix}</td>
-                        <td style="padding:10px 12px;">{row_i_ais}</td>
-                        <td style="padding:10px 12px;">{row_i_chg}</td>
+                        <td colspan="3" style="padding:10px 12px; text-align:center; font-weight:500;">
+                        label_iso = "Only isolated" if lang_now == "en" else "Solo aislada"
+                        {row_i_ais} &nbsp; ({label_iso})
+                    </td>
                     </tr>
                 </tbody>
             </table>
