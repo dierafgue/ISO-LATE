@@ -5538,8 +5538,16 @@ else:
 # -------------------------------------------------------------------------
 # Métricas resumen
 # -------------------------------------------------------------------------
-V0_fix = float(st.session_state.get("cmp_Vb_fix", np.nan))
-V0_ais = float(st.session_state.get("cmp_Vb_ais", np.nan))
+# Cortante basal como máximo absoluto
+if len(V_fix_max) and len(V_fix_min):
+    V0_fix = float(max(abs(V_fix_max[0]), abs(V_fix_min[0])))
+else:
+    V0_fix = np.nan
+
+if len(V_ais_max) and len(V_ais_min):
+    V0_ais = float(max(abs(V_ais_max[0]), abs(V_ais_min[0])))
+else:
+    V0_ais = np.nan
 
 # FIJA: techo absoluto (equivale al relativo porque la base es 0)
 if U_fix_hist is not None:
