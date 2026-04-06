@@ -2852,17 +2852,40 @@ def _compute_scale_factor(Sa_record, Sa_target, threshold=0.90):
 def _band_check(Sa_scaled, Sa_target, threshold=0.90):
     return bool(np.all(np.asarray(Sa_scaled, dtype=float) >= threshold * np.asarray(Sa_target, dtype=float)))
 
-def _build_record_excel_bytes(t_exp, a_exp, v_exp, u_exp):
-    df_xlsx = pd.DataFrame({
-        "tiempo": np.asarray(t_exp, dtype=float).ravel(),
-        "aceleracion": np.asarray(a_exp, dtype=float).ravel(),
-        "velocidad": np.asarray(v_exp, dtype=float).ravel(),
-        "desplazamiento": np.asarray(u_exp, dtype=float).ravel(),
-    })
-
+def _build_record_excel_bytes(t_exp, a_exp, v_exp, u_exp,
+                              t_fix=None, a_fix=None, v_fix=None, u_fix=None,
+                              t_ais=None, a_ais=None, v_ais=None, u_ais=None,
+                              export_mode="single"):
     bio = io.BytesIO()
+
     with pd.ExcelWriter(bio, engine="openpyxl") as writer:
-        df_xlsx.to_excel(writer, index=False, sheet_name="registro")
+        if export_mode == "single":
+            df_xlsx = pd.DataFrame({
+                "tiempo": np.asarray(t_exp, dtype=float).ravel(),
+                "aceleracion": np.asarray(a_exp, dtype=float).ravel(),
+                "velocidad": np.asarray(v_exp, dtype=float).ravel(),
+                "desplazamiento": np.asarray(u_exp, dtype=float).ravel(),
+            })
+            df_xlsx.to_excel(writer, index=False, sheet_name="registro")
+
+        elif export_mode == "dual_final":
+            df_fix = pd.DataFrame({
+                "tiempo": np.asarray(t_fix, dtype=float).ravel(),
+                "aceleracion": np.asarray(a_fix, dtype=float).ravel(),
+                "velocidad": np.asarray(v_fix, dtype=float).ravel(),
+                "desplazamiento": np.asarray(u_fix, dtype=float).ravel(),
+            })
+
+            df_ais = pd.DataFrame({
+                "tiempo": np.asarray(t_ais, dtype=float).ravel(),
+                "aceleracion": np.asarray(a_ais, dtype=float).ravel(),
+                "velocidad": np.asarray(v_ais, dtype=float).ravel(),
+                "desplazamiento": np.asarray(u_ais, dtype=float).ravel(),
+            })
+
+            df_fix.to_excel(writer, index=False, sheet_name="fixed")
+            df_ais.to_excel(writer, index=False, sheet_name="isolated")
+
     bio.seek(0)
     return bio.getvalue()
 
@@ -3134,6 +3157,29 @@ if uploaded is not None:
         st.markdown(f"**{tr('bn_dur')}:** {t_ag[-1]:.2f} s")
         st.markdown(f"**{tr('bn_npts')}:** {len(ag_orig)}")
 
+    # ---------------------------------------------------------------------
+    # REGISTROS FINALES ESCALADOS PARA ANÁLISIS
+    # ---------------------------------------------------------------------
+    ag_final_fix = sf_fix * ag_final
+    ag_final_ais = sf_ais * ag_final
+
+    out_fix = procesar_registro(ag_final_fix, float(dt), aplicar_proc=False)
+    out_ais = procesar_registro(ag_final_ais, float(dt), aplicar_proc=False)
+
+    vel_final_fix = np.asarray(out_fix["vel_orig"], dtype=float).ravel()
+    disp_final_fix = np.asarray(out_fix["disp_orig"], dtype=float).ravel()
+
+    vel_final_ais = np.asarray(out_ais["vel_orig"], dtype=float).ravel()
+    disp_final_ais = np.asarray(out_ais["disp_orig"], dtype=float).ravel()
+
+    st.session_state["rs_ag_final_fix"] = np.asarray(ag_final_fix, dtype=float).ravel()
+    st.session_state["rs_vel_final_fix"] = np.asarray(vel_final_fix, dtype=float).ravel()
+    st.session_state["rs_disp_final_fix"] = np.asarray(disp_final_fix, dtype=float).ravel()
+
+    st.session_state["rs_ag_final_ais"] = np.asarray(ag_final_ais, dtype=float).ravel()
+    st.session_state["rs_vel_final_ais"] = np.asarray(vel_final_ais, dtype=float).ravel()
+    st.session_state["rs_disp_final_ais"] = np.asarray(disp_final_ais, dtype=float).ravel()
+
     # =============================================================================
     # COLUMNA 2: REGISTRO SÍSMICO
     # =============================================================================
@@ -3327,19 +3373,54 @@ if rs_ready and ("rs_t" in st.session_state):
                 u_exp = np.asarray(st.session_state["rs_disp_orig"], dtype=float).ravel()
                 tag = "orig"
 
+                xlsx_bytes = _build_record_excel_bytes(
+                    t_exp=t_exp,
+                    a_exp=a_exp,
+                    v_exp=v_exp,
+                    u_exp=u_exp,
+                    export_mode="single"
+                )
+
             elif pick == tr("bn_dl_opt_proc") and bool(st.session_state.get("rs_proc_on", False)):
                 a_exp = np.asarray(st.session_state["rs_ag_proc"], dtype=float).ravel()
                 v_exp = np.asarray(st.session_state["rs_vel_proc"], dtype=float).ravel()
                 u_exp = np.asarray(st.session_state["rs_disp_proc"], dtype=float).ravel()
                 tag = "proc"
 
+                xlsx_bytes = _build_record_excel_bytes(
+                    t_exp=t_exp,
+                    a_exp=a_exp,
+                    v_exp=v_exp,
+                    u_exp=u_exp,
+                    export_mode="single"
+                )
+
             else:
-                a_exp = np.asarray(st.session_state["rs_ag_final"], dtype=float).ravel()
-                v_exp = np.asarray(st.session_state["rs_vel_final"], dtype=float).ravel()
-                u_exp = np.asarray(st.session_state["rs_disp_final"], dtype=float).ravel()
                 tag = "final"
 
-            xlsx_bytes = _build_record_excel_bytes(t_exp, a_exp, v_exp, u_exp)
+                a_fix = np.asarray(st.session_state["rs_ag_final_fix"], dtype=float).ravel()
+                v_fix = np.asarray(st.session_state["rs_vel_final_fix"], dtype=float).ravel()
+                u_fix = np.asarray(st.session_state["rs_disp_final_fix"], dtype=float).ravel()
+
+                a_ais = np.asarray(st.session_state["rs_ag_final_ais"], dtype=float).ravel()
+                v_ais = np.asarray(st.session_state["rs_vel_final_ais"], dtype=float).ravel()
+                u_ais = np.asarray(st.session_state["rs_disp_final_ais"], dtype=float).ravel()
+
+                xlsx_bytes = _build_record_excel_bytes(
+                    t_exp=None,
+                    a_exp=None,
+                    v_exp=None,
+                    u_exp=None,
+                    t_fix=t_exp,
+                    a_fix=a_fix,
+                    v_fix=v_fix,
+                    u_fix=u_fix,
+                    t_ais=t_exp,
+                    a_ais=a_ais,
+                    v_ais=v_ais,
+                    u_ais=u_ais,
+                    export_mode="dual_final"
+                )
 
             safe_name = "".join(
                 c if (c.isalnum() or c in ("_", "-", ".")) else "_"
@@ -3355,7 +3436,7 @@ if rs_ready and ("rs_t" in st.session_state):
                 key="bn_dl_btn_xlsx",
                 use_container_width=True,
             )
-            
+
 # =============================================================================
 # === BLOQUE 6: ANÁLISIS DINÁMICO (NEWMARK-β) SIMÉTRICO =======================
 # =============================================================================
