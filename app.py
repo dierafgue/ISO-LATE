@@ -978,27 +978,12 @@ T["en"].update({
     "b2_not_ready_M": "M_cond is not ready.",
     "b2_not_ready_K": "K_cond is not ready.",
 
-    "b2_check": "Approximate lateral stiffness check",
-    "b2_floor": "Story",
-    "b2_k_model": "k_model",
-    "b2_k_aprox": "k_aprox",
-    "b2_ratio": "ratio",
-
     "b2_plot_title": "2D structural model",
     "b2_plot_wait": "The plot will appear here once you generate the model.",
 
     "b2_err": "Error while generating the model",
     "b2_warn_pinv": "Kss is singular; pseudo-inverse (pinv) was used.",
     "b2_err_no_floors": "There are no floors (y>0).",
-    "b2_check_note": (
-    "Approximate comparison between the stiffness obtained from the condensed model "
-    "(k_model) and a simplified column-based estimate "
-    "(k_aprox = n_col · 12EI/h³). "
-    "Values close to 1 indicate good agreement. "
-    "Intermediate stories usually show the best correlation, while the first and "
-    "top stories may present larger differences due to global frame interaction "
-    "and boundary effects."
-    ),
 
     "b2_weight_breakdown": "Structural weight breakdown",
     "b2_weight_cols": "Columns weight",
@@ -1039,27 +1024,12 @@ T["es"].update({
     "b2_not_ready_M": "M_cond no está listo.",
     "b2_not_ready_K": "K_cond no está listo.",
 
-    "b2_check": "Verificación aproximada de rigidez lateral por piso",
-    "b2_floor": "Piso",
-    "b2_k_model": "k_modelo",
-    "b2_k_aprox": "k_aprox",
-    "b2_ratio": "ratio",
-
     "b2_plot_title": "Modelo estructural 2D",
     "b2_plot_wait": "Aquí aparecerá el gráfico cuando generes el modelo.",
 
     "b2_err": "Error al generar el modelo",
     "b2_warn_pinv": "Kss singular; se usó pseudo-inversa (pinv).",
     "b2_err_no_floors": "No hay pisos (y>0).",
-    "b2_check_note": (
-    "Comparación aproximada entre la rigidez obtenida del modelo condensado "
-    "(k_modelo) y una estimación simplificada basada únicamente en columnas "
-    "(k_aprox = n_col · 12EI/h³). "
-    "Valores cercanos a 1 indican buena concordancia. "
-    "Los pisos intermedios suelen mostrar el mejor ajuste, mientras que el primer "
-    "y último piso pueden presentar mayores diferencias debido a la interacción "
-    "global del pórtico y a los efectos de borde del sistema estructural."
-    ),
 
     "b2_weight_breakdown": "Desglose del peso estructural",
     "b2_weight_cols": "Peso de columnas",
@@ -1242,16 +1212,11 @@ with col_left:
         else:
             st.warning(tr("b2_not_ready_K"))
 
-        k_modelo = st.session_state.get("k_modelo")
-        k_aprox  = st.session_state.get("k_aprox")
-        ratio_k  = st.session_state.get("ratio_k")
         peso_columnas = st.session_state.get("peso_columnas")
         peso_vigas = st.session_state.get("peso_vigas")
         peso_sobrecarga_muerta_total = st.session_state.get("peso_sobrecarga_muerta_total")
         peso_total_estructura = st.session_state.get("peso_total_estructura")
         masa_total_estructura = st.session_state.get("masa_total_estructura")    
-
-        if (k_modelo is not None) and (k_aprox is not None) and (ratio_k is not None):
 
         if (
             (peso_columnas is not None) and
