@@ -1253,19 +1253,6 @@ with col_left:
 
         if (k_modelo is not None) and (k_aprox is not None) and (ratio_k is not None):
 
-            with st.expander(tr("b2_check"), expanded=False):
-        
-                st.caption(tr("b2_check_note"))
-        
-                df_check = pd.DataFrame({
-                    tr("b2_floor"): np.arange(1, len(k_modelo) + 1),
-                    tr("b2_k_model"): np.round(k_modelo, 6),
-                    tr("b2_k_aprox"): np.round(k_aprox, 6),
-                    tr("b2_ratio"): np.round(ratio_k, 3),
-                })
-        
-                st.dataframe(df_check, use_container_width=True)
-
         if (
             (peso_columnas is not None) and
             (peso_vigas is not None) and
