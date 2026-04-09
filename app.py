@@ -1623,7 +1623,7 @@ T["en"].update({
     "b4_need_prev": "First generate the structural model and condensation (Section 2).",
 
     "b4_subtitle": "Design parameters",
-    "b4_zeta_note": "Rayleigh modal damping is set by default to **ζ = 5%**.",
+    "b4_zeta_note": "Rayleigh modal damping uses the value defined in Section 1.",
 
     "b4_modal_data": "Modal data",
     "h_b4_modal_data": "Shows natural frequencies and periods from the condensed model.",
@@ -1692,7 +1692,7 @@ T["es"].update({
     "b4_need_prev": "⚙️ Primero genera el modelo estructural y la condensación (Sección 2).",
 
     "b4_subtitle": "Parámetros de diseño",
-    "b4_zeta_note": "El amortiguamiento modal de Rayleigh se fija por defecto en **ζ = 5%**.",
+    "b4_zeta_note": "El amortiguamiento modal de Rayleigh usa el valor definido en la Sección 1.",
 
     "b4_modal_data": "📌 Datos modales",
     "h_b4_modal_data": "Muestra frecuencias y períodos naturales del modelo condensado.",
@@ -1815,7 +1815,8 @@ with col_izq:
     st.markdown(f"### ⚙️ {tr('b4_subtitle')}")
     st.caption(tr("b4_zeta_note"))
 
-    ζ = 0.05
+    ζ = float(st.session_state.get("amortiguamiento", 0.05))
+    ζ = max(0.0, min(ζ, 1.0))  # blindaje: 0 <= ζ <= 1
     st.session_state["zeta_modal"] = float(ζ)
 
     # =========================================================
