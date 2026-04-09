@@ -2974,18 +2974,19 @@ def plot_modelo_condensado_fijo(K_fix, M_fix, niveles_fix, pisos_y):
 
     # Nota técnica: ARRIBA IZQUIERDA
     ax.text(
-        0.03, 0.92,
+        0.025, 0.925,
         tr("b5_scheme_note"),
         transform=ax.transAxes,
-        fontsize=max(fs - 0.7, 5.2),
+        fontsize=max(fs - 1.2, 4.8),
         color=COLOR_TEXT,
         ha="left",
         va="top",
+        zorder=1,
         bbox=dict(
-            boxstyle="round,pad=0.35",
-            facecolor=(0.10, 0.12, 0.16, 0.88),
-            edgecolor=(1, 1, 1, 0.14),
-            linewidth=0.8
+            boxstyle="round,pad=0.28",
+            facecolor=(0.10, 0.12, 0.16, 0.78),
+            edgecolor=(1, 1, 1, 0.10),
+            linewidth=0.7
         )
     )
 
@@ -3087,18 +3088,19 @@ def plot_modelo_condensado_aislado(K_cond_ais, M_cond_ais, pisos_y):
 
     # Nota técnica: ARRIBA IZQUIERDA
     ax.text(
-        0.03, 0.92,
+        0.025, 0.925,
         tr("b5_scheme_note"),
         transform=ax.transAxes,
-        fontsize=max(fs - 0.7, 5.2),
+        fontsize=max(fs - 1.2, 4.8),
         color=COLOR_TEXT,
         ha="left",
         va="top",
+        zorder=1,
         bbox=dict(
-            boxstyle="round,pad=0.35",
-            facecolor=(0.10, 0.12, 0.16, 0.88),
-            edgecolor=(1, 1, 1, 0.14),
-            linewidth=0.8
+            boxstyle="round,pad=0.28",
+            facecolor=(0.10, 0.12, 0.16, 0.78),
+            edgecolor=(1, 1, 1, 0.10),
+            linewidth=0.7
         )
     )
 
