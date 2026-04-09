@@ -2193,7 +2193,7 @@ T["en"].update({
     "b5_mpart": "Mpart [%]",
     "b5_macc": "Macc [%]",
 
-    "b5_scheme_note": "Schematic condensed model.\nExact stiffness is defined by the condensed matrix Kc.",
+    "b5_scheme_note": "Schematic model.\nExact stiffness is defined by Kc.",
     "b5_iso_keff_lbl": "Keff",
 })
 
@@ -2251,7 +2251,7 @@ T["es"].update({
     "b5_mpart": "Mpart [%]",
     "b5_macc": "Macc [%]",
 
-    "b5_scheme_note": "Modelo condensado esquemático.\nLa rigidez exacta está definida por la matriz condensada Kc.",
+    "b5_scheme_note": "Modelo esquemático.\nLa rigidez exacta está definida por Kc.",
     "b5_iso_keff_lbl": "Keff",
 })
 
