@@ -568,7 +568,7 @@ st.markdown("---")
 # === SECCIÓN 1: PARÁMETROS GENERALES DEL MODELO (DISEÑO SIMÉTRICO) ==========
 # =============================================================================
 
-from funciones_usuario import (
+from funciones_usuario import (f
     seccion_rectangular_cm_to_SI,
     seccion_AI_cm_to_SI,
     build_param_estruct
@@ -739,7 +739,7 @@ with col_geo:
     l_vano = st.number_input(
         tr("bay_length"),
         min_value=1.0,
-        value=ss_num("l_vano", 5.0),
+        value=max(ss_num("l_vano", 5.0), 1.0),
         step=0.5,
         help=tr("help_bay_length"),
     )
@@ -784,13 +784,15 @@ with col_sec:
         cc1, cc2 = st.columns(2)
         b_col = cc1.number_input(
             tr("b_col"),
-            value=ss_num("b_col_cm", 50.0),
+            min_value=1.0,
+            value=max(ss_num("b_col_cm", 50.0), 1.0),
             step=0.5,
             help=tr("help_b_col"),
         )
         h_col = cc2.number_input(
             tr("h_col"),
-            value=ss_num("h_col_cm", 50.0),
+            min_value=1.0,
+            value=max(ss_num("h_col_cm", 50.0), 1.0),
             step=0.5,
             help=tr("help_h_col"),
         )
@@ -799,13 +801,15 @@ with col_sec:
         cv1, cv2 = st.columns(2)
         b_viga = cv1.number_input(
             tr("b_beam"),
-            value=ss_num("b_viga_cm", 30.0),
+            min_value=1.0,
+            value=max(ss_num("b_viga_cm", 30.0), 1.0),
             step=0.5,
             help=tr("help_b_beam"),
         )
         h_viga = cv2.number_input(
             tr("h_beam"),
-            value=ss_num("h_viga_cm", 50.0),
+            min_value=1.0,
+            value=max(ss_num("h_viga_cm", 50.0), 1.0),
             step=0.5,
             help=tr("help_h_beam"),
         )
@@ -830,13 +834,15 @@ with col_sec:
         ca1, ca2 = st.columns(2)
         A_col_cm2 = ca1.number_input(
             tr("A_col"),
-            value=ss_num("A_col_cm2", 2500.00),
+            min_value=0.00001,
+            value=max(ss_num("A_col_cm2", 2500.00), 0.00001),
             step=10.0,
             help=tr("help_A_col"),
         )
         I_col_cm4 = ca2.number_input(
             tr("I_col"),
-            value=ss_num("I_col_cm4", 520833.33),
+            min_value=0.00001,
+            value=max(ss_num("I_col_cm4", 520833.33), 0.00001),
             step=100.0,
             help=tr("help_I_col"),
         )
@@ -845,13 +851,15 @@ with col_sec:
         cb1, cb2 = st.columns(2)
         A_viga_cm2 = cb1.number_input(
             tr("A_beam"),
-            value=ss_num("A_viga_cm2", 1500.00),
+            min_value=0.00001,
+            value=max(ss_num("A_viga_cm2", 1500.00), 0.00001),
             step=10.0,
             help=tr("help_A_beam"),
         )
         I_viga_cm4 = cb2.number_input(
             tr("I_beam"),
-            value=ss_num("I_viga_cm4", 312500.00),
+            min_value=0.00001,
+            value=max(ss_num("I_viga_cm4", 312500.00), 0.00001),
             step=100.0,
             help=tr("help_I_beam"),
         )
@@ -872,14 +880,16 @@ with col_mat:
     cm1, cm2 = st.columns(2)
     E = cm1.number_input(
         tr("E"),
-        value=ss_num("E", 2534563.54),
+        min_value=0.00001,
+        value=max(ss_num("E", 2534563.54), 0.00001),
         step=10000.0,
         help=tr("help_E"),
     )
 
     peso_especifico = cm2.number_input(
         tr("gamma"),
-        value=ss_num("peso_especifico", 2.4028),
+        min_value=0.00001,
+        value=max(ss_num("peso_especifico", 2.4028), 0.00001),
         step=0.0001,
         format="%.4f",
         help=tr("help_gamma"),
@@ -888,7 +898,8 @@ with col_mat:
     st.markdown(f"#### ⚖️ {tr('loads')}")
     sobrecarga_muerta = st.number_input(
         tr("dl"),
-        value=ss_num("sobrecarga_muerta", 0.0),
+        min_value=0.0,
+        value=max(ss_num("sobrecarga_muerta", 0.0), 0.0),
         step=1.0,
         help=tr("help_dl"),
     )
