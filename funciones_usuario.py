@@ -2938,19 +2938,17 @@ def plot_modelo_condensado_fijo(K_fix, M_fix, niveles_fix, pisos_y):
     ax.set_facecolor(BG)
 
     y = np.asarray(niveles_fix, dtype=float)
-    _, k_fix_plot = extraer_rigideces_para_esquema(K_fix, tiene_base=False)
 
     x_center = 0.0
-    xk_txt = x_center - 0.12   # ← IZQUIERDA del eje
     xm = x_center
-    xm_txt = x_center + 0.10   # → DERECHA del eje
+    xm_txt = x_center + 0.10
 
-    XMAX = max(abs(xk_txt) + 0.35, abs(xm_txt) + 0.55)
+    XMAX = abs(xm_txt) + 0.62
 
     # ✅ ÚNICA línea azul (edificio)
     ax.plot([x_center, x_center], [0, np.max(y)], color=COLOR_SPR, lw=lw_ed)
 
-    # Base corta
+    # ✅ Base corta
     base_half = 0.12
     ax.plot([x_center-base_half, x_center+base_half], [0, 0],
             color=COLOR_BASE, lw=5, solid_capstyle="round")
@@ -2960,17 +2958,7 @@ def plot_modelo_condensado_fijo(K_fix, M_fix, niveles_fix, pisos_y):
         va="center", fontsize=fs, color=COLOR_BASE, path_effects=HALO
     )
 
-    # Rigideces (texto a la IZQUIERDA)
-    for i in range(n_pisos_fix):
-        ymid = 0.5*(y[i] + y[i+1])
-        ax.text(
-            xk_txt, ymid,
-            f"$K_{{{i+1}}}={k_fix_plot[i]:.1f}$ Tf/m",
-            color=COLOR_LABEL_SPR, fontsize=fs,
-            va="center", ha="right", path_effects=HALO
-        )
-
-    # Masas (bolita + texto a la derecha)
+    # ✅ Masas (sin rigideces de piso)
     for i in range(1, n_pisos_fix+1):
         ax.plot(xm, y[i], "o", color=COLOR_MASS, markersize=ms)
         ax.text(
@@ -2979,6 +2967,23 @@ def plot_modelo_condensado_fijo(K_fix, M_fix, niveles_fix, pisos_y):
             color=COLOR_LABEL_MASS, fontsize=fs,
             va="center", ha="left", path_effects=HALO
         )
+
+    # ✅ Nota técnica dentro del gráfico
+    ax.text(
+        0.03, 0.05,
+        tr("b5_scheme_note"),
+        transform=ax.transAxes,
+        fontsize=max(fs - 0.7, 5.2),
+        color=COLOR_TEXT,
+        ha="left",
+        va="bottom",
+        bbox=dict(
+            boxstyle="round,pad=0.28",
+            facecolor=(1, 1, 1, 0.05),
+            edgecolor=(1, 1, 1, 0.12),
+            linewidth=0.8
+        )
+    )
 
     ax.set_title(tr("b5_fixed_model_lbl"), color=COLOR_TEXT, fontsize=13, fontweight="bold")
     ax.set_ylabel(tr("b5_height_lbl"), color=COLOR_TEXT)
@@ -3008,11 +3013,11 @@ def plot_modelo_condensado_aislado(K_cond_ais, M_cond_ais, pisos_y):
     pisos_y = np.asarray(pisos_y, dtype=float).ravel()
     y_top = float(np.max(pisos_y)) if len(pisos_y) else 0.0
 
-    # ✅ Niveles del aislado: [-1, 0, y1, y2, ...]
+    # ✅ niveles del aislado: base física en -1, masa del aislador en 0, luego pisos reales
     yline = np.concatenate([[-1.0], [0.0], pisos_y])
 
-    # Rigideces equivalentes para esquema
-    k_iso_plot, k_story_ais_plot = extraer_rigideces_para_esquema(K_cond_ais, tiene_base=True)
+    # ✅ Keff total del sistema de aislamiento desde la propia matriz condensada
+    keff_total = float(K_cond_ais[0, 0]) if np.ndim(K_cond_ais) == 2 else np.nan
 
     # ----------------- Geometría / posiciones -----------------
     x_center = 0.0
@@ -3020,10 +3025,13 @@ def plot_modelo_condensado_aislado(K_cond_ais, M_cond_ais, pisos_y):
     xm      = x_center
     xm_txt  = x_center + 0.10
 
-    XMAX = max(abs(xk_txt) + 0.45, abs(xm_txt) + 0.65)
+    XMAX = max(abs(xk_txt) + 0.42, abs(xm_txt) + 0.70)
 
-    # ✅ ÚNICA línea azul del edificio: desde -1 hasta el techo
-    ax.plot([x_center, x_center], [-1.0, y_top], color=COLOR_SPR, lw=lw_ed)
+    # ✅ ÚNICA línea azul del edificio: desde 0 hasta techo
+    ax.plot([x_center, x_center], [0.0, y_top], color=COLOR_SPR, lw=lw_ed)
+
+    # ✅ tramo del aislador entre base fija y masa M0
+    ax.plot([x_center, x_center], [-1.0, 0.0], color=COLOR_SPR, lw=lw_ed, alpha=0.95)
 
     # ✅ Base fija corta en y=-1
     base_half = 0.12
@@ -3035,25 +3043,15 @@ def plot_modelo_condensado_aislado(K_cond_ais, M_cond_ais, pisos_y):
         va="center", fontsize=fs, color=COLOR_BASE, path_effects=HALO
     )
 
-    # ----------------- Textos K (a la izquierda del eje) -----------------
+    # ✅ Solo etiqueta de Keff del aislador
     ax.text(
         xk_txt, -0.5,
-        f"$K_{{ais}}={k_iso_plot:.1f}$ Tf/m",
+        f"${tr('b5_iso_keff_lbl')}={keff_total:.1f}$ Tf/m",
         color=COLOR_LABEL_SPR, fontsize=fs,
         va="center", ha="right", path_effects=HALO
     )
 
-    for i in range(2, len(yline)):
-        ymid = 0.5 * (yline[i-1] + yline[i])
-        k_i = float(k_story_ais_plot[i-2])
-        ax.text(
-            xk_txt, ymid,
-            f"$K_{{{i-1}}}={k_i:.1f}$ Tf/m",
-            color=COLOR_LABEL_SPR, fontsize=fs,
-            va="center", ha="right", path_effects=HALO
-        )
-
-    # ----------------- Masas -----------------
+    # ✅ Masa del aislador / base condensada
     ax.plot(xm, 0.0, "o", color=COLOR_MASS, markersize=ms)
     ax.text(
         xm_txt, 0.0,
@@ -3062,6 +3060,7 @@ def plot_modelo_condensado_aislado(K_cond_ais, M_cond_ais, pisos_y):
         va="center", ha="left", path_effects=HALO
     )
 
+    # ✅ Masas de los pisos
     for i, yv in enumerate(pisos_y, start=1):
         ax.plot(xm, float(yv), "o", color=COLOR_MASS, markersize=ms)
         ax.text(
@@ -3070,6 +3069,23 @@ def plot_modelo_condensado_aislado(K_cond_ais, M_cond_ais, pisos_y):
             color=COLOR_LABEL_MASS, fontsize=fs,
             va="center", ha="left", path_effects=HALO
         )
+
+    # ✅ Nota técnica dentro del gráfico
+    ax.text(
+        0.03, 0.05,
+        tr("b5_scheme_note"),
+        transform=ax.transAxes,
+        fontsize=max(fs - 0.7, 5.2),
+        color=COLOR_TEXT,
+        ha="left",
+        va="bottom",
+        bbox=dict(
+            boxstyle="round,pad=0.28",
+            facecolor=(1, 1, 1, 0.05),
+            edgecolor=(1, 1, 1, 0.12),
+            linewidth=0.8
+        )
+    )
 
     # ----------------- Estilo ejes -----------------
     ax.set_title(tr("b5_iso_model_lbl"), color=COLOR_TEXT, fontsize=13, fontweight="bold")
