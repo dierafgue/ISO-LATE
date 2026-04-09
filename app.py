@@ -568,7 +568,7 @@ st.markdown("---")
 # === SECCIÓN 1: PARÁMETROS GENERALES DEL MODELO (DISEÑO SIMÉTRICO) ==========
 # =============================================================================
 
-from funciones_usuario import (f
+from funciones_usuario import (
     seccion_rectangular_cm_to_SI,
     seccion_AI_cm_to_SI,
     build_param_estruct
@@ -720,7 +720,8 @@ with col_geo:
 
     n_pisos = c1.number_input(
         tr("n_floors"),
-        min_value=1, max_value=20,
+        min_value=1,
+        max_value=20,
         value=int(ss_num("n_pisos", 2)),
         step=1,
         help=tr("help_n_floors"),
@@ -728,7 +729,8 @@ with col_geo:
 
     n_vanos = c2.number_input(
         tr("n_bays"),
-        min_value=1, max_value=6,
+        min_value=1,
+        max_value=6,
         value=int(ss_num("n_vanos", 1)),
         step=1,
         help=tr("help_n_bays"),
@@ -748,7 +750,7 @@ with col_geo:
         st.number_input(
             tr("h_first"),
             min_value=2.0,
-            value=ss_num("h_piso_1", 4.0),
+            value=max(ss_num("h_piso_1", 4.0), 2.0),
             step=0.1,
             help=tr("help_h_first"),
         ),
@@ -759,7 +761,7 @@ with col_geo:
         st.number_input(
             tr("h_rest"),
             min_value=2.0,
-            value=ss_num("h_piso_restantes", 3.0),
+            value=max(ss_num("h_piso_restantes", 3.0), 2.0),
             step=0.1,
             help=tr("help_h_rest"),
         ),
@@ -815,14 +817,14 @@ with col_sec:
         )
 
         # SI (m², m⁴) para el modelo
-        A_col, I_col   = seccion_rectangular_cm_to_SI(b_col, h_col)
+        A_col, I_col = seccion_rectangular_cm_to_SI(b_col, h_col)
         A_viga, I_viga = seccion_rectangular_cm_to_SI(b_viga, h_viga)
 
-        # ✅ Guardar también equivalentes en cm² / cm⁴ (evita float(None) al pasar a avanzado)
-        A_col_cm2  = float(b_col * h_col)
-        I_col_cm4  = float(b_col * (h_col**3) / 12.0)
+        # Guardar equivalentes en cm² / cm⁴
+        A_col_cm2 = float(b_col * h_col)
+        I_col_cm4 = float(b_col * (h_col ** 3) / 12.0)
         A_viga_cm2 = float(b_viga * h_viga)
-        I_viga_cm4 = float(b_viga * (h_viga**3) / 12.0)
+        I_viga_cm4 = float(b_viga * (h_viga ** 3) / 12.0)
 
         b_col_cm, h_col_cm = float(b_col), float(h_col)
         b_viga_cm, h_viga_cm = float(b_viga), float(h_viga)
@@ -865,7 +867,7 @@ with col_sec:
         )
 
         # SI (m², m⁴) para el modelo
-        A_col, I_col   = seccion_AI_cm_to_SI(A_col_cm2, I_col_cm4)
+        A_col, I_col = seccion_AI_cm_to_SI(A_col_cm2, I_col_cm4)
         A_viga, I_viga = seccion_AI_cm_to_SI(A_viga_cm2, I_viga_cm4)
 
         # En avanzado no se usan dimensiones b/h
@@ -906,8 +908,9 @@ with col_mat:
 
     amortiguamiento = st.number_input(
         tr("damp"),
-        min_value=0.0, max_value=10.0,
-        value=ss_num("amortiguamiento", 0.05) * 100.0,
+        min_value=0.0,
+        max_value=10.0,
+        value=min(max(ss_num("amortiguamiento", 0.05) * 100.0, 0.0), 10.0),
         step=0.5,
         help=tr("help_damp"),
     )
@@ -930,9 +933,14 @@ params_nuevos = build_param_estruct(
     sobrecarga_muerta=sobrecarga_muerta,
     amortiguamiento_ratio=(amortiguamiento / 100.0),
     modo_avanzado=modo_avanzado,
-    b_col_cm=b_col_cm, h_col_cm=h_col_cm, b_viga_cm=b_viga_cm, h_viga_cm=h_viga_cm,
-    A_col_cm2=A_col_cm2, I_col_cm4=I_col_cm4,
-    A_viga_cm2=A_viga_cm2, I_viga_cm4=I_viga_cm4,
+    b_col_cm=b_col_cm,
+    h_col_cm=h_col_cm,
+    b_viga_cm=b_viga_cm,
+    h_viga_cm=h_viga_cm,
+    A_col_cm2=A_col_cm2,
+    I_col_cm4=I_col_cm4,
+    A_viga_cm2=A_viga_cm2,
+    I_viga_cm4=I_viga_cm4,
 )
 
 if st.session_state.get("param_estruct") != params_nuevos:
