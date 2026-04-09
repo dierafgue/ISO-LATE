@@ -2970,7 +2970,7 @@ def plot_modelo_condensado_fijo(K_fix, M_fix, niveles_fix, pisos_y):
 
     # ✅ Nota técnica dentro del gráfico
     ax.text(
-        0.03, 0.05,
+        0.03, 0.12,
         tr("b5_scheme_note"),
         transform=ax.transAxes,
         fontsize=max(fs - 0.7, 5.2),
@@ -2978,9 +2978,9 @@ def plot_modelo_condensado_fijo(K_fix, M_fix, niveles_fix, pisos_y):
         ha="left",
         va="bottom",
         bbox=dict(
-            boxstyle="round,pad=0.28",
-            facecolor=(1, 1, 1, 0.05),
-            edgecolor=(1, 1, 1, 0.12),
+            boxstyle="round,pad=0.35",
+            facecolor=(0.1, 0.12, 0.16, 0.85),
+            edgecolor=(1, 1, 1, 0.15),
             linewidth=0.8
         )
     )
@@ -3045,7 +3045,7 @@ def plot_modelo_condensado_aislado(K_cond_ais, M_cond_ais, pisos_y):
 
     # ✅ Solo etiqueta de Keff del aislador
     ax.text(
-        xk_txt, -0.5,
+        xk_txt, -0.35,
         f"${tr('b5_iso_keff_lbl')}={keff_total:.1f}$ Tf/m",
         color=COLOR_LABEL_SPR, fontsize=fs,
         va="center", ha="right", path_effects=HALO
@@ -3072,7 +3072,7 @@ def plot_modelo_condensado_aislado(K_cond_ais, M_cond_ais, pisos_y):
 
     # ✅ Nota técnica dentro del gráfico
     ax.text(
-        0.03, 0.05,
+        0.03, 0.12,
         tr("b5_scheme_note"),
         transform=ax.transAxes,
         fontsize=max(fs - 0.7, 5.2),
@@ -3080,9 +3080,9 @@ def plot_modelo_condensado_aislado(K_cond_ais, M_cond_ais, pisos_y):
         ha="left",
         va="bottom",
         bbox=dict(
-            boxstyle="round,pad=0.28",
-            facecolor=(1, 1, 1, 0.05),
-            edgecolor=(1, 1, 1, 0.12),
+            boxstyle="round,pad=0.35",
+            facecolor=(0.1, 0.12, 0.16, 0.85),
+            edgecolor=(1, 1, 1, 0.15),
             linewidth=0.8
         )
     )
