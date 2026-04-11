@@ -1815,7 +1815,8 @@ with col_izq:
     st.markdown(f"### ⚙️ {tr('b4_subtitle')}")
     st.caption(tr("b4_zeta_note"))
 
-    ζ = float(st.session_state.get("amortiguamiento", 0.05))
+    param_estruct = st.session_state.get("param_estruct", {})
+    ζ = float(param_estruct.get("amortiguamiento_ratio", 0.05))
     ζ = max(0.0, min(ζ, 1.0))  # blindaje: 0 <= ζ <= 1
     st.session_state["zeta_modal"] = float(ζ)
 
@@ -3577,7 +3578,9 @@ dt     = float(st.session_state["dt"])
 # -----------------------------------------------------------------
 # ✅ ζ desde Bloque 4 (o default 5%) — SIN pedir input
 # -----------------------------------------------------------------
-zeta = float(st.session_state.get("zeta_modal", 0.05))
+param_estruct = st.session_state.get("param_estruct", {})
+zeta = float(st.session_state.get("zeta_modal", param_estruct.get("amortiguamiento_ratio", 0.05)))
+zeta = max(0.0, min(zeta, 1.0))
 st.caption(tr("b6_zeta_note").format(zeta=zeta))
 st.session_state["zeta_modal"] = float(zeta)
 
