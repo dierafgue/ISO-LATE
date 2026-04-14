@@ -4803,11 +4803,17 @@ T["en"].update({
 
     "b10_need_alt": "Missing st.session_state['alturas'] (floor heights).",
 
-    "b10_nec_cd": "Cd (NEC-24)",
-    "h_b10_nec_cd": "Deflection amplification factor Cd according to NEC-24.",
+    "b10_nec_cd": "Cd (NEC-24 fixed)",
+    "h_b10_nec_cd": "Deflection amplification factor Cd according to NEC-24 for conventional fixed-base structures.",
     "b10_need_Ie": "I cannot find Ie in session_state. Need rs_Ie or nec24_params['Ie'].",
     "b10_bad_Ie": "Invalid Ie (<=0).",
-    "b10_nec_caption": "NEC drift = (Cd·real drift)/I with Cd={cd:.3g} and I={ie:.3g}.",
+
+    "b10_fix_caption": "FIXED: NEC drift = (Cd·real drift)/Ie with Cd={cd:.3g} and Ie={ie:.3g}.",
+    "b10_iso_caption": "ISOLATED (THA): NEC drift = real drift. Limit taken from NEC Table 9.7.",
+    "b10_iso_pdelta": "Secondary effects check: investigate if drift > 0.010 / RI = {lim:.4f} ({pct:.3f}%).",
+
+    "b10_nec_ri": "RI (NEC-24 isolated)",
+    "h_b10_nec_ri": "RI = 3R/8, limited between 1 and 2, used for the secondary-effects check 0.010/RI.",
 
     "b10_err_calc": "Error computing drifts: {e}",
 
@@ -4841,11 +4847,17 @@ T["es"].update({
 
     "b10_need_alt": "❌ Falta st.session_state['alturas'] (alturas de pisos).",
 
-    "b10_nec_cd": "Cd (NEC24)",
-    "h_b10_nec_cd": "Factor de amplificación de desplazamientos Cd según NEC-24.",
+    "b10_nec_cd": "Cd (NEC24 fija)",
+    "h_b10_nec_cd": "Factor de amplificación de desplazamientos Cd según NEC-24 para estructuras convencionales de base fija.",
     "b10_need_Ie": "❌ No encuentro Ie en session_state. Necesito rs_Ie o nec24_params['Ie'].",
     "b10_bad_Ie": "❌ Ie inválido (<=0).",
-    "b10_nec_caption": "✅ Deriva_NEC = (Cd·Deriva_real)/I con Cd={cd:.3g} e I={ie:.3g}.",
+
+    "b10_fix_caption": "FIJA: Deriva_NEC = (Cd·Deriva_real)/Ie con Cd={cd:.3g} e Ie={ie:.3g}.",
+    "b10_iso_caption": "AISLADA (THA): Deriva_NEC = Deriva_real. El límite se toma de la Tabla 9.7 de la NEC.",
+    "b10_iso_pdelta": "Chequeo de efectos secundarios: investigar si deriva > 0.010 / RI = {lim:.4f} ({pct:.3f}%).",
+
+    "b10_nec_ri": "RI (NEC24 aislada)",
+    "h_b10_nec_ri": "RI = 3R/8, limitado entre 1 y 2, usado para el chequeo secundario 0.010/RI.",
 
     "b10_err_calc": "❌ Error calculando derivas: {e}",
 
@@ -4905,11 +4917,85 @@ def _df_to_compact_table(df: pd.DataFrame, height_min=150, height_max=300):
     h = int(max(height_min, min(height_max, h)))
     st.dataframe(df, hide_index=True, use_container_width=True, height=h)
 
+def _get_risk_category_from_state():
+    cat = st.session_state.get("nec_risk_cat", None)
+    if cat is None:
+        nec_params = st.session_state.get("nec24_params", {})
+        cat = nec_params.get("categoria", None)
+    if cat is None:
+        cat = "II"
+
+    cat = str(cat).strip().upper()
+    if cat in ["1", "I"]:
+        return "I"
+    if cat in ["2", "II"]:
+        return "II"
+    if cat in ["3", "III"]:
+        return "III"
+    if cat in ["4", "IV"]:
+        return "IV"
+    return "II"
+
+def _nec_drift_limit_ratio(case_type: str, risk_cat: str) -> float:
+    """
+    Devuelve el límite de deriva en razón (no en %).
+    case_type:
+        - 'fixed'    -> Tabla 4.3, segunda fila
+        - 'isolated' -> Tabla 9.7 (THA)
+    """
+    risk_cat = str(risk_cat).upper().strip()
+
+    # FIJA -> Tabla 4.3, segunda fila
+    fixed_map = {
+        "I":   0.015,
+        "II":  0.015,
+        "III": 0.012,
+        "IV":  0.010,
+    }
+
+    # AISLADA THA -> Tabla 9.7 (valores en %, convertidos a razón)
+    isolated_map = {
+        "I":   0.0030,  # 0.30 %
+        "II":  0.0030,  # 0.30 %
+        "III": 0.0045,  # 0.45 %
+        "IV":  0.0075,  # 0.75 %
+    }
+
+    if case_type == "fixed":
+        return float(fixed_map.get(risk_cat, 0.015))
+    elif case_type == "isolated":
+        return float(isolated_map.get(risk_cat, 0.0030))
+    else:
+        raise ValueError("case_type debe ser 'fixed' o 'isolated'")
+
+def _get_R_value():
+    for key in ["R", "rs_R", "nec_R"]:
+        if key in st.session_state:
+            try:
+                return float(st.session_state[key])
+            except Exception:
+                pass
+
+    nec_params = st.session_state.get("nec24_params", {})
+    for key in ["R", "r_factor", "R_factor"]:
+        if key in nec_params:
+            try:
+                return float(nec_params[key])
+            except Exception:
+                pass
+
+    return None
+
+def _calc_RI_from_R(R: float) -> float:
+    RI = 3.0 * float(R) / 8.0
+    RI = max(1.0, min(RI, 2.0))
+    return float(RI)
+
 def _plot_drift_poly(
     drift_plot, y_plot, title, color_line, xlabel, n_pisos_ref=10,
     nec_limit_ratio=None
 ):
-    x = np.asarray(drift_plot, float).ravel() * 100.0  # a %
+    x = np.asarray(drift_plot, float).ravel() * 100.0
     y = np.asarray(y_plot, float).ravel()
 
     if len(x) != len(y):
@@ -4925,7 +5011,6 @@ def _plot_drift_poly(
 
     ax.plot(x, y, "-o", color=color_line, lw=lw, ms=ms)
 
-    # línea de límite NEC24
     x_limit_pct = None
     if nec_limit_ratio is not None and np.isfinite(nec_limit_ratio) and nec_limit_ratio > 0:
         x_limit_pct = float(nec_limit_ratio) * 100.0
@@ -4971,71 +5056,6 @@ def _plot_drift_poly(
     fig.tight_layout()
     st.pyplot(fig, use_container_width=True)
 
-def _get_risk_category_from_state():
-    # prioridad: valor directo guardado en bloque 3
-    cat = st.session_state.get("nec_risk_cat", None)
-
-    # respaldo: dentro de nec24_params
-    if cat is None:
-        nec_params = st.session_state.get("nec24_params", {})
-        cat = nec_params.get("categoria", None)
-
-    # fallback razonable
-    if cat is None:
-        cat = "II"
-
-    cat = str(cat).strip().upper()
-
-    # normalizar posibles entradas
-    if cat in ["1", "I"]:
-        return "I"
-    if cat in ["2", "II"]:
-        return "II"
-    if cat in ["3", "III"]:
-        return "III"
-    if cat in ["4", "IV"]:
-        return "IV"
-
-    return "II"
-
-def _nec_drift_limit_ratio(case_type: str, risk_cat: str) -> float:
-    """
-    Devuelve el límite de deriva en razón (no en %).
-    case_type:
-        - 'fixed'
-        - 'isolated'
-    risk_cat:
-        - 'I', 'II', 'III', 'IV'
-    """
-
-    risk_cat = str(risk_cat).upper().strip()
-
-    # FIJA → Tabla 4.3, segunda fila:
-    # "paredes interiores rígidas de bloque de cemento, hormigón o ladrillo de arcilla"
-    # valores en razón
-    fixed_map = {
-        "I":   0.015,
-        "II":  0.015,
-        "III": 0.012,
-        "IV":  0.010,
-    }
-
-    # AISLADA → Tabla 9.5
-    # la tabla está en %, así que aquí la convertimos a razón
-    isolated_map = {
-        "I":   0.0020,  # 0.20 %
-        "II":  0.0020,  # 0.20 %
-        "III": 0.0030,  # 0.30 %
-        "IV":  0.0050,  # 0.50 %
-    }
-
-    if case_type == "fixed":
-        return float(fixed_map.get(risk_cat, 0.015))
-    elif case_type == "isolated":
-        return float(isolated_map.get(risk_cat, 0.0020))
-    else:
-        raise ValueError("case_type debe ser 'fixed' o 'isolated'")
-
 # -------------------- HEREDAR desde BLOQUE 9 --------------------
 u_fix_levels = st.session_state.get("cmp_U_fix_levels", None)
 u_ais_levels = st.session_state.get("cmp_U_ais_levels", None)
@@ -5056,17 +5076,16 @@ if alt_fix is None:
 alt_fix = np.asarray(alt_fix, float).ravel()
 n_pisos = int(len(alt_fix))
 
-# niveles: Base(0 m) + elevaciones de pisos
-y_levels = np.r_[0.0, alt_fix]
-
 risk_cat = _get_risk_category_from_state()
-
 nec_limit_fix_ratio = _nec_drift_limit_ratio("fixed", risk_cat)
 nec_limit_ais_ratio = _nec_drift_limit_ratio("isolated", risk_cat)
 
 st.session_state["cmp_risk_cat"] = risk_cat
 st.session_state["cmp_nec_limit_fix_ratio"] = nec_limit_fix_ratio
 st.session_state["cmp_nec_limit_ais_ratio"] = nec_limit_ais_ratio
+
+# niveles: Base(0 m) + elevaciones de pisos
+y_levels = np.r_[0.0, alt_fix]
 
 # -------------------------------------------------------------------------
 # NEC24: SIEMPRE activo
@@ -5092,7 +5111,19 @@ if Ie <= 0:
     st.error(tr("b10_bad_Ie"))
     st.stop()
 
-st.caption(tr("b10_nec_caption").format(cd=float(Cd), ie=float(Ie)))
+R_val = _get_R_value()
+if R_val is None or R_val <= 0:
+    R_val = 5.0
+
+RI = _calc_RI_from_R(R_val)
+lim_sec_ratio = 0.010 / RI
+
+c1, c2 = st.columns(2)
+with c1:
+    st.caption(tr("b10_fix_caption").format(cd=float(Cd), ie=float(Ie)))
+with c2:
+    st.caption(tr("b10_iso_caption"))
+    st.caption(tr("b10_iso_pdelta").format(lim=float(lim_sec_ratio), pct=float(lim_sec_ratio * 100.0)))
 
 # =============================================================================
 # Helpers THA exactos
@@ -5157,8 +5188,12 @@ except Exception as e:
 # =============================================================================
 # Aplicar NEC24
 # =============================================================================
+# FIJA -> convencional
 drift_fix = (float(Cd) * drift_fix_real) / float(Ie)
-drift_ais = (float(Cd) * drift_ais_real) / float(Ie)
+
+# AISLADA THA -> se usa deriva real para comparar con Tabla 9.7
+drift_ais = drift_ais_real
+
 xlabel_plot = tr("b10_xlabel_nec")
 
 # =============================================================================
@@ -5237,6 +5272,10 @@ st.session_state["cmp_drift_y_ais_levels"] = np.asarray(y_plot_ais, float).ravel
 
 # compatibilidad con bloques previos
 st.session_state["cmp_drift_y_levels"] = np.asarray(y_plot_fix, float).ravel()
+
+st.session_state["cmp_R_used"] = float(R_val)
+st.session_state["cmp_RI_used"] = float(RI)
+st.session_state["cmp_sec_lim_ratio"] = float(lim_sec_ratio)
 
 st.success(tr("b10_ok"))
 
