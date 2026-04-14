@@ -1433,7 +1433,7 @@ def diseno_aislador_LRB(
     modo_automatico=True, modo_periodo_objetivo=False, T_objetivo=None,
     *,
     Ku_over_Kd=10.0,   # relación típica Ku/Kd
-    LB_factor=0.85     # factor de reducción “LB”
+    LB_factor=0.85,     # factor de reducción “LB”
     Qd_over_W=0.10
 ):
     """
