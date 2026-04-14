@@ -5123,7 +5123,6 @@ with c1:
     st.caption(tr("b10_fix_caption").format(cd=float(Cd), ie=float(Ie)))
 with c2:
     st.caption(tr("b10_iso_caption"))
-    st.caption(tr("b10_iso_pdelta").format(lim=float(lim_sec_ratio), pct=float(lim_sec_ratio * 100.0)))
 
 # =============================================================================
 # Helpers THA exactos
