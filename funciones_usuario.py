@@ -1434,6 +1434,7 @@ def diseno_aislador_LRB(
     *,
     Ku_over_Kd=10.0,   # relación típica Ku/Kd
     LB_factor=0.85     # factor de reducción “LB”
+    Qd_over_W=0.10
 ):
     """
     Diseño de aisladores LRB (2D) sin restricciones geométricas impuestas.
@@ -1518,7 +1519,7 @@ def diseno_aislador_LRB(
 
     # ===================== MODO AUTOMÁTICO =====================
     if modo_automatico and not modo_periodo_objetivo:
-        D_L = math.sqrt((0.10 * W_total * 4.0) / (n_ais * math.pi * sigma_L_tonf))
+        D_L = math.sqrt((Qd_over_W * W_total * 4.0) / (n_ais * math.pi * sigma_L_tonf))
         D_B = 4.0 * D_L
         t_r = D_L
 
@@ -1594,7 +1595,7 @@ def diseno_aislador_LRB(
                 "desacople dinámico efectivo."
             )
 
-        D_L = math.sqrt((0.05 * W_total * 4.0) / (n_ais * math.pi * sigma_L_tonf))
+        D_L = math.sqrt((Qd_over_W * W_total * 4.0) / (n_ais * math.pi * sigma_L_tonf))
 
         rel_DB_ini = 4.0
         rel_DB_min = 2.5
@@ -1684,6 +1685,7 @@ def diseno_aislador_LRB(
         "D_L": float(D_L),
         "D_B": float(D_B),
         "t_r": float(t_r),
+        "Qd_over_W": float(Qd_over_W),
 
         "delta_L": float(delta_L),
         "delta_y": float(delta_y),
