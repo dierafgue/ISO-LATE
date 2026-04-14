@@ -1518,7 +1518,7 @@ def diseno_aislador_LRB(
 
     # ===================== MODO AUTOMÁTICO =====================
     if modo_automatico and not modo_periodo_objetivo:
-        D_L = math.sqrt((0.05 * W_total * 4.0) / (n_ais * math.pi * sigma_L_tonf))
+        D_L = math.sqrt((0.10 * W_total * 4.0) / (n_ais * math.pi * sigma_L_tonf))
         D_B = 4.0 * D_L
         t_r = D_L
 
