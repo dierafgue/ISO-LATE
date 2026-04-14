@@ -4830,6 +4830,7 @@ T["en"].update({
 
     "b10_ok": "NEC-24 drifts ready",
     "b10_base": "Base",
+    "b10_nec_limit": "NEC24 limit",
 })
 
 T["es"].update({
@@ -4867,6 +4868,7 @@ T["es"].update({
 
     "b10_ok": "Derivas NEC24 listas",
     "b10_base": "Base",
+    "b10_nec_limit": "Límite NEC24",
 })
 
 # -------------------------------------------------------------------------
@@ -4903,8 +4905,11 @@ def _df_to_compact_table(df: pd.DataFrame, height_min=150, height_max=300):
     h = int(max(height_min, min(height_max, h)))
     st.dataframe(df, hide_index=True, use_container_width=True, height=h)
 
-def _plot_drift_poly(drift_plot, y_plot, title, color_line, xlabel, n_pisos_ref=10):
-    x = np.asarray(drift_plot, float).ravel() * 100.0
+def _plot_drift_poly(
+    drift_plot, y_plot, title, color_line, xlabel, n_pisos_ref=10,
+    nec_limit_ratio=None
+):
+    x = np.asarray(drift_plot, float).ravel() * 100.0  # a %
     y = np.asarray(y_plot, float).ravel()
 
     if len(x) != len(y):
@@ -4920,6 +4925,32 @@ def _plot_drift_poly(drift_plot, y_plot, title, color_line, xlabel, n_pisos_ref=
 
     ax.plot(x, y, "-o", color=color_line, lw=lw, ms=ms)
 
+    # línea de límite NEC24
+    x_limit_pct = None
+    if nec_limit_ratio is not None and np.isfinite(nec_limit_ratio) and nec_limit_ratio > 0:
+        x_limit_pct = float(nec_limit_ratio) * 100.0
+
+        ax.axvline(
+            x_limit_pct,
+            color="red",
+            lw=1.6,
+            linestyle="--",
+            alpha=0.95
+        )
+
+        y_text = float(np.max(y)) * 0.96 if len(y) else 0.0
+        ax.text(
+            x_limit_pct,
+            y_text,
+            tr("b10_nec_limit"),
+            rotation=90,
+            va="top",
+            ha="right",
+            color="red",
+            fontsize=9,
+            path_effects=HALO
+        )
+
     ax.axvline(0.0, color=COLOR_GRID, lw=1.0, alpha=0.6)
     ax.set_xlabel(xlabel, color=COLOR_TEXT)
     ax.set_ylabel(tr("b10_ylabel"), color=COLOR_TEXT)
@@ -4929,12 +4960,81 @@ def _plot_drift_poly(drift_plot, y_plot, title, color_line, xlabel, n_pisos_ref=
     for s in ("top", "right"):
         ax.spines[s].set_visible(False)
 
-    vmax = float(np.max(x)) if len(x) else 1.0
+    vals_for_xlim = x.copy()
+    if x_limit_pct is not None:
+        vals_for_xlim = np.r_[vals_for_xlim, x_limit_pct]
+
+    vmax = float(np.max(vals_for_xlim)) if len(vals_for_xlim) else 1.0
     vmax = 1.0 if vmax <= 0 else vmax
     ax.set_xlim(0.0, 1.10 * vmax)
 
     fig.tight_layout()
     st.pyplot(fig, use_container_width=True)
+
+def _get_risk_category_from_state():
+    # prioridad: valor directo guardado en bloque 3
+    cat = st.session_state.get("nec_risk_cat", None)
+
+    # respaldo: dentro de nec24_params
+    if cat is None:
+        nec_params = st.session_state.get("nec24_params", {})
+        cat = nec_params.get("categoria", None)
+
+    # fallback razonable
+    if cat is None:
+        cat = "II"
+
+    cat = str(cat).strip().upper()
+
+    # normalizar posibles entradas
+    if cat in ["1", "I"]:
+        return "I"
+    if cat in ["2", "II"]:
+        return "II"
+    if cat in ["3", "III"]:
+        return "III"
+    if cat in ["4", "IV"]:
+        return "IV"
+
+    return "II"
+
+def _nec_drift_limit_ratio(case_type: str, risk_cat: str) -> float:
+    """
+    Devuelve el límite de deriva en razón (no en %).
+    case_type:
+        - 'fixed'
+        - 'isolated'
+    risk_cat:
+        - 'I', 'II', 'III', 'IV'
+    """
+
+    risk_cat = str(risk_cat).upper().strip()
+
+    # FIJA → Tabla 4.3, segunda fila:
+    # "paredes interiores rígidas de bloque de cemento, hormigón o ladrillo de arcilla"
+    # valores en razón
+    fixed_map = {
+        "I":   0.015,
+        "II":  0.015,
+        "III": 0.012,
+        "IV":  0.010,
+    }
+
+    # AISLADA → Tabla 9.5
+    # la tabla está en %, así que aquí la convertimos a razón
+    isolated_map = {
+        "I":   0.0020,  # 0.20 %
+        "II":  0.0020,  # 0.20 %
+        "III": 0.0030,  # 0.30 %
+        "IV":  0.0050,  # 0.50 %
+    }
+
+    if case_type == "fixed":
+        return float(fixed_map.get(risk_cat, 0.015))
+    elif case_type == "isolated":
+        return float(isolated_map.get(risk_cat, 0.0020))
+    else:
+        raise ValueError("case_type debe ser 'fixed' o 'isolated'")
 
 # -------------------- HEREDAR desde BLOQUE 9 --------------------
 u_fix_levels = st.session_state.get("cmp_U_fix_levels", None)
@@ -4958,6 +5058,15 @@ n_pisos = int(len(alt_fix))
 
 # niveles: Base(0 m) + elevaciones de pisos
 y_levels = np.r_[0.0, alt_fix]
+
+risk_cat = _get_risk_category_from_state()
+
+nec_limit_fix_ratio = _nec_drift_limit_ratio("fixed", risk_cat)
+nec_limit_ais_ratio = _nec_drift_limit_ratio("isolated", risk_cat)
+
+st.session_state["cmp_risk_cat"] = risk_cat
+st.session_state["cmp_nec_limit_fix_ratio"] = nec_limit_fix_ratio
+st.session_state["cmp_nec_limit_ais_ratio"] = nec_limit_ais_ratio
 
 # -------------------------------------------------------------------------
 # NEC24: SIEMPRE activo
@@ -5092,7 +5201,9 @@ with colL:
             _df_to_compact_table(dfL)
         _plot_drift_poly(
             drift_fix_plot, y_plot_fix,
-            tr("b10_plot_fix"), COLOR_FIX, xlabel_plot, n_pisos_ref=n_pisos
+            tr("b10_plot_fix"), COLOR_FIX, xlabel_plot,
+            n_pisos_ref=n_pisos,
+            nec_limit_ratio=nec_limit_fix_ratio
         )
 
 with colR:
@@ -5102,7 +5213,9 @@ with colR:
             _df_to_compact_table(dfR)
         _plot_drift_poly(
             drift_ais_plot, y_plot_ais,
-            tr("b10_plot_iso"), COLOR_AIS, xlabel_plot, n_pisos_ref=n_pisos
+            tr("b10_plot_iso"), COLOR_AIS, xlabel_plot,
+            n_pisos_ref=n_pisos,
+            nec_limit_ratio=nec_limit_ais_ratio
         )
 
 # Guardar para Bloque 11
