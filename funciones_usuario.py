@@ -1434,7 +1434,7 @@ def diseno_aislador_LRB(
     *,
     Ku_over_Kd=10.0,   # relación típica Ku/Kd
     LB_factor=0.85,     # factor de reducción “LB”
-    Qd_over_W=0.15
+    Qd_over_W=0.12
 ):
     """
     Diseño de aisladores LRB (2D) sin restricciones geométricas impuestas.
