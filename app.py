@@ -3747,23 +3747,25 @@ with colR:
 
         # ---------------------------------------------------------
         # Matriz de amortiguamiento NO CLÁSICO
-        # - aislador: amortiguamiento equivalente
-        # - superestructura: Rayleigh pequeño (prueba 1%)
+        # - superestructura: Rayleigh con el ζ ingresado por el usuario
+        # - aislador: amortiguamiento equivalente acoplado
         # ---------------------------------------------------------
         C_ais = np.zeros_like(M_ais_eff, dtype=float)
         
         n_gdl = M_ais_eff.shape[0]
         
         # -------------------------------
-        # 1) Rayleigh pequeño SOLO en la superestructura
+        # 1) Rayleigh SOLO en la superestructura
+        #    usando el ζ ingresado al inicio
         # -------------------------------
-        zeta_sup = 0.01  # prueba fina: 1%
+        zeta_sup = float(zeta)
         
         if n_gdl > 1:
             M_sup = M_ais_eff[1:, 1:]
             K_sup = K_ais_eff[1:, 1:]
         
-            # frecuencias del sistema aislado completo, excluyendo el modo 1 del aislador
+            # frecuencias del sistema aislado completo,
+            # excluyendo el modo 1 del aislador
             w_ais = modal_w(K_ais_eff, M_ais_eff)
             w_ais = np.asarray(w_ais, dtype=float).ravel()
             w_ais = np.sort(w_ais[w_ais > 1e-6])
