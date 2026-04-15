@@ -4129,37 +4129,44 @@ with col_right:
         c_tot = c_1ais * n_aisladores
 
         # -------------------------------------------------------------
-        # Matriz de amortiguamiento:
+        # Matriz de amortiguamiento NO CLÁSICO:
         # - Rayleigh solo en la superestructura
-        # - Ceq total del sistema de aislamiento en C[0,0]
+        # - Ceq total del sistema de aislamiento como acople
         # -------------------------------------------------------------
         C_used = np.zeros_like(M_ais, dtype=float)
-
+        n_gdl = M_ais.shape[0]
+        
         if (rayleigh_from_w is not None) and (modal_w is not None):
             try:
                 w_ais = modal_w(K_ais, M_ais)
                 w_ais = np.asarray(w_ais, dtype=float).ravel()
                 w_ais = np.sort(w_ais[w_ais > 1e-6])
-
+        
                 if len(w_ais) >= 3:
                     wR_ais = np.array([w_ais[1], w_ais[2]], dtype=float)
                 elif len(w_ais) == 2:
                     wR_ais = np.array([w_ais[0], w_ais[1]], dtype=float)
                 else:
                     wR_ais = None
-
-                if (wR_ais is not None) and (M_ais.shape[0] > 1):
+        
+                if (wR_ais is not None) and (n_gdl > 1):
                     alpha_ais, beta_ais = rayleigh_from_w(wR_ais, zeta)
-
+        
                     M_sup = M_ais[1:, 1:]
                     K_sup = K_ais[1:, 1:]
                     C_sup = alpha_ais * M_sup + beta_ais * K_sup
-                    C_used[1:, 1:] = C_sup
+                    C_used[1:, 1:] += C_sup
             except Exception:
                 C_used = np.zeros_like(M_ais, dtype=float)
-
-        # amortiguamiento equivalente TOTAL del sistema de aislamiento
-        C_used[0, 0] += c_tot
+        
+        # amortiguamiento equivalente TOTAL del sistema de aislamiento como acople
+        if n_gdl >= 2:
+            C_used[0, 0] += c_tot
+            C_used[0, 1] += -c_tot
+            C_used[1, 0] += -c_tot
+            C_used[1, 1] += c_tot
+        else:
+            C_used[0, 0] += c_tot
 
         # -------------------------------------------------------------
         # Análisis lineal equivalente del sistema condensado
