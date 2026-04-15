@@ -4487,16 +4487,14 @@ V_fix_min = np.min(V_fix_all, axis=1)
 # -------------------- AISLADA --------------------
 if a_ais_rel.shape[0] == n_pisos + 1:
 
-    # aceleración del sistema aislado
-    a_abs_ais = a_ais_rel
-
     # masas diagonales del sistema aislado
     m_diag_ais = np.diag(np.asarray(M_ais, float)).reshape(-1, 1)
 
     # solo superestructura (sin DOF 0 del aislador)
     m_sup = m_diag_ais[1:, :]
-    a_base = a_abs_ais[0:1, :]
-    a_sup = a_abs_ais[1:, :] - a_base
+
+    # aceleración absoluta de la superestructura (tipo ETABS)
+    a_sup = a_ais_rel[1:, :] + ag_ais.reshape(1, -1)
 
     # fuerzas inerciales por piso
     F_sup = m_sup * a_sup
