@@ -3723,44 +3723,46 @@ with colR:
         st.markdown(f"### {tr('b6_right_hdr')}")
 
         # ---------------------------------------------------------
-        # Frecuencias modales (excluyendo modo 1 del aislador)
+        # Rayleigh SOLO para la superestructura
         # ---------------------------------------------------------
-        w_ais = modal_w(K_ais_eff, M_ais_eff)
-        w_ais = np.asarray(w_ais, dtype=float).ravel()
-        w_ais = np.sort(w_ais[w_ais > 1e-6])
-
-        if len(w_ais) >= 3:
-            wR_ais = np.array([w_ais[1], w_ais[2]], dtype=float)  # modos 2 y 3
-        elif len(w_ais) == 2:
-            wR_ais = np.array([w_ais[0], w_ais[1]], dtype=float)
-            st.warning("Solo hay 2 frecuencias válidas; no se pudo excluir completamente el modo del aislador.")
-        else:
-            st.error("No hay suficientes frecuencias para definir Rayleigh.")
-            st.stop()
-
-        # coeficientes Rayleigh
-        alpha_ais, beta_ais = rayleigh_from_w(wR_ais, zeta)
-
-        # ---------------------------------------------------------
-        # Matriz de amortiguamiento:
-        # - aislador: solo c equivalente
-        # - superestructura: Rayleigh
-        # ---------------------------------------------------------
-        C_ais = np.zeros_like(M_ais_eff, dtype=float)
-
         n_gdl = M_ais_eff.shape[0]
-
+        
         if n_gdl > 1:
             M_sup = M_ais_eff[1:, 1:]
             K_sup = K_ais_eff[1:, 1:]
+        
+            w_sup = modal_w(K_sup, M_sup)
+            w_sup = np.asarray(w_sup, dtype=float).ravel()
+            w_sup = np.sort(w_sup[w_sup > 1e-6])
+        
+            try:
+                wR_sup = pick_two_w(w_sup, wmin=1e-6)
+            except Exception:
+                st.error("No hay suficientes frecuencias válidas en la superestructura para definir Rayleigh.")
+                st.stop()
+        
+            alpha_ais, beta_ais = rayleigh_from_w(wR_sup, zeta)
+        else:
+            alpha_ais, beta_ais = 0.0, 0.0
 
+        # ---------------------------------------------------------
+        # Matriz de amortiguamiento NO CLÁSICO:
+        # - superestructura: Rayleigh
+        # - aislador: amortiguamiento acoplado
+        # ---------------------------------------------------------
+        C_ais = np.zeros_like(M_ais_eff, dtype=float)
+        
+        if n_gdl > 1:
+            M_sup = M_ais_eff[1:, 1:]
+            K_sup = K_ais_eff[1:, 1:]
+        
             C_sup = alpha_ais * M_sup + beta_ais * K_sup
-            C_ais[1:, 1:] = C_sup
-
-        # amortiguamiento del aislador
+            C_ais[1:, 1:] += C_sup
+        
+        # amortiguamiento viscoso equivalente del aislador
         n_aisladores = int(st.session_state.get("n_aisladores", 1))
         c_1ais = float(st.session_state["res_aislador"]["c_1ais"])
-        ciso = float(c_1ais) * float(n_aisladores)
+        ciso = c_1ais * n_aisladores
         
         if n_gdl >= 2:
             C_ais[0, 0] += ciso
