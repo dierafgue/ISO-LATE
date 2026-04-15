@@ -3747,19 +3747,50 @@ with colR:
 
         # ---------------------------------------------------------
         # Matriz de amortiguamiento NO CLÁSICO
-        # SOLO amortiguamiento equivalente del aislador
-        # (sin Rayleigh en la superestructura)
+        # - aislador: amortiguamiento equivalente
+        # - superestructura: Rayleigh pequeño (prueba 1%)
         # ---------------------------------------------------------
         C_ais = np.zeros_like(M_ais_eff, dtype=float)
         
         n_gdl = M_ais_eff.shape[0]
         
-        # amortiguamiento viscoso equivalente del aislador
+        # -------------------------------
+        # 1) Rayleigh pequeño SOLO en la superestructura
+        # -------------------------------
+        zeta_sup = 0.01  # prueba fina: 1%
+        
+        if n_gdl > 1:
+            M_sup = M_ais_eff[1:, 1:]
+            K_sup = K_ais_eff[1:, 1:]
+        
+            # frecuencias del sistema aislado completo, excluyendo el modo 1 del aislador
+            w_ais = modal_w(K_ais_eff, M_ais_eff)
+            w_ais = np.asarray(w_ais, dtype=float).ravel()
+            w_ais = np.sort(w_ais[w_ais > 1e-6])
+        
+            if len(w_ais) >= 3:
+                wR_ais = np.array([w_ais[1], w_ais[2]], dtype=float)
+            elif len(w_ais) == 2:
+                wR_ais = np.array([w_ais[0], w_ais[1]], dtype=float)
+            else:
+                wR_ais = None
+        
+            if wR_ais is not None:
+                alpha_ais, beta_ais = rayleigh_from_w(wR_ais, zeta_sup)
+                C_sup = alpha_ais * M_sup + beta_ais * K_sup
+                C_ais[1:, 1:] += C_sup
+            else:
+                alpha_ais, beta_ais = 0.0, 0.0
+        else:
+            alpha_ais, beta_ais = 0.0, 0.0
+        
+        # -------------------------------
+        # 2) Amortiguamiento del aislador
+        # -------------------------------
         n_aisladores = int(st.session_state.get("n_aisladores", 1))
         c_1ais = float(st.session_state["res_aislador"]["c_1ais"])
         ciso = c_1ais * n_aisladores
         
-        # amortiguamiento acoplado entre DOF 0 (aislador) y DOF 1 (superestructura)
         if n_gdl >= 2:
             C_ais[0, 0] += ciso
             C_ais[0, 1] += -ciso
@@ -3770,9 +3801,9 @@ with colR:
         
         # métricas
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("α", f"{0.0:.3e}", "1/s")
-        m2.metric("β", f"{0.0:.3e}", "s")
-        m3.metric("ζ", f"{zeta:.3f}", "")
+        m1.metric("α", f"{alpha_ais:.3e}", "1/s")
+        m2.metric("β", f"{beta_ais:.3e}", "s")
+        m3.metric("ζ_sup", f"{zeta_sup:.3f}", "")
         m4.metric(tr("b6_metrics_dur"), f"{t_total:.2f}", "s")
 
         # ---------------------------------------------------------
