@@ -4493,8 +4493,8 @@ if a_ais_rel.shape[0] == n_pisos + 1:
     # solo superestructura (sin DOF 0 del aislador)
     m_sup = m_diag_ais[1:, :]
 
-    # aceleración absoluta de la superestructura (tipo ETABS)
-    a_sup = a_ais_rel[1:, :]
+    # aceleración absoluta de la superestructura
+    a_sup = a_ais_rel[1:, :] + ag_ais.reshape(1, -1)
 
     # fuerzas inerciales por piso
     F_sup = m_sup * a_sup
