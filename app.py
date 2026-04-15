@@ -3746,33 +3746,26 @@ with colR:
             alpha_ais, beta_ais = 0.0, 0.0
 
         # ---------------------------------------------------------
-        # Matriz de amortiguamiento NO CLÁSICO:
-        # - superestructura: Rayleigh
-        # - aislador: amortiguamiento acoplado
+        # Matriz de amortiguamiento – PRUEBA 1
+        # SOLO amortiguamiento equivalente del aislador
+        # (sin Rayleigh en la superestructura)
         # ---------------------------------------------------------
         C_ais = np.zeros_like(M_ais_eff, dtype=float)
         
-        if n_gdl > 1:
-            M_sup = M_ais_eff[1:, 1:]
-            K_sup = K_ais_eff[1:, 1:]
-        
-            C_sup = alpha_ais * M_sup + beta_ais * K_sup
-            C_ais[1:, 1:] += C_sup
+        n_gdl = M_ais_eff.shape[0]
         
         # amortiguamiento viscoso equivalente del aislador
         n_aisladores = int(st.session_state.get("n_aisladores", 1))
         c_1ais = float(st.session_state["res_aislador"]["c_1ais"])
         ciso = c_1ais * n_aisladores
         
-        if n_gdl >= 2:
-            C_ais[0, 0] += ciso
-        else:
-            C_ais[0, 0] += ciso
-
+        # versión diagonal simple
+        C_ais[0, 0] += ciso
+        
         # métricas
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("α", f"{alpha_ais:.3e}", "1/s")
-        m2.metric("β", f"{beta_ais:.3e}", "s")
+        m1.metric("α", f"{0.0:.3e}", "1/s")
+        m2.metric("β", f"{0.0:.3e}", "s")
         m3.metric("ζ", f"{zeta:.3f}", "")
         m4.metric(tr("b6_metrics_dur"), f"{t_total:.2f}", "s")
 
