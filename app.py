@@ -3746,7 +3746,7 @@ with colR:
             alpha_ais, beta_ais = 0.0, 0.0
 
         # ---------------------------------------------------------
-        # Matriz de amortiguamiento – PRUEBA 1
+        # Matriz de amortiguamiento NO CLÁSICO
         # SOLO amortiguamiento equivalente del aislador
         # (sin Rayleigh en la superestructura)
         # ---------------------------------------------------------
@@ -3759,8 +3759,14 @@ with colR:
         c_1ais = float(st.session_state["res_aislador"]["c_1ais"])
         ciso = c_1ais * n_aisladores
         
-        # versión diagonal simple
-        C_ais[0, 0] += ciso
+        # amortiguamiento acoplado entre DOF 0 (aislador) y DOF 1 (superestructura)
+        if n_gdl >= 2:
+            C_ais[0, 0] += ciso
+            C_ais[0, 1] += -ciso
+            C_ais[1, 0] += -ciso
+            C_ais[1, 1] += ciso
+        else:
+            C_ais[0, 0] += ciso
         
         # métricas
         m1, m2, m3, m4 = st.columns(4)
