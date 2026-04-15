@@ -3766,9 +3766,6 @@ with colR:
         
         if n_gdl >= 2:
             C_ais[0, 0] += ciso
-            C_ais[0, 1] += -ciso
-            C_ais[1, 0] += -ciso
-            C_ais[1, 1] += ciso
         else:
             C_ais[0, 0] += ciso
 
