@@ -3760,7 +3760,15 @@ with colR:
         # amortiguamiento del aislador
         n_aisladores = int(st.session_state.get("n_aisladores", 1))
         c_1ais = float(st.session_state["res_aislador"]["c_1ais"])
-        C_ais[0, 0] += c_1ais * n_aisladores
+        ciso = float(c_1ais) * float(n_aisladores)
+        
+        if n_gdl >= 2:
+            C_ais[0, 0] += ciso
+            C_ais[0, 1] += -ciso
+            C_ais[1, 0] += -ciso
+            C_ais[1, 1] += ciso
+        else:
+            C_ais[0, 0] += ciso
 
         # métricas
         m1, m2, m3, m4 = st.columns(4)
