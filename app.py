@@ -4184,7 +4184,7 @@ with col_left:
         plt.close(fig)
 
 # =============================================================================
-# DERECHA: HISTÉRESIS
+# DERECHA: HISTÉRESIS LINEAL EQUIVALENTE TIPO ETABS
 # =============================================================================
 with col_right:
     with st.container(border=True):
@@ -4219,30 +4219,30 @@ with col_right:
         # -------------------------------------------------------------
         C_used = np.zeros_like(M_ais, dtype=float)
         n_gdl = M_ais.shape[0]
-        
+
         if (rayleigh_from_w is not None) and (modal_w is not None):
             try:
                 w_ais = modal_w(K_ais, M_ais)
                 w_ais = np.asarray(w_ais, dtype=float).ravel()
                 w_ais = np.sort(w_ais[w_ais > 1e-6])
-        
+
                 if len(w_ais) >= 3:
                     wR_ais = np.array([w_ais[1], w_ais[2]], dtype=float)
                 elif len(w_ais) == 2:
                     wR_ais = np.array([w_ais[0], w_ais[1]], dtype=float)
                 else:
                     wR_ais = None
-        
+
                 if (wR_ais is not None) and (n_gdl > 1):
                     alpha_ais, beta_ais = rayleigh_from_w(wR_ais, zeta)
-        
+
                     M_sup = M_ais[1:, 1:]
                     K_sup = K_ais[1:, 1:]
                     C_sup = alpha_ais * M_sup + beta_ais * K_sup
                     C_used[1:, 1:] += C_sup
             except Exception:
                 C_used = np.zeros_like(M_ais, dtype=float)
-        
+
         # amortiguamiento equivalente TOTAL del sistema de aislamiento como acople
         if n_gdl >= 2:
             C_used[0, 0] += c_tot
@@ -4253,81 +4253,37 @@ with col_right:
             C_used[0, 0] += c_tot
 
         # -------------------------------------------------------------
-        # USAR LA RESPUESTA YA CALCULADA EN BLOQUE 6
-        # y evaluar la fuerza del aislador con ley bilineal con memoria
+        # Análisis lineal equivalente del sistema condensado
         # -------------------------------------------------------------
-        if bilinear_state is None:
-            def bilinear_state(u0, u0_prev, uy, k0, kp, ue_prev):
-                du = u0 - u0_prev
-                ue_trial = ue_prev + du
-                ue = np.clip(ue_trial, -uy, uy)
-                d_ue_du = 0.0 if (ue != ue_trial) else 1.0
-                F_hyst = kp * u0 + (k0 - kp) * ue
-                k_t = kp + (k0 - kp) * d_ue_du
-                return F_hyst, k_t, ue
+        r = np.ones((M_ais.shape[0], 1))
+        P = -(M_ais @ r) @ ag_mps2[np.newaxis, :]
 
-        if ("u_t_ais" not in st.session_state) or ("v_t_ais" not in st.session_state):
-            st.error("Primero ejecuta el Bloque 6 para obtener la respuesta dinámica aislada.")
-            st.stop()
+        U0 = np.zeros(M_ais.shape[0], dtype=float)
+        V0 = np.zeros(M_ais.shape[0], dtype=float)
 
-        U_hist = np.asarray(st.session_state["u_t_ais"], dtype=float)
-        V_hist = np.asarray(st.session_state["v_t_ais"], dtype=float)
-
-        U_hist = np.asarray(U_hist, dtype=float)
-        V_hist = np.asarray(V_hist, dtype=float)
-        
-        if U_hist.ndim == 1:
-            U_hist = U_hist.reshape(1, -1)
-        if V_hist.ndim == 1:
-            V_hist = V_hist.reshape(1, -1)
-
-        # DOF 0 = aislador
-        u_iso = np.asarray(U_hist[0, :], dtype=float).ravel()
-        v_iso = np.asarray(V_hist[0, :], dtype=float).ravel()
+        U_lin, V_lin, A_lin = newmark(
+            M_ais, C_used, K_ais, U0, V0, dt, P, gamma=0.5, beta=0.25
+        )
+        U_lin, V_lin, A_lin = ensure_2d(U_lin, V_lin, A_lin)
 
         # -------------------------------------------------------------
-        # Propiedades bilineales de UN aislador
+        # Fuerza de UN link equivalente individual
+        # mismo desplazamiento base, misma velocidad base
         # -------------------------------------------------------------
-        res_ais = st.session_state["res_aislador"]
+        u_iso = np.asarray(U_lin[0, :], dtype=float).ravel()
+        v_iso = np.asarray(V_lin[0, :], dtype=float).ravel()
 
-        # nombres consistentes con tu app
-        k0 = float(res_ais["k_inicial_1ais"])   # rigidez inicial
-        kp = float(res_ais["k_post_1ais"])      # rigidez postfluencia
-        fy = float(res_ais["yield_1ais"])       # fuerza de fluencia
-        uy = float(res_ais["delta_y"])          # desplazamiento de fluencia
+        F_link_1 = keff_1ais * u_iso + c_1ais * v_iso
 
-        # -------------------------------------------------------------
-        # Fuerza histerética de UN link con memoria
-        # -------------------------------------------------------------
-        nt = len(u_iso)
-        F_link_1 = np.zeros(nt, dtype=float)
-
-        ue_prev = 0.0
-        u_prev = 0.0
-
-        for i in range(nt):
-            ui = float(u_iso[i])
-
-            F_hyst, k_t, ue = bilinear_state(
-                ui, u_prev, uy, k0, kp, ue_prev
-            )
-
-            F_link_1[i] = F_hyst
-
-            u_prev = ui
-            ue_prev = ue
-
-        # guardar
-        st.session_state["U_lin_b7"] = U_hist
-        st.session_state["V_lin_b7"] = V_hist
+        st.session_state["U_lin_b7"] = U_lin
+        st.session_state["V_lin_b7"] = V_lin
+        st.session_state["A_lin_b7"] = A_lin
         st.session_state["Fiso_hist_1ais_b7"] = np.asarray(F_link_1, dtype=float).ravel()
         st.session_state["ag_used_b7_ais"] = np.asarray(ag_mps2, dtype=float).ravel()
 
         st.session_state["dbg_n_aisladores"] = n_aisladores
-        st.session_state["dbg_ke_1ais"] = k0
-        st.session_state["dbg_kp_1ais"] = kp
-        st.session_state["dbg_fy_1ais"] = fy
-        st.session_state["dbg_uy_1ais"] = uy
+        st.session_state["dbg_keff_1ais"] = keff_1ais
+        st.session_state["dbg_ceq_1ais"] = c_1ais
         st.session_state["dbg_u_iso_max"] = float(np.max(np.abs(u_iso)))
         st.session_state["dbg_Fiso_1_max"] = float(np.max(np.abs(F_link_1)))
 
@@ -4340,7 +4296,7 @@ with col_right:
         fig, ax = plt.subplots(figsize=(FIG_W, FIG_H))
         fig.patch.set_facecolor(BG)
         ax.set_facecolor(BG)
-        
+
         ax.plot(
             u_iso,
             F_link_1,
@@ -4350,18 +4306,18 @@ with col_right:
             solid_capstyle="round",
             solid_joinstyle="round",
         )
-        
+
         # máximos y mínimos
         u_max = float(np.max(u_iso))
         u_min = float(np.min(u_iso))
         f_max = float(np.max(F_link_1))
         f_min = float(np.min(F_link_1))
-        
+
         legend_txt = (
             f"u max = {u_max:.6f} m | F max = {f_max:.6f} Tf\n"
             f"u min = {u_min:.6f} m | F min = {f_min:.6f} Tf"
         )
-        
+
         leg = ax.legend(
             [legend_txt],
             loc="upper left",
@@ -4372,15 +4328,15 @@ with col_right:
         )
         for txt in leg.get_texts():
             txt.set_color(COLOR_TEXT)
-        
+
         ax.set_xlabel(tr("b7_xlabel_u0"), color=COLOR_TEXT)
         ax.set_ylabel(tr("b7_ylabel_Fiso"), color=COLOR_TEXT)
-        
+
         ax.grid(True, color=COLOR_GRID, linestyle=":", alpha=0.35)
         ax.tick_params(colors=COLOR_TEXT)
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
-        
+
         fig.tight_layout()
         st.pyplot(fig, use_container_width=True)
         plt.close(fig)
