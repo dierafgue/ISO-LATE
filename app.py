@@ -4291,10 +4291,10 @@ with col_right:
         res_ais = st.session_state["res_aislador"]
 
         # nombres consistentes con tu app
-        k0 = float(res_ais["ke_1ais"])       # rigidez inicial
-        kp = float(res_ais["kp_1ais"])       # rigidez postfluencia
-        fy = float(res_ais["fy_1ais"])       # fuerza de fluencia
-        uy = fy / k0 if abs(k0) > 1e-14 else 0.0
+        k0 = float(res_ais["k_inicial_1ais"])   # rigidez inicial
+        kp = float(res_ais["k_post_1ais"])      # rigidez postfluencia
+        fy = float(res_ais["yield_1ais"])       # fuerza de fluencia
+        uy = float(res_ais["delta_y"])          # desplazamiento de fluencia
 
         # -------------------------------------------------------------
         # Fuerza histerética de UN link con memoria
