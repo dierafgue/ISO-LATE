@@ -2384,9 +2384,17 @@ try:
         col = y_to_col[y_key]
         T_pp_ais[row, col] = 1.0
 
+    # -----------------------------------------
+    # MATRIZ CONDENSADA SIN AISLADOR (CLAVE)
+    # -----------------------------------------
     K_cond_ais = T_pp_ais.T @ K_vx_nodo @ T_pp_ais
-
-    # ✅ AISLADOR: resorte a tierra en el DOF 0
+    
+    # 🔥 GUARDAR MATRIZ SIN AISLADOR (rodillo)
+    st.session_state["K_cond_rodillo"] = np.array(K_cond_ais, copy=True)
+    
+    # -----------------------------------------
+    # AISLADOR: resorte a tierra en DOF 0
+    # -----------------------------------------
     k_iso_total = keff_1ais * n_aisladores
     K_cond_ais[0, 0] += k_iso_total
 
