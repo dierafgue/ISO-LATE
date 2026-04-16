@@ -4347,6 +4347,10 @@ T["en"].update({
     "b8_missing_nec_params": "Missing NEC-24 parameters Ie and/or R. Run Block 3 first.",
     "b8_factor_info_fix": "Applied inelastic factor (FIXED): Vinel = Vel·Ie/R = {Ie:.3f}/{R:.3f} = {fac:.5f}",
     "b8_factor_info_iso": "Applied inelastic factor (ISOLATED): Vinel = Vel·Ie/Riso, with Riso = clamp((3/8)R, 1, 2) = {Rraw:.3f} → {Riso:.3f}; factor = {Ie:.3f}/{Riso:.3f} = {fac:.5f}",
+
+    "b8_mode": "Shear type",
+    "b8_mode_el": "Elastic (physical response)",
+    "b8_mode_inel": "Inelastic (code-based)",
 })
 
 T["es"].update({
@@ -4371,6 +4375,10 @@ T["es"].update({
     "b8_missing_nec_params": "Faltan los parámetros NEC-24 Ie y/o R. Ejecuta primero el Bloque 3.",
     "b8_factor_info_fix": "Factor inelástico aplicado (FIJA): Vinel = Vel·Ie/R = {Ie:.3f}/{R:.3f} = {fac:.5f}",
     "b8_factor_info_iso": "Factor inelástico aplicado (AISLADA): Vinel = Vel·Ie/Riso, con Riso = limitar((3/8)R, 1, 2) = {Rraw:.3f} → {Riso:.3f}; factor = {Ie:.3f}/{Riso:.3f} = {fac:.5f}",
+
+    "b8_mode": "Tipo de cortante",
+    "b8_mode_el": "Elástico (respuesta física)",
+    "b8_mode_inel": "Inelástico (normativo)",
 })
 
 st.markdown(f"## 🧱 {tr('b8_title')}")
@@ -4521,6 +4529,15 @@ R_iso_eff = min(2.0, max(1.0, R_iso_raw))
 fac_fix = Ie_user / R_user
 fac_ais = Ie_user / R_iso_eff
 
+# -------------------- Selector de tipo de cortante --------------------
+modo_cortante = st.radio(
+    tr("b8_mode"),
+    [tr("b8_mode_el"), tr("b8_mode_inel")],
+    horizontal=True,
+    key="b8_modo_cortante"
+)
+usar_inelastico = modo_cortante == tr("b8_mode_inel")
+
 # =============================================================================
 # THA – SOLO Max/Min
 # =============================================================================
@@ -4572,7 +4589,10 @@ def _story_from_forces(F):
 V_fix_all_el = _story_from_forces(F_fix)
 
 # aplicar inelasticidad fija: Vinel = Vel * Ie / R
-V_fix_all = fac_fix * V_fix_all_el
+if usar_inelastico:
+    V_fix_all = fac_fix * V_fix_all_el
+else:
+    V_fix_all = V_fix_all_el
 
 V_fix_max = np.max(V_fix_all, axis=1)
 V_fix_min = np.min(V_fix_all, axis=1)
@@ -4594,7 +4614,10 @@ if a_ais_rel.shape[0] == n_pisos + 1:
     V_ais_all_el = _story_from_forces(F_sup)
 
     # aplicar inelasticidad aislada: Vinel = Vel * Ie / ((3/8)R)
-    V_ais_all = fac_ais * V_ais_all_el
+    if usar_inelastico:
+        V_ais_all = fac_ais * V_ais_all_el
+    else:
+        V_ais_all = V_ais_all_el
 
     # envolventes
     V_ais_max = np.max(V_ais_all, axis=1)
@@ -4611,15 +4634,16 @@ else:
     st.stop()
 
 # -------------------- Info de factores --------------------
-st.caption(tr("b8_factor_info_fix").format(Ie=Ie_user, R=R_user, fac=fac_fix))
-st.caption(
-    tr("b8_factor_info_iso").format(
-        Ie=Ie_user,
-        Rraw=R_iso_raw,
-        Riso=R_iso_eff,
-        fac=fac_ais
+if usar_inelastico:
+    st.caption(tr("b8_factor_info_fix").format(Ie=Ie_user, R=R_user, fac=fac_fix))
+    st.caption(
+        tr("b8_factor_info_iso").format(
+            Ie=Ie_user,
+            Rraw=R_iso_raw,
+            Riso=R_iso_eff,
+            fac=fac_ais
+        )
     )
-)
 
 # -------------------- Layout resultados --------------------
 colL, colR = st.columns([1, 1], gap="large")
@@ -4700,6 +4724,8 @@ st.session_state["cmp_fac_fix_used"] = float(fac_fix)
 st.session_state["cmp_fac_ais_used"] = float(fac_ais)
 st.session_state["cmp_V_fix_story_elastic"] = np.max(np.abs(V_fix_all_el), axis=1)
 st.session_state["cmp_V_ais_story_elastic"] = np.max(np.abs(V_ais_all_el), axis=1)
+st.session_state["cmp_b8_modo_cortante"] = str(modo_cortante)
+st.session_state["cmp_b8_usar_inelastico"] = bool(usar_inelastico)
 
 # =============================================================================
 # === BLOQUE 9: DESPLAZAMIENTOS LATERALES (SOLO THA MAX/MIN) ==================
