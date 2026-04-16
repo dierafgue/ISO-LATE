@@ -3723,9 +3723,11 @@ with colR:
         st.markdown(f"### {tr('b6_right_hdr')}")
 
         # ---------------------------------------------------------
-        # AMORTIGUAMIENTO NO CLÁSICO DIRECTO
+        # AMORTIGUAMIENTO NO CLÁSICO TIPO ETABS
         # - aislador: amortiguamiento equivalente acoplado
-        # - superestructura: Rayleigh directo con zeta_sup definido
+        # - Rayleigh: usando el zeta ingresado por el usuario
+        # - término beta*K con rigidez inicial de la superestructura (K0),
+        #   no con la rigidez efectiva aislada
         # ---------------------------------------------------------
         n_gdl = M_ais_eff.shape[0]
 
@@ -3747,26 +3749,33 @@ with colR:
             C_ais[0, 0] += ciso
 
         # -------------------------------
-        # 2) Amortiguamiento Rayleigh de la superestructura
+        # 2) Rayleigh con el zeta REAL ingresado por el usuario
+        #    pero usando K0 de la superestructura fija
         # -------------------------------
-        zeta_sup = 0.015  # valor explícito para la superestructura aislada
-
-        best_alpha = 0.0
-        best_beta = 0.0
+        alpha_sup = 0.0
+        beta_sup = 0.0
 
         if n_gdl > 1:
+            # submatrices de la superestructura aislada
             M_sup = M_ais_eff[1:, 1:]
-            K_sup = K_ais_eff[1:, 1:]
+            K_sup_eff = K_ais_eff[1:, 1:]
 
-            w_sup = modal_w(K_sup, M_sup)
-            w_sup = np.asarray(w_sup, float).ravel()
+            # K0 = rigidez inicial de la superestructura fija
+            # misma dimensión que la subestructura [1:,1:]
+            K0_sup = np.array(K_fix, dtype=float)
+
+            # frecuencias para definir Rayleigh en la superestructura
+            # usa la superestructura del sistema aislado
+            w_sup = modal_w(K_sup_eff, M_sup)
+            w_sup = np.asarray(w_sup, dtype=float).ravel()
             w_sup = np.sort(w_sup[w_sup > 1e-6])
 
             if len(w_sup) >= 2:
-                wR = pick_two_w(w_sup, wmin=1e-6)
-                best_alpha, best_beta = rayleigh_from_w(wR, zeta_sup)
+                wR_sup = pick_two_w(w_sup, wmin=1e-6)
+                alpha_sup, beta_sup = rayleigh_from_w(wR_sup, zeta)
 
-                C_sup = best_alpha * M_sup + best_beta * K_sup
+                # CLAVE: beta con K0_sup, no con K_sup_eff
+                C_sup = alpha_sup * M_sup + beta_sup * K0_sup
                 C_ais[1:, 1:] += C_sup
 
         # -------------------------------
@@ -3780,15 +3789,18 @@ with colR:
 
         # métricas
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("α_sup", f"{best_alpha:.3e}", "1/s")
-        m2.metric("β_sup", f"{best_beta:.3e}", "s")
-        m3.metric("ζ_sup", f"{zeta_sup:.3f}", "")
+        m1.metric("α_sup", f"{alpha_sup:.3e}", "1/s")
+        m2.metric("β_sup", f"{beta_sup:.3e}", "s")
+        m3.metric("ζ", f"{zeta:.3f}", "")
         m4.metric(tr("b6_metrics_dur"), f"{t_total:.2f}", "s")  
         
         # ---------------------------------------------------------
         # Newmark
         # ---------------------------------------------------------
-        sig_ais = _sig(K_ais_eff, M_ais_eff, C_ais, ag_ext_ais, extra=(dt, zeta_sup, gamma_n, beta_n))
+        sig_ais = _sig(
+            K_ais_eff, M_ais_eff, C_ais, ag_ext_ais,
+            extra=(dt, zeta, gamma_n, beta_n, alpha_sup, beta_sup)
+        )
         cache_ais = st.session_state.get("b6_cache_ais", {})
 
         if cache_ais.get("sig") != sig_ais:
