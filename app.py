@@ -4252,37 +4252,71 @@ with col_right:
             C_used[0, 0] += c_tot
 
         # -------------------------------------------------------------
-        # Análisis lineal equivalente del sistema condensado
+        # USAR LA RESPUESTA YA CALCULADA EN BLOQUE 6
+        # y evaluar la fuerza del aislador con ley bilineal con memoria
         # -------------------------------------------------------------
-        r = np.ones((M_ais.shape[0], 1))
-        P = -(M_ais @ r) @ ag_mps2[np.newaxis, :]
+        bilinear_state = get_fun("_bilinear_state")
 
-        U0 = np.zeros(M_ais.shape[0], dtype=float)
-        V0 = np.zeros(M_ais.shape[0], dtype=float)
+        if bilinear_state is None:
+            st.error("No se encontró la función `_bilinear_state`.")
+            st.stop()
 
-        U_lin, V_lin, A_lin = newmark(
-            M_ais, C_used, K_ais, U0, V0, dt, P, gamma=0.5, beta=0.25
-        )
-        U_lin, V_lin, A_lin = ensure_2d(U_lin, V_lin, A_lin)
+        if ("u_t_ais" not in st.session_state) or ("v_t_ais" not in st.session_state):
+            st.error("Primero ejecuta el Bloque 6 para obtener la respuesta dinámica aislada.")
+            st.stop()
+
+        U_hist = np.asarray(st.session_state["u_t_ais"], dtype=float)
+        V_hist = np.asarray(st.session_state["v_t_ais"], dtype=float)
+
+        U_hist, V_hist = ensure_2d(U_hist, V_hist)
+
+        # DOF 0 = aislador
+        u_iso = np.asarray(U_hist[0, :], dtype=float).ravel()
+        v_iso = np.asarray(V_hist[0, :], dtype=float).ravel()
 
         # -------------------------------------------------------------
-        # Fuerza de UN link equivalente individual
-        # mismo desplazamiento base, misma velocidad base
+        # Propiedades bilineales de UN aislador
         # -------------------------------------------------------------
-        u_iso = np.asarray(U_lin[0, :], dtype=float).ravel()
-        v_iso = np.asarray(V_lin[0, :], dtype=float).ravel()
+        res_ais = st.session_state["res_aislador"]
 
-        F_link_1 = keff_1ais * u_iso + c_1ais * v_iso
+        # nombres consistentes con tu app
+        k0 = float(res_ais["ke_1ais"])       # rigidez inicial
+        kp = float(res_ais["kp_1ais"])       # rigidez postfluencia
+        fy = float(res_ais["fy_1ais"])       # fuerza de fluencia
+        uy = fy / k0 if abs(k0) > 1e-14 else 0.0
 
-        st.session_state["U_lin_b7"] = U_lin
-        st.session_state["V_lin_b7"] = V_lin
-        st.session_state["A_lin_b7"] = A_lin
+        # -------------------------------------------------------------
+        # Fuerza histerética de UN link con memoria
+        # -------------------------------------------------------------
+        nt = len(u_iso)
+        F_link_1 = np.zeros(nt, dtype=float)
+
+        ue_prev = 0.0
+        u_prev = 0.0
+
+        for i in range(nt):
+            ui = float(u_iso[i])
+
+            F_hyst, k_t, ue = bilinear_state(
+                ui, u_prev, uy, k0, kp, ue_prev
+            )
+
+            F_link_1[i] = F_hyst
+
+            u_prev = ui
+            ue_prev = ue
+
+        # guardar
+        st.session_state["U_lin_b7"] = U_hist
+        st.session_state["V_lin_b7"] = V_hist
         st.session_state["Fiso_hist_1ais_b7"] = np.asarray(F_link_1, dtype=float).ravel()
         st.session_state["ag_used_b7_ais"] = np.asarray(ag_mps2, dtype=float).ravel()
 
         st.session_state["dbg_n_aisladores"] = n_aisladores
-        st.session_state["dbg_keff_1ais"] = keff_1ais
-        st.session_state["dbg_ceq_1ais"] = c_1ais
+        st.session_state["dbg_ke_1ais"] = k0
+        st.session_state["dbg_kp_1ais"] = kp
+        st.session_state["dbg_fy_1ais"] = fy
+        st.session_state["dbg_uy_1ais"] = uy
         st.session_state["dbg_u_iso_max"] = float(np.max(np.abs(u_iso)))
         st.session_state["dbg_Fiso_1_max"] = float(np.max(np.abs(F_link_1)))
 
