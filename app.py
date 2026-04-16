@@ -4177,18 +4177,13 @@ with col_right:
                     M_sup = M_ais[1:, 1:]
                     K_sup = K_ais[1:, 1:]
                     C_sup = alpha_ais * M_sup + beta_ais * K_sup
-                    C_used[1:, 1:] += C_sup
+                    eta_sup = zeta  # mismo criterio que Bloque 6
+                    C_used[1:, 1:] += eta_sup * C_sup
             except Exception:
                 C_used = np.zeros_like(M_ais, dtype=float)
 
-        # amortiguamiento equivalente TOTAL del sistema de aislamiento como acople
-        if n_gdl >= 2:
-            C_used[0, 0] += c_tot
-            C_used[0, 1] += -c_tot
-            C_used[1, 0] += -c_tot
-            C_used[1, 1] += c_tot
-        else:
-            C_used[0, 0] += c_tot
+        # aislador como amortiguador a tierra (CONSISTENTE con K)
+        C_used[0, 0] += c_tot
 
         # -------------------------------------------------------------
         # Análisis lineal equivalente del sistema condensado
