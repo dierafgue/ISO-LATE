@@ -3731,62 +3731,75 @@ with colR:
         st.markdown(f"### {tr('b6_right_hdr')}")
 
         # ---------------------------------------------------------
-        # AMORTIGUAMIENTO NO CLÁSICO CORRECTO
+        # AMORTIGUAMIENTO NO CLÁSICO CORRECTO (LINEAL EQUIVALENTE)
         # ---------------------------------------------------------
         n_gdl = M_ais_eff.shape[0]
-
+        
         # -------------------------------
-        # 1) Amortiguamiento del aislador (CORREGIDO)
+        # 1) AISLADOR (IGUAL QUE ETABS)
         # -------------------------------
         C_ais = np.zeros_like(M_ais_eff, dtype=float)
-
+        
         n_aisladores = int(st.session_state.get("n_aisladores", 1))
         c_1ais = float(st.session_state["res_aislador"]["c_1ais"])
+        
+        # 👉 IMPORTANTE: ETABS usa damping por LINK
+        # si tu valor es total, divide; si es por aislador, deja así
         ciso = c_1ais * n_aisladores
-
-        # ✔ SOLO en DOF base (igual que K)
-        C_ais[0, 0] += ciso
-
+        
+        if n_gdl >= 2:
+            C_ais[0, 0] += ciso
+            C_ais[0, 1] += -ciso
+            C_ais[1, 0] += -ciso
+            C_ais[1, 1] += ciso
+        else:
+            C_ais[0, 0] += ciso
+        
         # -------------------------------
-        # 2) Rayleigh de la superestructura (CORREGIDO)
+        # 2) RAYLEIGH SOLO SUPER (TIPO ETABS)
         # -------------------------------
         alpha_sup = 0.0
         beta_sup = 0.0
-
+        
         if n_gdl > 1:
+            # submatrices superestructura
             M_sup = M_ais_eff[1:, 1:]
-
-            # ✔ usar matriz SIN aislador
-            K_cond_rodillo = np.array(st.session_state["K_cond_rodillo"], dtype=float)
-            K_sup = K_cond_rodillo[1:, 1:]
-
-            # frecuencias estructurales correctas
-            w_sup = modal_w(K_sup, M_sup)
-            w_sup = np.asarray(w_sup, dtype=float).ravel()
-            w_sup = np.sort(w_sup[w_sup > 1e-6])
-
-            if len(w_sup) >= 2:
-                wR_sup = pick_two_w(w_sup, wmin=1e-6)
-                alpha_sup, beta_sup = rayleigh_from_w(wR_sup, zeta)
-
-                C_sup = alpha_sup * M_sup + beta_sup * K_sup
+        
+            # 🔥 CLAVE: usar K SIN aislador
+            K0_full = np.array(st.session_state["K_cond_rodillo"], dtype=float)
+            K0_sup = K0_full[1:, 1:]
+        
+            # 🔥 CLAVE: usar MODOS DE LA FIJA
+            w_fix = st.session_state.get("w_sin", None)
+            if w_fix is None:
+                w_fix = modal_w(K_fix, M_fix)
+        
+            w_fix = np.asarray(w_fix, float)
+            w_fix = np.sort(w_fix[w_fix > 1e-6])
+        
+            if len(w_fix) >= 2:
+                wR = pick_two_w(w_fix, wmin=1e-6)
+                alpha_sup, beta_sup = rayleigh_from_w(wR, zeta)
+        
+                # 👉 ETABS: beta*K con rigidez inicial
+                C_sup = alpha_sup * M_sup + beta_sup * K0_sup
                 C_ais[1:, 1:] += C_sup
-
+        
         # -------------------------------
-        # 3) Carga sísmica
+        # 3) CARGA SÍSMICA
         # -------------------------------
         r_ais = np.ones((M_ais_eff.shape[0], 1))
         P_ais = -(M_ais_eff @ r_ais) @ ag_ext_ais[np.newaxis, :]
-
+        
         U0_ais = np.zeros(K_ais_eff.shape[0])
         V0_ais = np.zeros(K_ais_eff.shape[0])
-
+        
         # métricas
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("α_sup", f"{alpha_sup:.3e}", "1/s")
         m2.metric("β_sup", f"{beta_sup:.3e}", "s")
         m3.metric("ζ", f"{zeta:.3f}", "")
-        m4.metric(tr("b6_metrics_dur"), f"{t_total:.2f}", "s")  
+        m4.metric(tr("b6_metrics_dur"), f"{t_total:.2f}", "s")
 
         # ---------------------------------------------------------
         # Newmark
