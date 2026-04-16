@@ -3750,14 +3750,12 @@ with colR:
         # 1) AISLADOR LINEAL EQUIVALENTE
         # -------------------------------
         C_ais = np.zeros_like(M_ais_eff, dtype=float)
-
+        
         n_aisladores = int(st.session_state.get("n_aisladores", 1))
         c_1ais = float(st.session_state["res_aislador"]["c_1ais"])
-
-        ciso = c_1ais
-
-        # Consistente con K_cond_ais[0,0] += k_iso_total
-        C_ais[0, 0] += ciso
+        
+        # CASO 2: sin amortiguamiento del aislador
+        ciso = 0.0
 
         # -------------------------------
         # 2) RAYLEIGH DE LA SUPERESTRUCTURA FIJA
