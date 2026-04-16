@@ -3754,11 +3754,7 @@ with colR:
         n_aisladores = int(st.session_state.get("n_aisladores", 1))
         c_1ais = float(st.session_state["res_aislador"]["c_1ais"])
 
-        # Si c_1ais es por aislador, deja esta línea:
-        ciso = c_1ais * n_aisladores
-
-        # Si descubres que c_1ais ya es TOTAL del sistema, usa esta en vez de la anterior:
-        # ciso = c_1ais
+        ciso = c_1ais
 
         # Consistente con K_cond_ais[0,0] += k_iso_total
         C_ais[0, 0] += ciso
