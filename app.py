@@ -3786,8 +3786,9 @@ with colR:
             # C_sup de la estructura fija
             C_sup = alpha_sup * np.asarray(M_fix, float) + beta_sup * np.asarray(K_fix, float)
 
-            # embebido en la aislada: DOF 1..n
-            #C_ais[1:, 1:] += C_sup
+            eta_sup = 0.10   # prueba 0.10 primero
+            C_ais[1:, 1:] += eta_sup * C_sup
+            
         else:
             st.warning("No hay suficientes frecuencias válidas en la estructura fija para definir Rayleigh.")
 
