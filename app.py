@@ -4346,7 +4346,7 @@ T["en"].update({
     "b8_tha_ok": "Story shears ready",
     "b8_missing_nec_params": "Missing NEC-24 parameters Ie and/or R. Run Block 3 first.",
     "b8_factor_info_fix": "Applied inelastic factor (FIXED): Vinel = Vel·Ie/R = {Ie:.3f}/{R:.3f} = {fac:.5f}",
-    "b8_factor_info_iso": "Applied inelastic factor (ISOLATED): Vinel = Vel·Ie/((3/8)R) = {Ie:.3f}/{Riso:.3f} = {fac:.5f}",
+    "b8_factor_info_iso": "Applied inelastic factor (ISOLATED): Vinel = Vel·Ie/Riso, with Riso = clamp((3/8)R, 1, 2) = {Rraw:.3f} → {Riso:.3f}; factor = {Ie:.3f}/{Riso:.3f} = {fac:.5f}",
 })
 
 T["es"].update({
@@ -4370,7 +4370,7 @@ T["es"].update({
     "b8_tha_ok": "Cortantes listos",
     "b8_missing_nec_params": "Faltan los parámetros NEC-24 Ie y/o R. Ejecuta primero el Bloque 3.",
     "b8_factor_info_fix": "Factor inelástico aplicado (FIJA): Vinel = Vel·Ie/R = {Ie:.3f}/{R:.3f} = {fac:.5f}",
-    "b8_factor_info_iso": "Factor inelástico aplicado (AISLADA): Vinel = Vel·Ie/((3/8)R) = {Ie:.3f}/{Riso:.3f} = {fac:.5f}",
+    "b8_factor_info_iso": "Factor inelástico aplicado (AISLADA): Vinel = Vel·Ie/Riso, con Riso = limitar((3/8)R, 1, 2) = {Rraw:.3f} → {Riso:.3f}; factor = {Ie:.3f}/{Riso:.3f} = {fac:.5f}",
 })
 
 st.markdown(f"## 🧱 {tr('b8_title')}")
@@ -4515,10 +4515,8 @@ if R_user <= 0:
     st.error("❌ El factor R debe ser mayor que cero.")
     st.stop()
 
-R_iso_eff = (3.0 / 8.0) * R_user
-if R_iso_eff <= 0:
-    st.error("❌ El R efectivo del sistema aislado debe ser mayor que cero.")
-    st.stop()
+R_iso_raw = (3.0 / 8.0) * R_user
+R_iso_eff = min(2.0, max(1.0, R_iso_raw))
 
 fac_fix = Ie_user / R_user
 fac_ais = Ie_user / R_iso_eff
@@ -4614,7 +4612,14 @@ else:
 
 # -------------------- Info de factores --------------------
 st.caption(tr("b8_factor_info_fix").format(Ie=Ie_user, R=R_user, fac=fac_fix))
-st.caption(tr("b8_factor_info_iso").format(Ie=Ie_user, Riso=R_iso_eff, fac=fac_ais))
+st.caption(
+    tr("b8_factor_info_iso").format(
+        Ie=Ie_user,
+        Rraw=R_iso_raw,
+        Riso=R_iso_eff,
+        fac=fac_ais
+    )
+)
 
 # -------------------- Layout resultados --------------------
 colL, colR = st.columns([1, 1], gap="large")
