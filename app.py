@@ -4504,21 +4504,47 @@ V_fix_min = np.min(V_fix_all, axis=1)
 # -------------------- AISLADA --------------------
 if a_ais_rel.shape[0] == n_pisos + 1:
 
+    # ---------------- STORY SHEAR (SUPER) ----------------
     m_diag_ais = np.diag(np.asarray(M_ais, float)).reshape(-1, 1)
     m_sup = m_diag_ais[1:, :]
 
     # aceleración relativa respecto al aislador
     a_base = a_ais_rel[0:1, :]
     a_sup_rel_base = a_ais_rel[1:, :] - a_base
-    
+
+    # fuerzas inerciales por piso
     F_sup = m_sup * a_sup_rel_base
-    
+
     # cortantes acumulados por piso
     V_ais_all = _story_from_forces(F_sup)
 
     # envolventes
     V_ais_max = np.max(V_ais_all, axis=1)
     V_ais_min = np.min(V_ais_all, axis=1)
+
+    # ---------------- BASE SHEAR (AISLADOR) ----------------
+    u_ais = np.asarray(st.session_state["u_t_ais"], float)
+    v_ais = np.asarray(st.session_state["v_t_ais"], float)
+
+    u_iso = u_ais[0, :]
+    v_iso = v_ais[0, :]
+
+    res_ais = st.session_state["res_aislador"]
+    keff_1ais = float(res_ais["keff_1ais"])
+    c_1ais = float(res_ais["c_1ais"])
+    n_aisladores = int(st.session_state.get("n_aisladores", 1))
+
+    k_tot = keff_1ais * n_aisladores
+    c_tot = c_1ais * n_aisladores
+
+    # fuerza real en el sistema de aislamiento
+    F_base = k_tot * u_iso + c_tot * v_iso
+
+    Vb_ais_max = float(np.max(F_base))
+    Vb_ais_min = float(np.min(F_base))
+
+    # guardar correctamente el base shear
+    st.session_state["cmp_Vb_ais"] = Vb_ais_max
 
 else:
     st.error("❌ THA AISLADA: dimensiones incorrectas.")
