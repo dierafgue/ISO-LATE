@@ -3798,8 +3798,8 @@ with colR:
 
         # métricas
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("α_sup", f"{alpha_sup:.3e}", "1/s")
-        m2.metric("β_sup", f"{beta_sup:.3e}", "s")
+        m1.metric("α", f"{alpha_sup:.3e}", "1/s")
+        m2.metric("β", f"{beta_sup:.3e}", "s")
         m3.metric("ζ", f"{zeta:.3f}", "")
         m4.metric(tr("b6_metrics_dur"), f"{t_total:.2f}", "s")
 
