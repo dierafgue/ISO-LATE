@@ -3814,7 +3814,19 @@ with colR:
             z2 = zt[1]
             z3 = zt[2]
         
-            err = (z2 - zeta_obj)**2 + (z3 - zeta_obj)**2
+            # correr respuesta rápida (solo desplazamiento aislador)
+            u_tmp, _, _ = newmark(
+                M_ais_eff, C_try, K_ais_eff,
+                np.zeros(n_gdl), np.zeros(n_gdl),
+                dt, P_ais, gamma=0.5, beta=0.25
+            )
+            
+            u_iso_tmp = np.max(np.abs(u_tmp[0, :]))
+            
+            # comparar con referencia (ETABS o baseline previo)
+            u_ref = st.session_state.get("u_iso_ref", u_iso_tmp)
+            
+            err = (u_iso_tmp - u_ref)**2
         
             if err < best_err:
                 best_err = err
