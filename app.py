@@ -3760,7 +3760,7 @@ with colR:
         zeta_candidates = np.linspace(0.0, 0.05, 41)
         
         best_err = 1e9
-        best_zeta_sup = 0.02
+        best_zeta_sup = 0.025
         best_alpha = 0.0
         best_beta = 0.0
         
