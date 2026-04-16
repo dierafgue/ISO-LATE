@@ -4512,17 +4512,29 @@ if a_ais_rel.shape[0] == n_pisos + 1:
     a_base = a_ais_rel[0:1, :]
     a_sup_rel_base = a_ais_rel[1:, :] - a_base
 
-    # fuerzas inerciales por piso
+    # fuerzas inerciales por piso (SUPER)
     F_sup = m_sup * a_sup_rel_base
 
-    # cortantes acumulados por piso
+    # cortantes acumulados por piso (SUPER)
     V_ais_all = _story_from_forces(F_sup)
 
-    # envolventes
+    # envolventes tipo ETABS
     V_ais_max = np.max(V_ais_all, axis=1)
     V_ais_min = np.min(V_ais_all, axis=1)
 
-    # ---------------- BASE SHEAR (AISLADOR) ----------------
+    # ---------------- BASE SHEAR (TIPO ETABS) ----------------
+    # 👉 IMPORTANTE: esto debe ser consistente con story shear
+    # 👉 ETABS reporta el cortante transmitido a la superestructura
+
+    Vb_ais_max = float(V_ais_max[0])
+    Vb_ais_min = float(V_ais_min[0])
+
+    # guardar correctamente el base shear (COMPARABLE)
+    st.session_state["cmp_Vb_ais"] = Vb_ais_max
+
+    # ---------------- (OPCIONAL) FUERZA REAL DEL AISLADOR ----------------
+    # 👉 Esto NO es base shear ETABS, pero es útil para análisis físico
+
     u_ais = np.asarray(st.session_state["u_t_ais"], float)
     v_ais = np.asarray(st.session_state["v_t_ais"], float)
 
@@ -4537,14 +4549,11 @@ if a_ais_rel.shape[0] == n_pisos + 1:
     k_tot = keff_1ais * n_aisladores
     c_tot = c_1ais * n_aisladores
 
-    # fuerza real en el sistema de aislamiento
+    # fuerza real en el sistema de aislamiento (NO COMPARAR CON ETABS)
     F_base = k_tot * u_iso + c_tot * v_iso
 
-    Vb_ais_max = float(np.max(F_base))
-    Vb_ais_min = float(np.min(F_base))
-
-    # guardar correctamente el base shear
-    st.session_state["cmp_Vb_ais"] = Vb_ais_max
+    # si luego quieres usarlo para gráficas o debug
+    st.session_state["F_base_ais"] = F_base
 
 else:
     st.error("❌ THA AISLADA: dimensiones incorrectas.")
