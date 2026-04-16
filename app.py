@@ -2384,17 +2384,12 @@ try:
         col = y_to_col[y_key]
         T_pp_ais[row, col] = 1.0
 
-    # -----------------------------------------
-    # MATRIZ CONDENSADA SIN AISLADOR (CLAVE)
-    # -----------------------------------------
     K_cond_ais = T_pp_ais.T @ K_vx_nodo @ T_pp_ais
-    
-    # 🔥 GUARDAR MATRIZ SIN AISLADOR (rodillo)
+
+    # guardar matriz condensada SIN aislador
     st.session_state["K_cond_rodillo"] = np.array(K_cond_ais, copy=True)
     
-    # -----------------------------------------
-    # AISLADOR: resorte a tierra en DOF 0
-    # -----------------------------------------
+    # AISLADOR: resorte a tierra en el DOF 0
     k_iso_total = keff_1ais * n_aisladores
     K_cond_ais[0, 0] += k_iso_total
 
@@ -3731,9 +3726,25 @@ with colR:
         st.markdown(f"### {tr('b6_right_hdr')}")
 
         # ---------------------------------------------------------
-        # AMORTIGUAMIENTO NO CLÁSICO PARA ETABS LINEAL EQUIVALENTE
+        # AMORTIGUAMIENTO NO CLÁSICO CONSISTENTE
+        # C_ais = C_iso + C_sup
+        # - C_iso: aislador lineal equivalente en DOF base
+        # - C_sup: Rayleigh de la superestructura fija
         # ---------------------------------------------------------
         n_gdl = M_ais_eff.shape[0]
+
+        if n_gdl < 2:
+            st.error("El sistema aislado debe tener al menos 2 GDL (base + superestructura).")
+            st.stop()
+
+        # chequeo de compatibilidad dimensional
+        if K_fix.shape[0] != n_gdl - 1 or M_fix.shape[0] != n_gdl - 1:
+            st.error(
+                f"Inconsistencia dimensional: sistema aislado = {n_gdl} GDL, "
+                f"pero K_fix = {K_fix.shape} y M_fix = {M_fix.shape}. "
+                "Se espera que la superestructura fija tenga n_gdl-1 GDL."
+            )
+            st.stop()
 
         # -------------------------------
         # 1) AISLADOR LINEAL EQUIVALENTE
@@ -3743,21 +3754,22 @@ with colR:
         n_aisladores = int(st.session_state.get("n_aisladores", 1))
         c_1ais = float(st.session_state["res_aislador"]["c_1ais"])
 
-        # OJO:
-        # si c_1ais es POR AISLADOR -> multiplicar por n_aisladores
-        # si c_1ais ya es TOTAL del sistema -> NO multiplicar
+        # Si c_1ais es por aislador, deja esta línea:
         ciso = c_1ais * n_aisladores
 
-        # aislador a tierra en DOF base
+        # Si descubres que c_1ais ya es TOTAL del sistema, usa esta en vez de la anterior:
+        # ciso = c_1ais
+
+        # Consistente con K_cond_ais[0,0] += k_iso_total
         C_ais[0, 0] += ciso
 
         # -------------------------------
-        # 2) RAYLEIGH DE LA SUPERESTRUCTURA
+        # 2) RAYLEIGH DE LA SUPERESTRUCTURA FIJA
         # -------------------------------
         alpha_sup = 0.0
-        beta_sup  = 0.0
+        beta_sup = 0.0
 
-        # usar FIXA para definir Rayleigh
+        # usar modos de la fija
         w_fix = st.session_state.get("w_sin", None)
         if w_fix is None:
             w_fix = modal_w(K_fix, M_fix)
@@ -3772,8 +3784,10 @@ with colR:
             # C_sup de la estructura fija
             C_sup = alpha_sup * np.asarray(M_fix, float) + beta_sup * np.asarray(K_fix, float)
 
-            # embebido en la aislada
-            #C_ais[1:, 1:] += C_sup
+            # embebido en la aislada: DOF 1..n
+            C_ais[1:, 1:] += C_sup
+        else:
+            st.warning("No hay suficientes frecuencias válidas en la estructura fija para definir Rayleigh.")
 
         # -------------------------------
         # 3) CARGA SÍSMICA
@@ -3796,7 +3810,7 @@ with colR:
         # ---------------------------------------------------------
         sig_ais = _sig(
             K_ais_eff, M_ais_eff, C_ais, ag_ext_ais,
-            extra=(dt, zeta, gamma_n, beta_n, alpha_sup, beta_sup)
+            extra=(dt, zeta, gamma_n, beta_n, alpha_sup, beta_sup, ciso)
         )
         cache_ais = st.session_state.get("b6_cache_ais", {})
 
@@ -3828,7 +3842,7 @@ with colR:
         st.session_state["C_ais"]       = C_ais
         st.session_state["ag_used_ais"] = ag_ext_ais.copy()
 
-        # PFA
+        # PFA absoluta
         a_abs_ais = a_ais_t + ag_ext_ais.reshape(1, -1)
         pfa_ais_mps2 = np.max(np.abs(a_abs_ais), axis=1)
 
@@ -3842,7 +3856,7 @@ with colR:
             st.session_state["pfa_ais_super_mps2"] = np.array([], dtype=float)
             st.session_state["pfa_ais_super_g"]    = np.array([], dtype=float)
 
-        # demanda aislador
+        # demanda del aislador
         u_iso_t = np.asarray(u_ais[0, :], float).ravel()
         st.session_state["u_iso_t"]   = u_iso_t
         st.session_state["u_iso_max"] = float(np.max(np.abs(u_iso_t)))
