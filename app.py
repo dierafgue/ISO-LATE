@@ -4505,15 +4505,14 @@ V_fix_min = np.min(V_fix_all, axis=1)
 if a_ais_rel.shape[0] == n_pisos + 1:
 
     # ---------------- STORY SHEAR (SUPER) ----------------
-    m_diag_ais = np.diag(np.asarray(M_ais, float)).reshape(-1, 1)
-    m_sup = m_diag_ais[1:, :]
-
-    # aceleración relativa respecto al aislador
-    a_base = a_ais_rel[0:1, :]
-    a_sup_rel_base = a_ais_rel[1:, :] - a_base
-
-    # fuerzas inerciales por piso (SUPER)
-    F_sup = m_sup * a_sup_rel_base
+    # masa de la superestructura REAL (como ETABS)
+    m_sup = np.diag(np.asarray(M_fix, float)).reshape(n_pisos, 1)
+    
+    # aceleración absoluta de la superestructura
+    a_sup_abs = a_ais_rel[1:, :] + ag_ais.reshape(1, -1)
+    
+    # fuerzas inerciales tipo ETABS
+    F_sup = m_sup * a_sup_abs
 
     # cortantes acumulados por piso (SUPER)
     V_ais_all = _story_from_forces(F_sup)
