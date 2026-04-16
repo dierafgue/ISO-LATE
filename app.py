@@ -4184,7 +4184,7 @@ with col_left:
         plt.close(fig)
 
 # =============================================================================
-# DERECHA: HISTÉRESIS LINEAL EQUIVALENTE TIPO ETABS
+# DERECHA: HISTÉRESIS
 # =============================================================================
 with col_right:
     with st.container(border=True):
@@ -4273,7 +4273,13 @@ with col_right:
         U_hist = np.asarray(st.session_state["u_t_ais"], dtype=float)
         V_hist = np.asarray(st.session_state["v_t_ais"], dtype=float)
 
-        U_hist, V_hist = ensure_2d(U_hist, V_hist)
+        U_hist = np.asarray(U_hist, dtype=float)
+        V_hist = np.asarray(V_hist, dtype=float)
+        
+        if U_hist.ndim == 1:
+            U_hist = U_hist.reshape(1, -1)
+        if V_hist.ndim == 1:
+            V_hist = V_hist.reshape(1, -1)
 
         # DOF 0 = aislador
         u_iso = np.asarray(U_hist[0, :], dtype=float).ravel()
