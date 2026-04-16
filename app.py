@@ -3752,24 +3752,18 @@ with colR:
         C_ais = np.zeros_like(M_ais_eff, dtype=float)
         
         n_aisladores = int(st.session_state.get("n_aisladores", 1))
-        keff_1ais = float(st.session_state["res_aislador"]["keff_1ais"])
+        c_1ais = float(st.session_state["res_aislador"]["c_1ais"])
         
-        # masa total del sistema aislado
-        m_total = float(np.sum(np.diag(M_ais_eff)))
-        
-        # frecuencia efectiva aproximada del sistema lineal equivalente
-        w_eff = np.sqrt((keff_1ais * n_aisladores) / m_total)
-        
-        # prueba: usar el zeta global para construir ciso
-        ciso = 2.0 * zeta * m_total * w_eff
+        # Tu DOF base representa el CONJUNTO de aisladores, igual que en K
+        ciso = c_1ais * n_aisladores
         
         # aislador a tierra en DOF base
         C_ais[0, 0] += ciso
         
         # debug
-        st.write("m_total =", m_total)
-        st.write("w_eff =", w_eff)
-        st.write("ciso_test =", ciso)
+        st.write("c_1ais =", c_1ais)
+        st.write("n_aisladores =", n_aisladores)
+        st.write("ciso_total =", ciso)
 
         # -------------------------------
         # 2) RAYLEIGH DE LA SUPERESTRUCTURA FIJA
@@ -3793,7 +3787,7 @@ with colR:
             C_sup = alpha_sup * np.asarray(M_fix, float) + beta_sup * np.asarray(K_fix, float)
 
             # embebido en la aislada: DOF 1..n
-            C_ais[1:, 1:] += C_sup
+            #C_ais[1:, 1:] += C_sup
         else:
             st.warning("No hay suficientes frecuencias válidas en la estructura fija para definir Rayleigh.")
 
