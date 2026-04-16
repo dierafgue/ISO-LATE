@@ -4007,6 +4007,7 @@ newmark = get_fun("newmark")
 ensure_2d = get_fun("ensure_2d")
 rayleigh_from_w = get_fun("rayleigh_from_w")
 modal_w = get_fun("modal_w")
+bilinear_state = get_fun("_bilinear_state")
 
 # fallback simple si no existe ensure_2d
 if ensure_2d is None:
@@ -4255,11 +4256,15 @@ with col_right:
         # USAR LA RESPUESTA YA CALCULADA EN BLOQUE 6
         # y evaluar la fuerza del aislador con ley bilineal con memoria
         # -------------------------------------------------------------
-        bilinear_state = get_fun("_bilinear_state")
-
         if bilinear_state is None:
-            st.error("No se encontró la función `_bilinear_state`.")
-            st.stop()
+            def bilinear_state(u0, u0_prev, uy, k0, kp, ue_prev):
+                du = u0 - u0_prev
+                ue_trial = ue_prev + du
+                ue = np.clip(ue_trial, -uy, uy)
+                d_ue_du = 0.0 if (ue != ue_trial) else 1.0
+                F_hyst = kp * u0 + (k0 - kp) * ue
+                k_t = kp + (k0 - kp) * d_ue_du
+                return F_hyst, k_t, ue
 
         if ("u_t_ais" not in st.session_state) or ("v_t_ais" not in st.session_state):
             st.error("Primero ejecuta el Bloque 6 para obtener la respuesta dinámica aislada.")
