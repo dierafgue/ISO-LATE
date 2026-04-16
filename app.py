@@ -3773,7 +3773,7 @@ with colR:
             C_sup = alpha_sup * np.asarray(M_fix, float) + beta_sup * np.asarray(K_fix, float)
 
             # embebido en la aislada
-            C_ais[1:, 1:] += C_sup
+            #C_ais[1:, 1:] += C_sup
 
         # -------------------------------
         # 3) CARGA SÍSMICA
