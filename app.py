@@ -4616,7 +4616,7 @@ st.session_state["cmp_V_ais_story_max"] = V_ais_max
 st.session_state["cmp_V_ais_story_min"] = V_ais_min
 
 st.session_state["cmp_Vb_fix"] = float(V_fix_max[0]) if len(V_fix_max) else np.nan
-st.session_state["cmp_Vb_ais"] = float(V_ais_max[0]) if len(V_ais_max) else np.nan
+st.session_state["cmp_Vb_ais"] = Vb_ais_max
 
 st.session_state["cmp_ag_used_fix"] = np.asarray(ag_fix, float).ravel()
 st.session_state["cmp_ag_used_ais"] = np.asarray(ag_ais, float).ravel()
