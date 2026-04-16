@@ -3752,10 +3752,24 @@ with colR:
         C_ais = np.zeros_like(M_ais_eff, dtype=float)
         
         n_aisladores = int(st.session_state.get("n_aisladores", 1))
-        c_1ais = float(st.session_state["res_aislador"]["c_1ais"])
+        keff_1ais = float(st.session_state["res_aislador"]["keff_1ais"])
         
-        # CASO 2: sin amortiguamiento del aislador
-        ciso = 0.0
+        # masa total del sistema aislado
+        m_total = float(np.sum(np.diag(M_ais_eff)))
+        
+        # frecuencia efectiva aproximada del sistema lineal equivalente
+        w_eff = np.sqrt((keff_1ais * n_aisladores) / m_total)
+        
+        # prueba: usar el zeta global para construir ciso
+        ciso = 2.0 * zeta * m_total * w_eff
+        
+        # aislador a tierra en DOF base
+        C_ais[0, 0] += ciso
+        
+        # debug
+        st.write("m_total =", m_total)
+        st.write("w_eff =", w_eff)
+        st.write("ciso_test =", ciso)
 
         # -------------------------------
         # 2) RAYLEIGH DE LA SUPERESTRUCTURA FIJA
