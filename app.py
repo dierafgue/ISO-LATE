@@ -3723,20 +3723,21 @@ with colR:
         st.markdown(f"### {tr('b6_right_hdr')}")
 
         # ---------------------------------------------------------
-        # AMORTIGUAMIENTO NO CLÁSICO CALIBRADO
+        # AMORTIGUAMIENTO NO CLÁSICO DIRECTO
+        # - aislador: amortiguamiento equivalente acoplado
+        # - superestructura: Rayleigh directo con zeta_sup definido
         # ---------------------------------------------------------
-        
         n_gdl = M_ais_eff.shape[0]
-        
+
         # -------------------------------
         # 1) Amortiguamiento del aislador (ACOPLADO)
         # -------------------------------
         C_ais = np.zeros_like(M_ais_eff, dtype=float)
-        
+
         n_aisladores = int(st.session_state.get("n_aisladores", 1))
         c_1ais = float(st.session_state["res_aislador"]["c_1ais"])
         ciso = c_1ais * n_aisladores
-        
+
         if n_gdl >= 2:
             C_ais[0, 0] += ciso
             C_ais[0, 1] += -ciso
@@ -3745,136 +3746,52 @@ with colR:
         else:
             C_ais[0, 0] += ciso
 
-        # carga sísmica de la aislada para la calibración
-        r_ais = np.ones((M_ais_eff.shape[0], 1))
-        P_ais = -(M_ais_eff @ r_ais) @ ag_ext_ais[np.newaxis, :]
-        
-        U0_ais = np.zeros(K_ais_eff.shape[0])
-        V0_ais = np.zeros(K_ais_eff.shape[0])
-        
         # -------------------------------
-        # 2) Calibración automática ζ_sup
+        # 2) Amortiguamiento Rayleigh de la superestructura
         # -------------------------------
-        zeta_obj = float(zeta)
-        
-        zeta_candidates = np.linspace(0.0, 0.05, 41)
-        
-        best_err = 1e9
-        best_zeta_sup = 0.025
+        zeta_sup = 0.02  # valor explícito para la superestructura aislada
+
         best_alpha = 0.0
         best_beta = 0.0
-        
-        for zsup in zeta_candidates:
-        
-            # Rayleigh SOLO superestructura
-            if n_gdl > 1:
-                M_sup = M_ais_eff[1:, 1:]
-                K_sup = K_ais_eff[1:, 1:]
-        
-                w_sup = modal_w(K_sup, M_sup)
-                w_sup = np.asarray(w_sup, float)
-                w_sup = np.sort(w_sup[w_sup > 1e-6])
-        
-                if len(w_sup) >= 2:
-                    wR = pick_two_w(w_sup, wmin=1e-6)
-                    alpha, beta = rayleigh_from_w(wR, zsup)
-                    C_sup = alpha * M_sup + beta * K_sup
-                else:
-                    alpha, beta = 0.0, 0.0
-                    C_sup = np.zeros_like(M_sup)
-        
-                C_try = C_ais.copy()
-                C_try[1:, 1:] += C_sup
-            else:
-                alpha, beta = 0.0, 0.0
-                C_try = C_ais.copy()
-        
-            # -------------------------------
-            # Sistema en espacio de estados
-            # -------------------------------
-            n = M_ais_eff.shape[0]
-            I = np.eye(n)
-            Z = np.zeros((n, n))
-        
-            MinvK = np.linalg.solve(M_ais_eff, K_ais_eff)
-            MinvC = np.linalg.solve(M_ais_eff, C_try)
-        
-            A = np.block([
-                [Z, I],
-                [-MinvK, -MinvC]
-            ])
-        
-            lam = np.linalg.eigvals(A)
-        
-            lam = lam[np.imag(lam) > 1e-6]
-        
-            if len(lam) < 3:
-                continue
-        
-            wn = np.abs(lam)
-            zt = -np.real(lam) / wn
-        
-            idx = np.argsort(wn)
-            zt = zt[idx]
-        
-            # ignorar modo 1 (aislador)
-            z2 = zt[1]
-            z3 = zt[2]
-        
-            u_tmp, _, _ = newmark(
-                M_ais_eff, C_try, K_ais_eff,
-                U0_ais, V0_ais, dt, P_ais,
-                gamma=0.5, beta=0.25
-            )
-            u_tmp = np.asarray(u_tmp, dtype=float)
-            if u_tmp.ndim == 1:
-                u_tmp = u_tmp.reshape(1, -1)
-            
-            u_iso_tmp = float(np.max(np.abs(u_tmp[0, :])))
-            
-            u_ref = st.session_state.get("u_iso_ref", None)
-            
-            if u_ref is None:
-                # fallback: criterio modal mientras no exista referencia externa
-                err = (z2 - zeta_obj)**2 + (z3 - zeta_obj)**2
-            else:
-                err = (u_iso_tmp - float(u_ref))**2
-        
-            if err < best_err:
-                best_err = err
-                best_zeta_sup = zsup
-                best_alpha = alpha
-                best_beta = beta
-        
-        # -------------------------------
-        # 3) Construcción final
-        # -------------------------------
+
         if n_gdl > 1:
             M_sup = M_ais_eff[1:, 1:]
             K_sup = K_ais_eff[1:, 1:]
-            C_sup = best_alpha * M_sup + best_beta * K_sup
-            C_ais[1:, 1:] += C_sup
-        
+
+            w_sup = modal_w(K_sup, M_sup)
+            w_sup = np.asarray(w_sup, float).ravel()
+            w_sup = np.sort(w_sup[w_sup > 1e-6])
+
+            if len(w_sup) >= 2:
+                wR = pick_two_w(w_sup, wmin=1e-6)
+                best_alpha, best_beta = rayleigh_from_w(wR, zeta_sup)
+
+                C_sup = best_alpha * M_sup + best_beta * K_sup
+                C_ais[1:, 1:] += C_sup
+
+        # -------------------------------
+        # 3) Carga sísmica
+        # -------------------------------
+        r_ais = np.ones((M_ais_eff.shape[0], 1))
+        P_ais = -(M_ais_eff @ r_ais) @ ag_ext_ais[np.newaxis, :]
+
+        U0_ais = np.zeros(K_ais_eff.shape[0])
+        V0_ais = np.zeros(K_ais_eff.shape[0])
+
         # métricas
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("α_sup", f"{best_alpha:.3e}", "1/s")
         m2.metric("β_sup", f"{best_beta:.3e}", "s")
-        m3.metric("ζ_sup auto", f"{best_zeta_sup:.3f}", "")
-        m4.metric(tr("b6_metrics_dur"), f"{t_total:.2f}", "s")
+        m3.metric("ζ_sup", f"{zeta_sup:.3f}", "")
+        m4.metric(tr("b6_metrics_dur"), f"{t_total:.2f}", "s")  
         
         # ---------------------------------------------------------
         # Newmark
         # ---------------------------------------------------------
-        sig_ais = _sig(K_ais_eff, M_ais_eff, C_ais, ag_ext_ais, extra=(dt, zeta, gamma_n, beta_n))
+        sig_ais = _sig(K_ais_eff, M_ais_eff, C_ais, ag_ext_ais, extra=(dt, zeta_sup, gamma_n, beta_n))
         cache_ais = st.session_state.get("b6_cache_ais", {})
 
         if cache_ais.get("sig") != sig_ais:
-            r_ais = np.ones((M_ais_eff.shape[0], 1))
-            P_ais = -(M_ais_eff @ r_ais) @ ag_ext_ais[np.newaxis, :]
-
-            U0_ais = np.zeros(K_ais_eff.shape[0])
-            V0_ais = np.zeros(K_ais_eff.shape[0])
-
             u_ais, v_ais_t, a_ais_t = newmark(
                 M_ais_eff, C_ais, K_ais_eff, U0_ais, V0_ais, dt, P_ais,
                 gamma=gamma_n, beta=beta_n
