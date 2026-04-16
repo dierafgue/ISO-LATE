@@ -3749,7 +3749,7 @@ with colR:
         # -------------------------------
         # 2) Amortiguamiento Rayleigh de la superestructura
         # -------------------------------
-        zeta_sup = 0.025  # valor explícito para la superestructura aislada
+        zeta_sup = 0.019  # valor explícito para la superestructura aislada
 
         best_alpha = 0.0
         best_beta = 0.0
