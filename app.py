@@ -1359,6 +1359,7 @@ T["en"].update({
     "b3_Ie": "Importance factor (Ie)",
     "b3_risk_cat": "Risk category",
     "b3_region": "Region of Ecuador",
+    "b3_R": "Reduction factor (R)",
     "b3_region_costa": "Coast",
     "b3_region_sierra": "Highlands and Amazon",
 
@@ -1368,6 +1369,7 @@ T["en"].update({
     "h_b3_Ie": "Importance factor Ie associated with the selected risk category.",
     "h_b3_risk_cat": "Defines importance factor Ie according to NEC-24.",
     "h_b3_region": "Defines exponent r for the NEC-24 descending branch.",
+    "h_b3_R": "Seismic response reduction factor used to obtain the design spectrum.",
 
     "b3_nec_spec": "Response spectrum – NEC-24",
     "b3_nec_wait": "The NEC-24 spectrum will be shown once the model is ready.",
@@ -1375,8 +1377,8 @@ T["en"].update({
     "b3_Sa": "Sa [g]",
     "b3_placeholder": "(placeholder)",
     "b3_design_spec": "Design spectrum",
-    "b3_sds_sd1": "SDS = {SDS:.3f} g, SD1 = {SD1:.3f} g·s, Ie = {Ie:.2f}",
-    "b3_coeffs": "Coefficients: Fa={Fa:.2f}, Fd={Fd:.2f}, Fs={Fs:.2f}",
+    "b3_sds_sd1": "SDS = {SDS:.3f} g, SD1 = {SD1:.3f} g·s, Ie = {Ie:.2f}, R = {R:.2f}",
+    "b3_coeffs": "Coefficients: Fa={Fa:.2f}, Fd={Fd:.2f}, Fs={Fs:.2f}, r={r:.2f}",
     "b3_nec_dl_btn": "Download NEC-24 Excel",
     "b3_nec_dl_help": "Exports 2 columns: period, design spectrum.",
 })
@@ -1391,6 +1393,7 @@ T["es"].update({
     "b3_Ie": "Factor de importancia (Ie)",
     "b3_risk_cat": "Categoría de riesgo",
     "b3_region": "Región del Ecuador",
+    "b3_R": "Factor de reducción (R)",
     "b3_region_costa": "Costa",
     "b3_region_sierra": "Sierra y oriente",
 
@@ -1400,6 +1403,7 @@ T["es"].update({
     "h_b3_Ie": "Factor de importancia Ie asociado a la categoría de riesgo seleccionada.",
     "h_b3_risk_cat": "Define el factor de importancia Ie según la NEC-24.",
     "h_b3_region": "Define el exponente r para la rama descendente del espectro NEC-24.",
+    "h_b3_R": "Factor de reducción de respuesta sísmica usado para obtener el espectro de diseño.",
 
     "b3_nec_spec": "Espectro de respuesta – NEC-24",
     "b3_nec_wait": "📌 El espectro NEC-24 se mostrará cuando el modelo esté listo.",
@@ -1407,8 +1411,8 @@ T["es"].update({
     "b3_Sa": "Sa [g]",
     "b3_placeholder": "(placeholder)",
     "b3_design_spec": "Espectro de diseño",
-    "b3_sds_sd1": "SDS = {SDS:.3f} g, SD1 = {SD1:.3f} g·s, Ie = {Ie:.2f}",
-    "b3_coeffs": "Coeficientes: Fa={Fa:.2f}, Fd={Fd:.2f}, Fs={Fs:.2f}",
+    "b3_sds_sd1": "SDS = {SDS:.3f} g, SD1 = {SD1:.3f} g·s, Ie = {Ie:.2f}, R = {R:.2f}",
+    "b3_coeffs": "Coeficientes: Fa={Fa:.2f}, Fd={Fd:.2f}, Fs={Fs:.2f}, r={r:.2f}",
     "b3_nec_dl_btn": "Descargar NEC-24 Excel",
     "b3_nec_dl_help": "Exporta 2 columnas: periodo, espectro de diseño.",
 })
@@ -1450,6 +1454,9 @@ with col_left:
     with st.container(border=True):
         st.markdown(f"### 🧩 {tr('b3_nec_params')}")
 
+        nec_info_placeholder = st.empty()
+        nec_dl_placeholder = st.empty()
+
         if not geom_ok:
             st.info(tr("b3_need_model_nec"))
             z = 0.47
@@ -1459,28 +1466,48 @@ with col_left:
             Ie = 1.0
             region_ecuador = tr("b3_region_sierra")
             r_nec = 1.0
+            R_user = 1.0
         else:
             c1, c2 = st.columns(2)
 
             with c1:
                 z = st.number_input(
-                    tr("b3_z"), 0.1, 1.0, 0.47, 0.01,
-                    key="nec_z", help=tr("h_b3_z")
+                    tr("b3_z"),
+                    min_value=0.1,
+                    max_value=1.0,
+                    value=float(st.session_state.get("nec_z", 0.47)),
+                    step=0.01,
+                    key="nec_z",
+                    help=tr("h_b3_z")
                 )
+
                 zona_sismica = st.selectbox(
-                    tr("b3_zone"), ["I", "II", "III", "IV", "V"],
-                    index=3, key="nec_zona", help=tr("h_b3_zone")
+                    tr("b3_zone"),
+                    ["I", "II", "III", "IV", "V"],
+                    index=["I", "II", "III", "IV", "V"].index(
+                        st.session_state.get("nec_zona", "IV")
+                    ),
+                    key="nec_zona",
+                    help=tr("h_b3_zone")
                 )
+
                 tipo_suelo = st.selectbox(
-                    tr("b3_soil"), ["A", "B", "C", "D", "E"],
-                    index=2, key="nec_suelo", help=tr("h_b3_soil")
+                    tr("b3_soil"),
+                    ["A", "B", "C", "D", "E"],
+                    index=["A", "B", "C", "D", "E"].index(
+                        st.session_state.get("nec_suelo", "C")
+                    ),
+                    key="nec_suelo",
+                    help=tr("h_b3_soil")
                 )
 
             with c2:
                 categoria = st.selectbox(
                     tr("b3_risk_cat"),
                     ["I", "II", "III", "IV"],
-                    index=1,
+                    index=["I", "II", "III", "IV"].index(
+                        st.session_state.get("nec_risk_cat", "II")
+                    ),
                     key="nec_risk_cat",
                     help=tr("h_b3_risk_cat")
                 )
@@ -1493,15 +1520,29 @@ with col_left:
                 }
                 Ie = IE_MAP[categoria]
 
+                region_options = [tr("b3_region_costa"), tr("b3_region_sierra")]
+                region_prev = st.session_state.get("nec_region", tr("b3_region_sierra"))
+                region_index = region_options.index(region_prev) if region_prev in region_options else 1
+
                 region_ecuador = st.selectbox(
                     tr("b3_region"),
-                    [tr("b3_region_costa"), tr("b3_region_sierra")],
-                    index=1,
+                    region_options,
+                    index=region_index,
                     key="nec_region",
                     help=tr("h_b3_region")
                 )
 
                 r_nec = 1.2 if region_ecuador == tr("b3_region_costa") else 1.0
+
+                R_user = st.number_input(
+                    tr("b3_R"),
+                    min_value=0.5,
+                    max_value=12.0,
+                    value=float(st.session_state.get("nec_R", 1.0)),
+                    step=0.5,
+                    key="nec_R",
+                    help=tr("h_b3_R")
+                )
 
             st.session_state["nec24_params"] = {
                 "z": float(z),
@@ -1511,11 +1552,10 @@ with col_left:
                 "categoria": str(categoria),
                 "region": str(region_ecuador),
                 "r": float(r_nec),
+                "R": float(R_user),
             }
 
         st.markdown("<div style='height:0.30rem;'></div>", unsafe_allow_html=True)
-        nec_info_placeholder = st.empty()
-        nec_dl_placeholder = st.empty()
 
 # =============================================================================
 # DERECHA: ESPECTRO NEC
@@ -1550,7 +1590,7 @@ with col_right:
                 z=float(z),
                 zona=str(zona_sismica),
                 suelo=str(tipo_suelo),
-                R=1.0,
+                R=float(R_user),
                 r=float(r_nec),
                 T_final=5.0,
                 delta_t=0.01
@@ -1561,6 +1601,7 @@ with col_right:
             st.session_state["SDS"] = float(SDS)
             st.session_state["SD1"] = float(SD1)
             st.session_state["r_nec"] = float(r_nec)
+            st.session_state["R_nec"] = float(R_user)
             st.session_state["rs_T_spec"] = np.asarray(T_spec, dtype=float).ravel()
             st.session_state["rs_Sa_design"] = np.asarray(Sa_design_plot, dtype=float).ravel()
             st.session_state["rs_Ie"] = float(Ie)
@@ -1571,8 +1612,8 @@ with col_right:
             nec24_xlsx_bytes = build_nec24_excel_bytes(T_spec, Sa_design_plot)
 
             with nec_info_placeholder.container():
-                st.caption(tr("b3_sds_sd1").format(SDS=SDS, SD1=SD1, Ie=Ie))
-                st.caption(tr("b3_coeffs").format(Fa=Fa, Fd=Fd, Fs=Fs))
+                st.caption(tr("b3_sds_sd1").format(SDS=SDS, SD1=SD1, Ie=Ie, R=R_user))
+                st.caption(tr("b3_coeffs").format(Fa=Fa, Fd=Fd, Fs=Fs, r=r_nec))
 
             with nec_dl_placeholder.container():
                 st.download_button(
@@ -4303,6 +4344,9 @@ T["en"].update({
     "b8_ylabel_h": "Height [m]",
 
     "b8_tha_ok": "Story shears ready",
+    "b8_missing_nec_params": "Missing NEC-24 parameters Ie and/or R. Run Block 3 first.",
+    "b8_factor_info_fix": "Applied inelastic factor (FIXED): Vinel = Vel·Ie/R = {Ie:.3f}/{R:.3f} = {fac:.5f}",
+    "b8_factor_info_iso": "Applied inelastic factor (ISOLATED): Vinel = Vel·Ie/((3/8)R) = {Ie:.3f}/{Riso:.3f} = {fac:.5f}",
 })
 
 T["es"].update({
@@ -4324,6 +4368,9 @@ T["es"].update({
     "b8_ylabel_h": "Altura [m]",
 
     "b8_tha_ok": "Cortantes listos",
+    "b8_missing_nec_params": "Faltan los parámetros NEC-24 Ie y/o R. Ejecuta primero el Bloque 3.",
+    "b8_factor_info_fix": "Factor inelástico aplicado (FIJA): Vinel = Vel·Ie/R = {Ie:.3f}/{R:.3f} = {fac:.5f}",
+    "b8_factor_info_iso": "Factor inelástico aplicado (AISLADA): Vinel = Vel·Ie/((3/8)R) = {Ie:.3f}/{Riso:.3f} = {fac:.5f}",
 })
 
 st.markdown(f"## 🧱 {tr('b8_title')}")
@@ -4450,6 +4497,33 @@ y_levels_fix = np.r_[0.0, alt_fix]
 y_levels_ais = np.r_[0.0, alt_fix]
 
 # =============================================================================
+# PARÁMETROS NEC-24 PARA INELASTICIDAD
+# =============================================================================
+nec_params = st.session_state.get("nec24_params", {})
+
+Ie_user = nec_params.get("Ie", st.session_state.get("rs_Ie", None))
+R_user  = nec_params.get("R",  st.session_state.get("R_nec", None))
+
+if Ie_user is None or R_user is None:
+    st.error(tr("b8_missing_nec_params"))
+    st.stop()
+
+Ie_user = float(Ie_user)
+R_user  = float(R_user)
+
+if R_user <= 0:
+    st.error("❌ El factor R debe ser mayor que cero.")
+    st.stop()
+
+R_iso_eff = (3.0 / 8.0) * R_user
+if R_iso_eff <= 0:
+    st.error("❌ El R efectivo del sistema aislado debe ser mayor que cero.")
+    st.stop()
+
+fac_fix = Ie_user / R_user
+fac_ais = Ie_user / R_iso_eff
+
+# =============================================================================
 # THA – SOLO Max/Min
 # =============================================================================
 ag_fix = st.session_state.get("ag_used_fix", None)
@@ -4497,7 +4571,11 @@ def _story_from_forces(F):
         V[i, :] = V[i + 1, :] + F[i, :]
     return V
 
-V_fix_all = _story_from_forces(F_fix)
+V_fix_all_el = _story_from_forces(F_fix)
+
+# aplicar inelasticidad fija: Vinel = Vel * Ie / R
+V_fix_all = fac_fix * V_fix_all_el
+
 V_fix_max = np.max(V_fix_all, axis=1)
 V_fix_min = np.min(V_fix_all, axis=1)
 
@@ -4514,8 +4592,11 @@ if a_ais_rel.shape[0] == n_pisos + 1:
     # fuerzas inerciales por piso
     F_sup = m_sup * a_sup_abs
 
-    # cortantes acumulados por piso
-    V_ais_all = _story_from_forces(F_sup)
+    # cortantes elásticos acumulados por piso
+    V_ais_all_el = _story_from_forces(F_sup)
+
+    # aplicar inelasticidad aislada: Vinel = Vel * Ie / ((3/8)R)
+    V_ais_all = fac_ais * V_ais_all_el
 
     # envolventes
     V_ais_max = np.max(V_ais_all, axis=1)
@@ -4530,7 +4611,11 @@ if a_ais_rel.shape[0] == n_pisos + 1:
 else:
     st.error("❌ THA AISLADA: dimensiones incorrectas.")
     st.stop()
-    
+
+# -------------------- Info de factores --------------------
+st.caption(tr("b8_factor_info_fix").format(Ie=Ie_user, R=R_user, fac=fac_fix))
+st.caption(tr("b8_factor_info_iso").format(Ie=Ie_user, Riso=R_iso_eff, fac=fac_ais))
+
 # -------------------- Layout resultados --------------------
 colL, colR = st.columns([1, 1], gap="large")
 
@@ -4601,6 +4686,15 @@ st.session_state["cmp_Vb_ais"] = Vb_ais_max
 
 st.session_state["cmp_ag_used_fix"] = np.asarray(ag_fix, float).ravel()
 st.session_state["cmp_ag_used_ais"] = np.asarray(ag_ais, float).ravel()
+
+# extras útiles por si quieres usarlos después
+st.session_state["cmp_Ie_used"] = float(Ie_user)
+st.session_state["cmp_R_used"] = float(R_user)
+st.session_state["cmp_R_iso_eff_used"] = float(R_iso_eff)
+st.session_state["cmp_fac_fix_used"] = float(fac_fix)
+st.session_state["cmp_fac_ais_used"] = float(fac_ais)
+st.session_state["cmp_V_fix_story_elastic"] = np.max(np.abs(V_fix_all_el), axis=1)
+st.session_state["cmp_V_ais_story_elastic"] = np.max(np.abs(V_ais_all_el), axis=1)
 
 # =============================================================================
 # === BLOQUE 9: DESPLAZAMIENTOS LATERALES (SOLO THA MAX/MIN) ==================
