@@ -4504,55 +4504,28 @@ V_fix_min = np.min(V_fix_all, axis=1)
 # -------------------- AISLADA --------------------
 if a_ais_rel.shape[0] == n_pisos + 1:
 
-    # ---------------- STORY SHEAR (SUPER) ----------------
-    # masa de la superestructura REAL (como ETABS)
-    m_sup = np.diag(np.asarray(M_fix, float)).reshape(n_pisos, 1)
-    
+    # masa de la superestructura tomada del sistema aislado
+    m_diag_ais = np.diag(np.asarray(M_ais, float)).reshape(-1, 1)
+    m_sup = m_diag_ais[1:, :]
+
     # aceleración absoluta de la superestructura
     a_sup_abs = a_ais_rel[1:, :] + ag_ais.reshape(1, -1)
-    
-    # fuerzas inerciales tipo ETABS
+
+    # fuerzas inerciales por piso
     F_sup = m_sup * a_sup_abs
 
-    # cortantes acumulados por piso (SUPER)
+    # cortantes acumulados por piso
     V_ais_all = _story_from_forces(F_sup)
 
-    # envolventes tipo ETABS
+    # envolventes
     V_ais_max = np.max(V_ais_all, axis=1)
     V_ais_min = np.min(V_ais_all, axis=1)
 
-    # ---------------- BASE SHEAR (TIPO ETABS) ----------------
-    # 👉 IMPORTANTE: esto debe ser consistente con story shear
-    # 👉 ETABS reporta el cortante transmitido a la superestructura
-
+    # base shear comparable con ETABS
     Vb_ais_max = float(V_ais_max[0])
     Vb_ais_min = float(V_ais_min[0])
 
-    # guardar correctamente el base shear (COMPARABLE)
     st.session_state["cmp_Vb_ais"] = Vb_ais_max
-
-    # ---------------- (OPCIONAL) FUERZA REAL DEL AISLADOR ----------------
-    # 👉 Esto NO es base shear ETABS, pero es útil para análisis físico
-
-    u_ais = np.asarray(st.session_state["u_t_ais"], float)
-    v_ais = np.asarray(st.session_state["v_t_ais"], float)
-
-    u_iso = u_ais[0, :]
-    v_iso = v_ais[0, :]
-
-    res_ais = st.session_state["res_aislador"]
-    keff_1ais = float(res_ais["keff_1ais"])
-    c_1ais = float(res_ais["c_1ais"])
-    n_aisladores = int(st.session_state.get("n_aisladores", 1))
-
-    k_tot = keff_1ais * n_aisladores
-    c_tot = c_1ais * n_aisladores
-
-    # fuerza real en el sistema de aislamiento (NO COMPARAR CON ETABS)
-    F_base = k_tot * u_iso + c_tot * v_iso
-
-    # si luego quieres usarlo para gráficas o debug
-    st.session_state["F_base_ais"] = F_base
 
 else:
     st.error("❌ THA AISLADA: dimensiones incorrectas.")
