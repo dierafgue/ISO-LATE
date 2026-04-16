@@ -3723,35 +3723,119 @@ with colR:
         st.markdown(f"### {tr('b6_right_hdr')}")
 
         # ---------------------------------------------------------
-        # Rayleigh GLOBAL tipo ETABS sobre TODO el sistema aislado
-        # C = alpha*M + beta*K
-        # NO agregar ciso explícito aquí para evitar doble conteo
+        # AMORTIGUAMIENTO NO CLÁSICO CALIBRADO
         # ---------------------------------------------------------
+        
         n_gdl = M_ais_eff.shape[0]
-
-        # frecuencias del sistema aislado completo
-        w_ais = modal_w(K_ais_eff, M_ais_eff)
-        w_ais = np.asarray(w_ais, dtype=float).ravel()
-        w_ais = np.sort(w_ais[w_ais > 1e-6])
-
-        # tomar dos frecuencias válidas para definir Rayleigh
-        try:
-            wR_ais = pick_two_w(w_ais, wmin=1e-6)
-        except Exception:
-            st.error("No hay suficientes frecuencias válidas del sistema aislado para definir Rayleigh.")
-            st.stop()
-
-        # usar el zeta ingresado por el usuario
-        alpha_ais, beta_ais = rayleigh_from_w(wR_ais, zeta)
-
-        # matriz de amortiguamiento tipo ETABS
-        C_ais = alpha_ais * M_ais_eff + beta_ais * K_ais_eff
-
+        
+        # -------------------------------
+        # 1) Amortiguamiento del aislador (ACOPLADO)
+        # -------------------------------
+        C_ais = np.zeros_like(M_ais_eff, dtype=float)
+        
+        n_aisladores = int(st.session_state.get("n_aisladores", 1))
+        c_1ais = float(st.session_state["res_aislador"]["c_1ais"])
+        ciso = c_1ais * n_aisladores
+        
+        if n_gdl >= 2:
+            C_ais[0, 0] += ciso
+            C_ais[0, 1] += -ciso
+            C_ais[1, 0] += -ciso
+            C_ais[1, 1] += ciso
+        else:
+            C_ais[0, 0] += ciso
+        
+        # -------------------------------
+        # 2) Calibración automática ζ_sup
+        # -------------------------------
+        zeta_obj = float(zeta)
+        
+        zeta_candidates = np.linspace(0.0, 0.05, 41)
+        
+        best_err = 1e9
+        best_zeta_sup = 0.02
+        best_alpha = 0.0
+        best_beta = 0.0
+        
+        for zsup in zeta_candidates:
+        
+            # Rayleigh SOLO superestructura
+            if n_gdl > 1:
+                M_sup = M_ais_eff[1:, 1:]
+                K_sup = K_ais_eff[1:, 1:]
+        
+                w_sup = modal_w(K_sup, M_sup)
+                w_sup = np.asarray(w_sup, float)
+                w_sup = np.sort(w_sup[w_sup > 1e-6])
+        
+                if len(w_sup) >= 2:
+                    wR = pick_two_w(w_sup, wmin=1e-6)
+                    alpha, beta = rayleigh_from_w(wR, zsup)
+                    C_sup = alpha * M_sup + beta * K_sup
+                else:
+                    alpha, beta = 0.0, 0.0
+                    C_sup = np.zeros_like(M_sup)
+        
+                C_try = C_ais.copy()
+                C_try[1:, 1:] += C_sup
+            else:
+                alpha, beta = 0.0, 0.0
+                C_try = C_ais.copy()
+        
+            # -------------------------------
+            # Sistema en espacio de estados
+            # -------------------------------
+            n = M_ais_eff.shape[0]
+            I = np.eye(n)
+            Z = np.zeros((n, n))
+        
+            MinvK = np.linalg.solve(M_ais_eff, K_ais_eff)
+            MinvC = np.linalg.solve(M_ais_eff, C_try)
+        
+            A = np.block([
+                [Z, I],
+                [-MinvK, -MinvC]
+            ])
+        
+            lam = np.linalg.eigvals(A)
+        
+            lam = lam[np.imag(lam) > 1e-6]
+        
+            if len(lam) < 3:
+                continue
+        
+            wn = np.abs(lam)
+            zt = -np.real(lam) / wn
+        
+            idx = np.argsort(wn)
+            zt = zt[idx]
+        
+            # ignorar modo 1 (aislador)
+            z2 = zt[1]
+            z3 = zt[2]
+        
+            err = (z2 - zeta_obj)**2 + (z3 - zeta_obj)**2
+        
+            if err < best_err:
+                best_err = err
+                best_zeta_sup = zsup
+                best_alpha = alpha
+                best_beta = beta
+        
+        # -------------------------------
+        # 3) Construcción final
+        # -------------------------------
+        if n_gdl > 1:
+            M_sup = M_ais_eff[1:, 1:]
+            K_sup = K_ais_eff[1:, 1:]
+            C_sup = best_alpha * M_sup + best_beta * K_sup
+            C_ais[1:, 1:] += C_sup
+        
         # métricas
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("α", f"{alpha_ais:.3e}", "1/s")
-        m2.metric("β", f"{beta_ais:.3e}", "s")
-        m3.metric("ζ", f"{zeta:.3f}", "")
+        m1.metric("α_sup", f"{best_alpha:.3e}", "1/s")
+        m2.metric("β_sup", f"{best_beta:.3e}", "s")
+        m3.metric("ζ_sup auto", f"{best_zeta_sup:.3f}", "")
         m4.metric(tr("b6_metrics_dur"), f"{t_total:.2f}", "s")
         
         # ---------------------------------------------------------
