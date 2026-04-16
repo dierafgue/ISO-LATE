@@ -3744,6 +3744,13 @@ with colR:
             C_ais[1, 1] += ciso
         else:
             C_ais[0, 0] += ciso
+
+        # carga sísmica de la aislada para la calibración
+        r_ais = np.ones((M_ais_eff.shape[0], 1))
+        P_ais = -(M_ais_eff @ r_ais) @ ag_ext_ais[np.newaxis, :]
+        
+        U0_ais = np.zeros(K_ais_eff.shape[0])
+        V0_ais = np.zeros(K_ais_eff.shape[0])
         
         # -------------------------------
         # 2) Calibración automática ζ_sup
@@ -3814,19 +3821,24 @@ with colR:
             z2 = zt[1]
             z3 = zt[2]
         
-            # correr respuesta rápida (solo desplazamiento aislador)
             u_tmp, _, _ = newmark(
                 M_ais_eff, C_try, K_ais_eff,
-                np.zeros(n_gdl), np.zeros(n_gdl),
-                dt, P_ais, gamma=0.5, beta=0.25
+                U0_ais, V0_ais, dt, P_ais,
+                gamma=0.5, beta=0.25
             )
+            u_tmp = np.asarray(u_tmp, dtype=float)
+            if u_tmp.ndim == 1:
+                u_tmp = u_tmp.reshape(1, -1)
             
-            u_iso_tmp = np.max(np.abs(u_tmp[0, :]))
+            u_iso_tmp = float(np.max(np.abs(u_tmp[0, :])))
             
-            # comparar con referencia (ETABS o baseline previo)
-            u_ref = st.session_state.get("u_iso_ref", u_iso_tmp)
+            u_ref = st.session_state.get("u_iso_ref", None)
             
-            err = (u_iso_tmp - u_ref)**2
+            if u_ref is None:
+                # fallback: criterio modal mientras no exista referencia externa
+                err = (z2 - zeta_obj)**2 + (z3 - zeta_obj)**2
+            else:
+                err = (u_iso_tmp - float(u_ref))**2
         
             if err < best_err:
                 best_err = err
