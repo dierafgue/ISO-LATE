@@ -3723,16 +3723,12 @@ with colR:
         st.markdown(f"### {tr('b6_right_hdr')}")
 
         # ---------------------------------------------------------
-        # AMORTIGUAMIENTO NO CLÁSICO TIPO ETABS
-        # - aislador: amortiguamiento equivalente acoplado
-        # - Rayleigh: usando el zeta ingresado por el usuario
-        # - término beta*K con rigidez inicial de la superestructura (K0),
-        #   no con la rigidez efectiva aislada
+        # AMORTIGUAMIENTO NO CLÁSICO CORRECTO
         # ---------------------------------------------------------
         n_gdl = M_ais_eff.shape[0]
 
         # -------------------------------
-        # 1) Amortiguamiento del aislador (ACOPLADO)
+        # 1) Amortiguamiento del aislador (CORREGIDO)
         # -------------------------------
         C_ais = np.zeros_like(M_ais_eff, dtype=float)
 
@@ -3740,33 +3736,24 @@ with colR:
         c_1ais = float(st.session_state["res_aislador"]["c_1ais"])
         ciso = c_1ais * n_aisladores
 
-        if n_gdl >= 2:
-            C_ais[0, 0] += ciso
-            C_ais[0, 1] += -ciso
-            C_ais[1, 0] += -ciso
-            C_ais[1, 1] += ciso
-        else:
-            C_ais[0, 0] += ciso
+        # ✔ SOLO en DOF base (igual que K)
+        C_ais[0, 0] += ciso
 
         # -------------------------------
-        # 2) Rayleigh con el zeta REAL ingresado por el usuario
-        #    pero usando K0 de la superestructura fija
+        # 2) Rayleigh de la superestructura (CORREGIDO)
         # -------------------------------
         alpha_sup = 0.0
         beta_sup = 0.0
 
         if n_gdl > 1:
-            # submatrices de la superestructura aislada
             M_sup = M_ais_eff[1:, 1:]
-            K_sup_eff = K_ais_eff[1:, 1:]
 
-            # K0 = rigidez inicial de la superestructura fija
-            # misma dimensión que la subestructura [1:,1:]
-            K0_sup = np.array(K_fix, dtype=float)
+            # ✔ usar matriz SIN aislador
+            K_cond_rodillo = np.array(st.session_state["K_cond_rodillo"], dtype=float)
+            K_sup = K_cond_rodillo[1:, 1:]
 
-            # frecuencias para definir Rayleigh en la superestructura
-            # usa la superestructura del sistema aislado
-            w_sup = modal_w(K_sup_eff, M_sup)
+            # frecuencias estructurales correctas
+            w_sup = modal_w(K_sup, M_sup)
             w_sup = np.asarray(w_sup, dtype=float).ravel()
             w_sup = np.sort(w_sup[w_sup > 1e-6])
 
@@ -3774,8 +3761,7 @@ with colR:
                 wR_sup = pick_two_w(w_sup, wmin=1e-6)
                 alpha_sup, beta_sup = rayleigh_from_w(wR_sup, zeta)
 
-                # CLAVE: beta con K0_sup, no con K_sup_eff
-                C_sup = alpha_sup * M_sup + beta_sup * K0_sup
+                C_sup = alpha_sup * M_sup + beta_sup * K_sup
                 C_ais[1:, 1:] += C_sup
 
         # -------------------------------
@@ -3793,7 +3779,7 @@ with colR:
         m2.metric("β_sup", f"{beta_sup:.3e}", "s")
         m3.metric("ζ", f"{zeta:.3f}", "")
         m4.metric(tr("b6_metrics_dur"), f"{t_total:.2f}", "s")  
-        
+
         # ---------------------------------------------------------
         # Newmark
         # ---------------------------------------------------------
