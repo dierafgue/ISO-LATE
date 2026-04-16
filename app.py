@@ -3760,11 +3760,6 @@ with colR:
         # aislador a tierra en DOF base
         C_ais[0, 0] += ciso
         
-        # debug
-        st.write("c_1ais =", c_1ais)
-        st.write("n_aisladores =", n_aisladores)
-        st.write("ciso_total =", ciso)
-
         # -------------------------------
         # 2) RAYLEIGH DE LA SUPERESTRUCTURA FIJA
         # -------------------------------
