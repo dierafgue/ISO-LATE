@@ -4012,6 +4012,9 @@ T["en"].update({
 
     "b7_dl_hyst": "Download hysteresis Excel",
     "b7_dl_hyst_help": "Downloads the hysteresis data of the isolator: time, u0, v0, Fiso.",
+
+    "b7_dl_spec": "Download NEC spectrum Excel",
+    "b7_dl_spec_help": "Downloads the NEC-24 spectrum data and an Excel chart with FIXED and ISOLATED points.",
 })
 
 T["es"].update({
@@ -4035,6 +4038,9 @@ T["es"].update({
 
     "b7_dl_hyst": "Descargar Excel de histéresis",
     "b7_dl_hyst_help": "Descarga los datos de histéresis del aislador: tiempo, u0, v0, Fiso.",
+
+    "b7_dl_spec": "Descargar Excel del espectro NEC",
+    "b7_dl_spec_help": "Descarga los datos del espectro NEC-24 y un gráfico Excel con los puntos FIJA y AISLADA.",
 })
 
 # -------------------------------------------------------------------------
@@ -4103,6 +4109,90 @@ def make_excel_hysteresis(t, u0, v0, fiso):
 
     output.seek(0)
     return output.getvalue()
+
+def make_excel_spectrum_with_chart(T_plot, Sa_design, T1_fix, Sa_Tfix, T1_ais, Sa_Tais):
+    import io
+    import numpy as np
+    import pandas as pd
+    from openpyxl import load_workbook
+    from openpyxl.chart import ScatterChart, Series, Reference
+    from openpyxl.chart.marker import DataPoint
+
+    T_plot = np.asarray(T_plot, dtype=float).ravel()
+    Sa_design = np.asarray(Sa_design, dtype=float).ravel()
+
+    if len(T_plot) != len(Sa_design):
+        raise ValueError("T_plot y Sa_design deben tener la misma longitud.")
+
+    output = io.BytesIO()
+
+    # -----------------------------
+    # Escribir hojas base
+    # -----------------------------
+    df_spec = pd.DataFrame({
+        "T (s)": T_plot,
+        "Sa_design (g)": Sa_design,
+    })
+
+    df_pts = pd.DataFrame({
+        "Case": ["FIXED", "ISOLATED"],
+        "T (s)": [float(T1_fix), float(T1_ais)],
+        "Sa (g)": [float(Sa_Tfix), float(Sa_Tais)],
+    })
+
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        df_spec.to_excel(writer, sheet_name="Spectrum", index=False)
+        df_pts.to_excel(writer, sheet_name="Points", index=False)
+
+    output.seek(0)
+
+    # -----------------------------
+    # Reabrir y crear gráfico Excel
+    # -----------------------------
+    wb = load_workbook(output)
+    ws_spec = wb["Spectrum"]
+    ws_pts = wb["Points"]
+
+    chart = ScatterChart()
+    chart.title = "NEC-24 Spectrum + FIXED / ISOLATED"
+    chart.style = 2
+    chart.x_axis.title = "Period T [s]"
+    chart.y_axis.title = "Sa [g]"
+    chart.height = 9
+    chart.width = 16
+    chart.legend.position = "r"
+
+    # Serie espectro
+    xvalues_spec = Reference(ws_spec, min_col=1, min_row=2, max_row=ws_spec.max_row)
+    yvalues_spec = Reference(ws_spec, min_col=2, min_row=2, max_row=ws_spec.max_row)
+    s1 = Series(yvalues_spec, xvalues_spec, title="Design spectrum")
+    s1.graphicalProperties.line.width = 22000
+    chart.series.append(s1)
+
+    # Punto fija
+    x_fix = Reference(ws_pts, min_col=2, min_row=2, max_row=2)
+    y_fix = Reference(ws_pts, min_col=3, min_row=2, max_row=2)
+    s2 = Series(y_fix, x_fix, title="FIXED")
+    s2.marker.symbol = "circle"
+    s2.marker.size = 9
+    s2.graphicalProperties.line.noFill = True
+    chart.series.append(s2)
+
+    # Punto aislada
+    x_ais = Reference(ws_pts, min_col=2, min_row=3, max_row=3)
+    y_ais = Reference(ws_pts, min_col=3, min_row=3, max_row=3)
+    s3 = Series(y_ais, x_ais, title="ISOLATED")
+    s3.marker.symbol = "diamond"
+    s3.marker.size = 9
+    s3.graphicalProperties.line.noFill = True
+    chart.series.append(s3)
+
+    ws_spec.add_chart(chart, "D2")
+
+    final_output = io.BytesIO()
+    wb.save(final_output)
+    final_output.seek(0)
+    return final_output.getvalue()
     
 # -----------------------------------------------------------------
 # Layout
@@ -4179,6 +4269,27 @@ with col_left:
         fig.tight_layout()
         st.pyplot(fig, use_container_width=True)
         plt.close(fig)
+
+        # -------------------------------------------------------------
+        # Exportación Excel del espectro NEC + puntos FIJA/AISLADA
+        # -------------------------------------------------------------
+        xlsx_spec = make_excel_spectrum_with_chart(
+            T_plot=T_plot,
+            Sa_design=Sa_design,
+            T1_fix=T1_fix,
+            Sa_Tfix=Sa_Tfix,
+            T1_ais=T1_ais,
+            Sa_Tais=Sa_Tais,
+        )
+
+        st.download_button(
+            label=f"⬇️ {tr('b7_dl_spec')}",
+            data=xlsx_spec,
+            file_name="ISO-LATE_B7_NEC_SPECTRUM.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            help=tr("b7_dl_spec_help"),
+            use_container_width=True,
+        )
 
 # =============================================================================
 # DERECHA: HISTÉRESIS LINEAL EQUIVALENTE TIPO ETABS
