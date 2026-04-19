@@ -4733,8 +4733,8 @@ if a_ais_rel.ndim == 1:
 # -------------------- FIJA --------------------
 a_abs_fix = a_fix + ag_fix.reshape(1, -1)
 
-m_fix = np.diag(np.asarray(M_fix, float)).reshape(n_pisos, 1)
-F_fix = m_fix * a_abs_fix
+M_fix_arr = np.asarray(M_fix, float)
+F_fix = M_fix_arr @ a_abs_fix
 
 def _story_from_forces(F):
     n, nt = F.shape
@@ -4758,15 +4758,15 @@ V_fix_min = np.min(V_fix_all, axis=1)
 # -------------------- AISLADA --------------------
 if a_ais_rel.shape[0] == n_pisos + 1:
 
-    # masa de la superestructura tomada del sistema aislado
-    m_diag_ais = np.diag(np.asarray(M_ais, float)).reshape(-1, 1)
-    m_sup = m_diag_ais[1:, :]
+    # submatriz de masa de la superestructura
+    M_ais_arr = np.asarray(M_ais, float)
+    M_sup = M_ais_arr[1:, 1:]
 
     # aceleración absoluta de la superestructura
     a_sup_abs = a_ais_rel[1:, :] + ag_ais.reshape(1, -1)
 
-    # fuerzas inerciales por piso
-    F_sup = m_sup * a_sup_abs
+    # fuerzas inerciales por piso/superestructura
+    F_sup = M_sup @ a_sup_abs
 
     # cortantes elásticos acumulados por piso
     V_ais_all_el = _story_from_forces(F_sup)
