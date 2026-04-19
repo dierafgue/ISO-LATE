@@ -3942,7 +3942,9 @@ st.success(tr("b6_ok"))
 # =============================================================================
 # === BLOQUE 7: ESPECTRO NEC24 (izq) + HISTÉRESIS (der) =======================
 # =============================================================================
+import io
 import numpy as np
+import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as pe
@@ -4007,6 +4009,9 @@ T["en"].update({
     "b7_right_hdr": "Equivalent linear isolator force–displacement loop",
     "b7_xlabel_u0": "Base displacement u₀ [m]",
     "b7_ylabel_Fiso": "Isolator force [Tf]",
+
+    "b7_dl_hyst": "Download hysteresis Excel",
+    "b7_dl_hyst_help": "Downloads the hysteresis data of the isolator: time, u0, v0, Fiso.",
 })
 
 T["es"].update({
@@ -4027,6 +4032,9 @@ T["es"].update({
     "b7_right_hdr": "Lazo fuerza–desplazamiento lineal equivalente del aislador",
     "b7_xlabel_u0": "Desplazamiento base u₀ [m]",
     "b7_ylabel_Fiso": "Fuerza del aislador [Tf]",
+
+    "b7_dl_hyst": "Descargar Excel de histéresis",
+    "b7_dl_hyst_help": "Descarga los datos de histéresis del aislador: tiempo, u0, v0, Fiso.",
 })
 
 # -------------------------------------------------------------------------
@@ -4073,6 +4081,29 @@ if newmark is None:
     st.warning(tr("b7_missing_fun"))
     st.stop()
 
+def make_excel_hysteresis(t, u0, v0, fiso):
+    t = np.asarray(t, float).ravel()
+    u0 = np.asarray(u0, float).ravel()
+    v0 = np.asarray(v0, float).ravel()
+    fiso = np.asarray(fiso, float).ravel()
+
+    if not (len(t) == len(u0) == len(v0) == len(fiso)):
+        raise ValueError("t, u0, v0 y fiso deben tener la misma longitud.")
+
+    output = io.BytesIO()
+    df = pd.DataFrame({
+        "t (s)": t,
+        "u0 (m)": u0,
+        "v0 (m/s)": v0,
+        "Fiso (Tf)": fiso,
+    })
+
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        df.to_excel(writer, sheet_name="Hysteresis", index=False)
+
+    output.seek(0)
+    return output.getvalue()
+    
 # -----------------------------------------------------------------
 # Layout
 # -----------------------------------------------------------------
@@ -4265,6 +4296,25 @@ with col_right:
         st.session_state["f_iso_max_b7"] = float(np.max(F_link_1))
         st.session_state["f_iso_min_b7"] = float(np.min(F_link_1))
         st.session_state["C_ais_used"] = C_used
+
+        # -------------------------------------------------------------
+        # Exportación Excel de la histéresis
+        # -------------------------------------------------------------
+        xlsx_hyst = make_excel_hysteresis(
+            t_hyst = np.asarray(st.session_state.get("t_ais", np.arange(len(u_iso), dtype=float) * dt), float).ravel()
+            u0=u_iso,
+            v0=v_iso,
+            fiso=F_link_1,
+        )
+
+        st.download_button(
+            label=f"⬇️ {tr('b7_dl_hyst')}",
+            data=xlsx_hyst,
+            file_name="ISO-LATE_B7_HISTERESIS.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            help=tr("b7_dl_hyst_help"),
+            use_container_width=True,
+        )
 
         fig, ax = plt.subplots(figsize=(FIG_W, FIG_H))
         fig.patch.set_facecolor(BG)
