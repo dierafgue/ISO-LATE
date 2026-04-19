@@ -3767,10 +3767,10 @@ with colR:
         st.markdown(f"### {tr('b6_right_hdr')}")
 
         # ---------------------------------------------------------
-        # AMORTIGUAMIENTO NO CLÁSICO CONSISTENTE
-        # C_ais = C_iso + C_sup
-        # - C_iso: aislador lineal equivalente en DOF base
-        # - C_sup: Rayleigh de la superestructura fija
+        # AMORTIGUAMIENTO CONSISTENTE CON ETABS
+        # C_ais = α_ais M_ais + β_ais K_ais + C_iso
+        # - Rayleigh GLOBAL del sistema aislado completo
+        # - más el amortiguamiento viscoso lineal del aislador en DOF 0
         # ---------------------------------------------------------
         n_gdl = M_ais_eff.shape[0]
 
@@ -3778,55 +3778,36 @@ with colR:
             st.error("El sistema aislado debe tener al menos 2 GDL (base + superestructura).")
             st.stop()
 
-        # chequeo de compatibilidad dimensional
-        if K_fix.shape[0] != n_gdl - 1 or M_fix.shape[0] != n_gdl - 1:
-            st.error(
-                f"Inconsistencia dimensional: sistema aislado = {n_gdl} GDL, "
-                f"pero K_fix = {K_fix.shape} y M_fix = {M_fix.shape}. "
-                "Se espera que la superestructura fija tenga n_gdl-1 GDL."
-            )
+        # ---------------------------------------------------------
+        # 1) RAYLEIGH GLOBAL DEL SISTEMA AISLADO COMPLETO
+        # ---------------------------------------------------------
+        w_ais = st.session_state.get("w_ais", None)
+        if w_ais is None:
+            w_ais = modal_w(K_ais_eff, M_ais_eff)
+
+        w_ais = np.asarray(w_ais, dtype=float).ravel()
+        w_ais = np.sort(w_ais[w_ais > 1e-6])
+
+        if len(w_ais) == 0:
+            st.error("No hay frecuencias válidas del sistema aislado para definir Rayleigh.")
             st.stop()
 
-        # -------------------------------
-        # 1) AISLADOR LINEAL EQUIVALENTE
-        # -------------------------------
-        C_ais = np.zeros_like(M_ais_eff, dtype=float)
-        
+        wR_ais = pick_two_w(w_ais, wmin=1e-6)
+        alpha_ais, beta_ais = rayleigh_from_w(wR_ais, zeta)
+
+        C_ais = alpha_ais * np.asarray(M_ais_eff, float) + beta_ais * np.asarray(K_ais_eff, float)
+
+        # ---------------------------------------------------------
+        # 2) AMORTIGUAMIENTO VISCOSO LINEAL DEL AISLADOR
+        # ---------------------------------------------------------
         n_aisladores = int(st.session_state.get("n_aisladores", 1))
         c_1ais = float(st.session_state["res_aislador"]["c_1ais"])
-        
-        # Tu DOF base representa el CONJUNTO de aisladores, igual que en K
+
+        # DOF 0 representa el conjunto de aisladores
         ciso = c_1ais * n_aisladores
-        
-        # aislador a tierra en DOF base
+
+        # aporte viscoso del aislador a tierra
         C_ais[0, 0] += ciso
-        
-        # -------------------------------
-        # 2) RAYLEIGH DE LA SUPERESTRUCTURA FIJA
-        # -------------------------------
-        alpha_sup = 0.0
-        beta_sup = 0.0
-
-        # usar modos de la fija
-        w_fix = st.session_state.get("w_sin", None)
-        if w_fix is None:
-            w_fix = modal_w(K_fix, M_fix)
-
-        w_fix = np.asarray(w_fix, dtype=float).ravel()
-        w_fix = np.sort(w_fix[w_fix > 1e-6])
-
-        if len(w_fix) >= 2:
-            wR_fix = pick_two_w(w_fix, wmin=1e-6)
-            alpha_sup, beta_sup = rayleigh_from_w(wR_fix, zeta)
-
-            # C_sup de la estructura fija
-            C_sup = alpha_sup * np.asarray(M_fix, float) + beta_sup * np.asarray(K_fix, float)
-
-            eta_sup = zeta
-            C_ais[1:, 1:] += eta_sup * C_sup
-            
-        else:
-            st.warning("No hay suficientes frecuencias válidas en la estructura fija para definir Rayleigh.")
 
         # -------------------------------
         # 3) CARGA SÍSMICA
@@ -3839,8 +3820,8 @@ with colR:
 
         # métricas
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("α", f"{alpha_sup:.3e}", "1/s")
-        m2.metric("β", f"{beta_sup:.3e}", "s")
+        m1.metric("α", f"{alpha_ais:.3e}", "1/s")
+        m2.metric("β", f"{beta_ais:.3e}", "s")
         m3.metric("ζ", f"{zeta:.3f}", "")
         m4.metric(tr("b6_metrics_dur"), f"{t_total:.2f}", "s")
 
@@ -3849,7 +3830,7 @@ with colR:
         # ---------------------------------------------------------
         sig_ais = _sig(
             K_ais_eff, M_ais_eff, C_ais, ag_ext_ais,
-            extra=(dt, zeta, gamma_n, beta_n, alpha_sup, beta_sup, ciso)
+            extra=(dt, zeta, gamma_n, beta_n, alpha_ais, beta_ais, ciso)
         )
         cache_ais = st.session_state.get("b6_cache_ais", {})
 
