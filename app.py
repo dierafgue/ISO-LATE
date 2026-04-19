@@ -4004,7 +4004,7 @@ T["en"].update({
     "b7_ylabel_Sa": "Sa [g]",
 
     # Right side
-    "b7_right_hdr": "Equivalent linear isolator hysteresis",
+    "b7_right_hdr": "Equivalent linear isolator force–displacement loop",
     "b7_xlabel_u0": "Base displacement u₀ [m]",
     "b7_ylabel_Fiso": "Isolator force [Tf]",
 })
@@ -4024,7 +4024,7 @@ T["es"].update({
     "b7_ylabel_Sa": "Sa [g]",
 
     # Right side
-    "b7_right_hdr": "Histéresis lineal equivalente del aislador",
+    "b7_right_hdr": "Lazo fuerza–desplazamiento lineal equivalente del aislador",
     "b7_xlabel_u0": "Desplazamiento base u₀ [m]",
     "b7_ylabel_Fiso": "Fuerza del aislador [Tf]",
 })
@@ -4173,44 +4173,37 @@ with col_right:
 
         res_ais = st.session_state["res_aislador"]
         keff_1ais = float(res_ais["keff_1ais"])
-        c_1ais = float(st.session_state["c_1ais"])
+        c_1ais = float(res_ais["c_1ais"])
 
         keff_tot = keff_1ais * n_aisladores
         c_tot = c_1ais * n_aisladores
 
         # -------------------------------------------------------------
-        # Matriz de amortiguamiento NO CLÁSICO:
-        # - Rayleigh solo en la superestructura
-        # - Ceq total del sistema de aislamiento como acople
+        # Matriz de amortiguamiento CONSISTENTE con Bloque 6 / ETABS
+        # C_used = α_ais M_ais + β_ais K_ais + C_iso
         # -------------------------------------------------------------
-        C_used = np.zeros_like(M_ais, dtype=float)
-        n_gdl = M_ais.shape[0]
+        if (rayleigh_from_w is None) or (modal_w is None):
+            st.error("No se encontraron funciones para amortiguamiento Rayleigh.")
+            st.stop()
 
-        if (rayleigh_from_w is not None) and (modal_w is not None):
-            try:
-                w_ais = modal_w(K_ais, M_ais)
-                w_ais = np.asarray(w_ais, dtype=float).ravel()
-                w_ais = np.sort(w_ais[w_ais > 1e-6])
+        w_ais = modal_w(K_ais, M_ais)
+        w_ais = np.asarray(w_ais, dtype=float).ravel()
+        w_ais = np.sort(w_ais[w_ais > 1e-6])
 
-                if len(w_ais) >= 3:
-                    wR_ais = np.array([w_ais[1], w_ais[2]], dtype=float)
-                elif len(w_ais) == 2:
-                    wR_ais = np.array([w_ais[0], w_ais[1]], dtype=float)
-                else:
-                    wR_ais = None
+        if len(w_ais) == 0:
+            st.error("No hay frecuencias válidas del sistema aislado para definir Rayleigh.")
+            st.stop()
 
-                if (wR_ais is not None) and (n_gdl > 1):
-                    alpha_ais, beta_ais = rayleigh_from_w(wR_ais, zeta)
+        if len(w_ais) >= 2:
+            wR_ais = np.array([w_ais[0], w_ais[1]], dtype=float)
+        else:
+            wR_ais = np.array([w_ais[0]], dtype=float)
 
-                    M_sup = M_ais[1:, 1:]
-                    K_sup = K_ais[1:, 1:]
-                    C_sup = alpha_ais * M_sup + beta_ais * K_sup
-                    eta_sup = zeta  # mismo criterio que Bloque 6
-                    C_used[1:, 1:] += eta_sup * C_sup
-            except Exception:
-                C_used = np.zeros_like(M_ais, dtype=float)
+        alpha_ais, beta_ais = rayleigh_from_w(wR_ais, zeta)
 
-        # aislador como amortiguador a tierra (CONSISTENTE con K)
+        C_used = alpha_ais * np.asarray(M_ais, float) + beta_ais * np.asarray(K_ais, float)
+
+        # aislador lineal viscoso a tierra
         C_used[0, 0] += c_tot
 
         # -------------------------------------------------------------
