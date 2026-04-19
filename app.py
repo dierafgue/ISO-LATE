@@ -4301,7 +4301,7 @@ with col_right:
         # Exportación Excel de la histéresis
         # -------------------------------------------------------------
         xlsx_hyst = make_excel_hysteresis(
-            t_hyst = np.asarray(st.session_state.get("t_ais", np.arange(len(u_iso), dtype=float) * dt), float).ravel()
+            t_hyst = np.asarray(st.session_state.get("t_ais", np.arange(len(u_iso), dtype=float) * dt), float).ravel(),
             u0=u_iso,
             v0=v_iso,
             fiso=F_link_1,
