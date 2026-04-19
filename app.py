@@ -3767,7 +3767,7 @@ with colR:
         st.markdown(f"### {tr('b6_right_hdr')}")
 
         # ---------------------------------------------------------
-        # AMORTIGUAMIENTO CONSISTENTE CON ETABS
+        # AMORTIGUAMIENTO
         # C_ais = α_ais M_ais + β_ais K_ais + C_iso
         # - Rayleigh GLOBAL del sistema aislado completo
         # - más el amortiguamiento viscoso lineal del aislador en DOF 0
@@ -4233,27 +4233,20 @@ with col_right:
         alpha_ais, beta_ais = rayleigh_from_w(wR_ais, zeta)
 
         # -------------------------------------------------------------
-        # C = C_sup + C_iso  (CONSISTENTE con ETABS)
+        # ALTERNATIVA DE COMPARACIÓN:
+        # C = α M_ais + β K_ais + C_iso
+        # (Rayleigh global del sistema aislado completo)
         # -------------------------------------------------------------
-        C_used = np.zeros_like(M_ais, dtype=float)
-        
-        # ---- SUPERSTRUCTURA (Rayleigh SOLO arriba) ----
         if len(w_ais) >= 2:
             wR_ais = np.array([w_ais[0], w_ais[1]], dtype=float)
         else:
             wR_ais = np.array([w_ais[0]], dtype=float)
-        
+
         alpha_ais, beta_ais = rayleigh_from_w(wR_ais, zeta)
-        
-        # solo DOFs 1..n
-        M_sup = M_ais[1:, 1:]
-        K_sup = K_ais[1:, 1:]
-        
-        C_sup = alpha_ais * M_sup + beta_ais * K_sup
-        
-        C_used[1:, 1:] += C_sup
-        
-        # ---- AISLADOR ----
+
+        C_used = alpha_ais * np.asarray(M_ais, float) + beta_ais * np.asarray(K_ais, float)
+
+        # damping viscoso del aislador individual acumulado en el DOF base
         C_used[0, 0] += c_tot
 
         # -------------------------------------------------------------
