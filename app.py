@@ -3885,10 +3885,19 @@ with colR:
         labels_ais = ["Isolator_0"] + [f"Level_{i}" for i in range(1, int(u_ais.shape[0]))]
 
         if st.session_state["b6_cache_ais"].get("xlsx") is None:
-            st.session_state["b6_cache_ais"]["xlsx"] = make_excel_per_floor(
-                t=t, u=u_ais, v=v_ais_t, a=a_ais_t, sheet_names=labels_ais
-            )
+            u_export = np.array(u_ais, copy=True)
+            v_export = np.array(v_ais_t, copy=True)
+            a_export = np.array(a_ais_t, copy=True)
 
+            if u_export.shape[0] > 1:
+                u_export[1:, :] = u_export[1:, :] - u_export[[0], :]
+                v_export[1:, :] = v_export[1:, :] - v_export[[0], :]
+                a_export[1:, :] = a_export[1:, :] - a_export[[0], :]
+
+            st.session_state["b6_cache_ais"]["xlsx"] = make_excel_per_floor(
+                t=t, u=u_export, v=v_export, a=a_export, sheet_names=labels_ais
+            )
+            
         st.download_button(
             label=f"⬇️ {tr('b6_dl_xlsx')}",
             data=st.session_state["b6_cache_ais"]["xlsx"],
@@ -3920,12 +3929,17 @@ with colR:
                 titulo = f"**{tr('b6_floor').format(i=idx)}**"
                 h = float(alt_fix[idx - 1]) if (idx - 1) < len(alt_fix) else float(idx)
 
+                # respuestas de superestructura RELATIVAS AL AISLADOR
+                u_rel_sup = u_ais[[idx], :] - u_ais[[0], :]
+                v_rel_sup = v_ais_t[[idx], :] - v_ais_t[[0], :]
+                a_rel_sup = a_ais_t[[idx], :] - a_ais_t[[0], :]
+
                 with st.expander(titulo, expanded=(idx == 1)):
                     _plot_resp(
                         t,
-                        u_ais[[idx], :],
-                        v_ais_t[[idx], :],
-                        a_ais_t[[idx], :],
+                        u_rel_sup,
+                        v_rel_sup,
+                        a_rel_sup,
                         [h],
                         t_total,
                         nombre_piso=str(idx),
