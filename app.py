@@ -3847,7 +3847,6 @@ with colR:
                 "u": u_ais,
                 "v": v_ais_t,
                 "a": a_ais_t,
-                "xlsx": None,
             }
         else:
             u_ais = cache_ais["u"]
@@ -3884,18 +3883,21 @@ with colR:
         # Excel
         labels_ais = ["Isolator_0"] + [f"Level_{i}" for i in range(1, int(u_ais.shape[0]))]
 
-        if st.session_state["b6_cache_ais"].get("xlsx") is None:
-            u_export = u_ais
-            v_export = v_ais_t
-            a_export = a_ais_t
+        u_export = np.array(u_ais, copy=True)
+        v_export = np.array(v_ais_t, copy=True)
+        a_export = np.array(a_ais_t, copy=True)
 
-            st.session_state["b6_cache_ais"]["xlsx"] = make_excel_per_floor(
-                t=t, u=u_export, v=v_export, a=a_export, sheet_names=labels_ais
-            )
-            
+        xlsx_ais = make_excel_per_floor(
+            t=t,
+            u=u_export,
+            v=v_export,
+            a=a_export,
+            sheet_names=labels_ais
+        )
+
         st.download_button(
             label=f"⬇️ {tr('b6_dl_xlsx')}",
-            data=st.session_state["b6_cache_ais"]["xlsx"],
+            data=xlsx_ais,
             file_name="ISO-LATE_B6_ISOLATED.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             help=tr("b6_dl_help"),
