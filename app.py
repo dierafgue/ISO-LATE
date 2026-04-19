@@ -4266,10 +4266,6 @@ with col_left:
         for txt in leg.get_texts():
             txt.set_color(COLOR_TEXT)
 
-        fig.tight_layout()
-        st.pyplot(fig, use_container_width=True)
-        plt.close(fig)
-
         # -------------------------------------------------------------
         # Exportación Excel del espectro NEC + puntos FIJA/AISLADA
         # -------------------------------------------------------------
@@ -4291,6 +4287,10 @@ with col_left:
             use_container_width=True,
         )
 
+        fig.tight_layout()
+        st.pyplot(fig, use_container_width=True)
+        plt.close(fig)
+        
 # =============================================================================
 # DERECHA: HISTÉRESIS LINEAL EQUIVALENTE TIPO ETABS
 # =============================================================================
