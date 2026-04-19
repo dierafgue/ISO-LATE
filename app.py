@@ -2085,8 +2085,8 @@ with col_izq:
     {tr("b4_box_DM")} : {D_M:.4f} m  
     {tr("b4_box_dy")} : {delta_y:.4f} m  
     
-    {tr("b4_box_keff")} : {keff_1ais:.3f} Tonf/m  
-    {tr("b4_box_ceq")} : {c_1ais:.3f} Tonf·s/m  
+    {tr("b4_box_keff")} : {keff_1ais:.5f} Tonf/m  
+    {tr("b4_box_ceq")} : {c_1ais:.5f} Tonf·s/m  
     
     {tr("b4_box_chk_dy")} : {yes_txt if ok_dy else no_txt}  
     {tr("b4_box_chk_k")} : {yes_txt if ok_k else no_txt}
