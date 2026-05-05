@@ -5811,6 +5811,22 @@ T["es"].update({
 # -------------------------------------------------------------------------
 st.markdown(f"## 📊 {tr('b11_title')}")
 
+st.markdown("""
+<style>
+/* Igualar altura de columnas */
+[data-testid="stHorizontalBlock"] {
+    align-items: stretch !important;
+}
+
+/* Hacer que los containers crezcan */
+[data-testid="stContainer"] {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # ----------------------- Estilos -----------------------
 BG         = "#2B3141"
 COLOR_TEXT = "#E8EDF2"
