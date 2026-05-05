@@ -4780,22 +4780,24 @@ if a_ais_rel.shape[0] == n_pisos + 1:
     M_sup = M_ais_arr[1:, 1:]
 
     # ---------------------------------------------------------
-    # Referencia de aceleración para cortantes AISLADOS
+    # Cortantes AISLADOS: calcular SIEMPRE ambas referencias
     # ---------------------------------------------------------
+    
+    # 1) Absoluto respecto al suelo — versión principal validada con ETABS
+    a_sup_abs = a_ais_rel[1:, :] + ag_ais.reshape(1, -1)
+    F_sup_abs = M_sup @ a_sup_abs
+    V_ais_all_el_abs = _story_from_forces(F_sup_abs)
+    
+    # 2) Relativo respecto al aislador — versión complementaria
+    a_sup_rel_iso = a_ais_rel[1:, :] - a_ais_rel[[0], :]
+    F_sup_rel_iso = M_sup @ a_sup_rel_iso
+    V_ais_all_el_rel_iso = _story_from_forces(F_sup_rel_iso)
+    
+    # 3) Lo que se muestra depende del selector
     if usar_ref_ais_relativa:
-        # Relativo al aislador:
-        # elimina la traslación rígida del nivel de aislamiento
-        a_sup_for_shear = a_ais_rel[1:, :] - a_ais_rel[[0], :]
+        V_ais_all_el = V_ais_all_el_rel_iso
     else:
-        # Absoluto respecto al suelo:
-        # formulación actual validada con ETABS
-        a_sup_for_shear = a_ais_rel[1:, :] + ag_ais.reshape(1, -1)
-
-    # fuerzas inerciales por piso/superestructura
-    F_sup = M_sup @ a_sup_for_shear
-
-    # cortantes elásticos acumulados por piso
-    V_ais_all_el = _story_from_forces(F_sup)
+        V_ais_all_el = V_ais_all_el_abs
 
     # aplicar inelasticidad aislada: Vinel = Vel * Ie / ((3/8)R)
     if usar_inelastico:
@@ -4912,6 +4914,24 @@ st.session_state["cmp_b8_modo_cortante"] = str(modo_cortante)
 st.session_state["cmp_b8_usar_inelastico"] = bool(usar_inelastico)
 st.session_state["cmp_b8_ref_ais"] = str(ref_ais)
 st.session_state["cmp_b8_usar_ref_ais_relativa"] = bool(usar_ref_ais_relativa)
+
+# Versión absoluta fija para el comparativo final principal
+st.session_state["cmp_V_ais_story_elastic_abs"] = np.max(np.abs(V_ais_all_el_abs), axis=1)
+
+if usar_inelastico:
+    V_ais_all_abs = fac_ais * V_ais_all_el_abs
+else:
+    V_ais_all_abs = V_ais_all_el_abs
+
+st.session_state["cmp_V_ais_story_abs"] = np.max(np.abs(V_ais_all_abs), axis=1)
+st.session_state["cmp_V_ais_story_max_abs"] = np.max(V_ais_all_abs, axis=1)
+st.session_state["cmp_V_ais_story_min_abs"] = np.min(V_ais_all_abs, axis=1)
+st.session_state["cmp_Vb_ais_abs"] = float(
+    max(
+        abs(st.session_state["cmp_V_ais_story_max_abs"][0]),
+        abs(st.session_state["cmp_V_ais_story_min_abs"][0])
+    )
+)
 
 # =============================================================================
 # === BLOQUE 9: DESPLAZAMIENTOS LATERALES (SOLO THA MAX/MIN) ==================
@@ -6095,8 +6115,19 @@ if len(V_fix_max) and len(V_fix_min):
 else:
     V0_fix = np.nan
 
-if len(V_ais_max) and len(V_ais_min):
-    V0_ais = float(max(abs(V_ais_max[0]), abs(V_ais_min[0])))
+# Para el cuadro final principal se usa SIEMPRE la versión absoluta
+V_ais_max_abs_final = np.asarray(
+    st.session_state.get("cmp_V_ais_story_max_abs", V_ais_max),
+    float
+).ravel()
+
+V_ais_min_abs_final = np.asarray(
+    st.session_state.get("cmp_V_ais_story_min_abs", V_ais_min),
+    float
+).ravel()
+
+if len(V_ais_max_abs_final) and len(V_ais_min_abs_final):
+    V0_ais = float(max(abs(V_ais_max_abs_final[0]), abs(V_ais_min_abs_final[0])))
 else:
     V0_ais = np.nan
 
@@ -6111,11 +6142,13 @@ if U_fix_hist is not None:
 else:
     uH_fix = np.nan
 
-# AISLADA: techo según la referencia seleccionada en Bloque 9
-if U_ais_hist is not None:
-    U_ais_hist = np.asarray(U_ais_hist, float)
-    if U_ais_hist.ndim == 2 and U_ais_hist.shape[0] >= 2:
-        u_roof_ais_t = U_ais_hist[-1, :]
+# Para el cuadro final principal se usa SIEMPRE desplazamiento absoluto respecto al suelo
+U_ais_hist_abs_final = st.session_state.get("cmp_u_used_ais_abs", U_ais_hist)
+
+if U_ais_hist_abs_final is not None:
+    U_ais_hist_abs_final = np.asarray(U_ais_hist_abs_final, float)
+    if U_ais_hist_abs_final.ndim == 2 and U_ais_hist_abs_final.shape[0] >= 2:
+        u_roof_ais_t = U_ais_hist_abs_final[-1, :]
         uH_ais = float(np.max(np.abs(u_roof_ais_t)))
     else:
         uH_ais = np.nan
