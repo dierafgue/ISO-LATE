@@ -5219,6 +5219,10 @@ T["en"].update({
     "b10_ok": "NEC-24 drifts ready",
     "b10_base": "Base",
     "b10_nec_limit": "NEC24 limit",
+
+    "b10_mode": "Drift type",
+    "b10_mode_el": "Elastic / real drift",
+    "b10_mode_inel": "Inelastic / NEC-24 drift",
 })
 
 T["es"].update({
@@ -5263,6 +5267,10 @@ T["es"].update({
     "b10_ok": "Derivas NEC24 listas",
     "b10_base": "Base",
     "b10_nec_limit": "Límite NEC24",
+
+    "b10_mode": "Tipo de deriva",
+    "b10_mode_el": "Elástica / real",
+    "b10_mode_inel": "Inelástica / NEC24",
 })
 
 # -------------------------------------------------------------------------
@@ -5500,6 +5508,16 @@ if R_val is None or R_val <= 0:
 RI = _calc_RI_from_R(R_val)
 lim_sec_ratio = 0.010 / RI
 
+# -------------------- Selector de tipo de deriva --------------------
+modo_deriva = st.radio(
+    tr("b10_mode"),
+    [tr("b10_mode_inel"), tr("b10_mode_el")],
+    horizontal=True,
+    key="b10_modo_deriva"
+)
+
+usar_deriva_inelastica = modo_deriva == tr("b10_mode_inel")
+
 c1, c2 = st.columns(2)
 with c1:
     st.caption(tr("b10_fix_caption").format(cd=float(Cd), ie=float(Ie)))
@@ -5567,13 +5585,18 @@ except Exception as e:
     st.stop()
 
 # =============================================================================
-# Aplicar NEC24
+# Aplicar tipo de deriva
 # =============================================================================
-# FIJA -> convencional
-drift_fix = (float(Cd) * drift_fix_real) / float(Ie)
+if usar_deriva_inelastica:
+    # FIJA -> NEC24 convencional
+    drift_fix = (float(Cd) * drift_fix_real) / float(Ie)
 
-# AISLADA THA -> se usa deriva real para comparar con Tabla 9.7
-drift_ais = drift_ais_real
+    # AISLADA THA -> NEC24 usa deriva real para comparar con Tabla 9.7
+    drift_ais = drift_ais_real
+else:
+    # ELÁSTICA / REAL -> sin Cd ni Ie
+    drift_fix = drift_fix_real
+    drift_ais = drift_ais_real
 
 xlabel_plot = tr("b10_xlabel_nec")
 
@@ -5657,6 +5680,9 @@ st.session_state["cmp_drift_y_levels"] = np.asarray(y_plot_fix, float).ravel()
 st.session_state["cmp_R_used"] = float(R_val)
 st.session_state["cmp_RI_used"] = float(RI)
 st.session_state["cmp_sec_lim_ratio"] = float(lim_sec_ratio)
+
+st.session_state["cmp_b10_modo_deriva"] = str(modo_deriva)
+st.session_state["cmp_b10_usar_deriva_inelastica"] = bool(usar_deriva_inelastica)
 
 st.success(tr("b10_ok"))
 
@@ -6007,13 +6033,21 @@ V_fix_min = np.asarray(st.session_state.get("cmp_V_fix_story_min", V_fix_env * 0
 V_ais_max = np.asarray(st.session_state.get("cmp_V_ais_story_max", V_ais_env), float).ravel()
 V_ais_min = np.asarray(st.session_state.get("cmp_V_ais_story_min", V_ais_env * 0.0), float).ravel()
 
-modeV_tag = tagV
+refV = st.session_state.get("cmp_b8_ref_ais", "")
+modeV_tag = f"{tagV} | {refV}" if refV else tagV
 
 # -------------------------------------------------------------------------
 # DESPLAZAMIENTOS
 # -------------------------------------------------------------------------
 U_fix_hist = st.session_state.get("cmp_U_fix_hist_levels", None)
-U_ais_hist = st.session_state.get("cmp_U_ais_hist_levels", None)
+
+# Hereda lo seleccionado en Bloque 9:
+# - absoluto respecto al suelo
+# - relativo respecto al aislador
+U_ais_hist = st.session_state.get(
+    "cmp_u_used_ais",
+    st.session_state.get("cmp_U_ais_hist_levels", None)
+)
 
 U_fix_max = None
 U_fix_min = None
@@ -6036,7 +6070,8 @@ if U_fix_max is None or U_ais_max is None or U_fix_min is None or U_ais_min is N
     st.error("❌ Faltan historias THA de desplazamientos para el comparativo final.")
     st.stop()
 
-modeU_tag = tagU
+refU = st.session_state.get("cmp_b9_ref_ais_disp", "")
+modeU_tag = f"{tagU} | {refU}" if refU else tagU
 
 # -------------------------------------------------------------------------
 # DERIVAS
@@ -6076,12 +6111,12 @@ if U_fix_hist is not None:
 else:
     uH_fix = np.nan
 
-# AISLADA: techo relativo a la base aislada
+# AISLADA: techo según la referencia seleccionada en Bloque 9
 if U_ais_hist is not None:
     U_ais_hist = np.asarray(U_ais_hist, float)
     if U_ais_hist.ndim == 2 and U_ais_hist.shape[0] >= 2:
-        u_roof_rel_ais_t = U_ais_hist[-1, :] - U_ais_hist[0, :]
-        uH_ais = float(np.max(np.abs(u_roof_rel_ais_t)))
+        u_roof_ais_t = U_ais_hist[-1, :]
+        uH_ais = float(np.max(np.abs(u_roof_ais_t)))
     else:
         uH_ais = np.nan
 else:
