@@ -4509,6 +4509,10 @@ T["en"].update({
     "b8_mode": "Shear type",
     "b8_mode_el": "Elastic (physical response)",
     "b8_mode_inel": "Inelastic (code-based)",
+
+    "b8_ref_ais": "ISOLATED shear reference",
+    "b8_ref_abs": "Absolute (relative to ground)",
+    "b8_ref_iso": "Relative (to isolator)",
 })
 
 T["es"].update({
@@ -4537,6 +4541,10 @@ T["es"].update({
     "b8_mode": "Tipo de cortante",
     "b8_mode_el": "Elástico (respuesta física)",
     "b8_mode_inel": "Inelástico (normativo)",
+
+    "b8_ref_ais": "Referencia de cortantes AISLADA",
+    "b8_ref_abs": "Absoluto (respecto al suelo)",
+    "b8_ref_iso": "Relativo (respecto al aislador)",
 })
 
 st.markdown(f"## 🧱 {tr('b8_title')}")
@@ -4696,6 +4704,15 @@ modo_cortante = st.radio(
 )
 usar_inelastico = modo_cortante == tr("b8_mode_inel")
 
+# -------------------- Selector de referencia para AISLADA --------------------
+ref_ais = st.radio(
+    tr("b8_ref_ais"),
+    [tr("b8_ref_abs"), tr("b8_ref_iso")],
+    horizontal=True,
+    key="b8_ref_ais"
+)
+usar_ref_ais_relativa = ref_ais == tr("b8_ref_iso")
+
 # =============================================================================
 # THA – SOLO Max/Min
 # =============================================================================
@@ -4762,11 +4779,20 @@ if a_ais_rel.shape[0] == n_pisos + 1:
     M_ais_arr = np.asarray(M_ais, float)
     M_sup = M_ais_arr[1:, 1:]
 
-    # aceleración absoluta de la superestructura
-    a_sup_abs = a_ais_rel[1:, :] + ag_ais.reshape(1, -1)
+    # ---------------------------------------------------------
+    # Referencia de aceleración para cortantes AISLADOS
+    # ---------------------------------------------------------
+    if usar_ref_ais_relativa:
+        # Relativo al aislador:
+        # elimina la traslación rígida del nivel de aislamiento
+        a_sup_for_shear = a_ais_rel[1:, :] - a_ais_rel[[0], :]
+    else:
+        # Absoluto respecto al suelo:
+        # formulación actual validada con ETABS
+        a_sup_for_shear = a_ais_rel[1:, :] + ag_ais.reshape(1, -1)
 
     # fuerzas inerciales por piso/superestructura
-    F_sup = M_sup @ a_sup_abs
+    F_sup = M_sup @ a_sup_for_shear
 
     # cortantes elásticos acumulados por piso
     V_ais_all_el = _story_from_forces(F_sup)
@@ -4884,6 +4910,8 @@ st.session_state["cmp_V_fix_story_elastic"] = np.max(np.abs(V_fix_all_el), axis=
 st.session_state["cmp_V_ais_story_elastic"] = np.max(np.abs(V_ais_all_el), axis=1)
 st.session_state["cmp_b8_modo_cortante"] = str(modo_cortante)
 st.session_state["cmp_b8_usar_inelastico"] = bool(usar_inelastico)
+st.session_state["cmp_b8_ref_ais"] = str(ref_ais)
+st.session_state["cmp_b8_usar_ref_ais_relativa"] = bool(usar_ref_ais_relativa)
 
 # =============================================================================
 # === BLOQUE 9: DESPLAZAMIENTOS LATERALES (SOLO THA MAX/MIN) ==================
