@@ -6254,6 +6254,12 @@ with colD:
     with st.container(border=True):
         st.subheader(tr("b11_hdr_S"))
 
+        st.caption(
+            "Comparative metrics are evaluated using absolute response (relative to ground) for consistency between FIXED and ISOLATED systems."
+            if st.session_state.get("lang", "en") == "en"
+            else "Las métricas comparativas se evalúan usando respuesta absoluta (respecto al suelo) para mantener consistencia entre la estructura fija y la aislada."
+        )
+
         lang_now = st.session_state.get("lang", "en")
         shear_reduction = chg_V if np.isfinite(chg_V) else np.nan
 
