@@ -4939,6 +4939,10 @@ T["en"].update({
     "b9_tha_ok": "THA ready – FIXED vs ISOLATED.",
     "b9_xlabel": "Displacement u [m]",
     "b9_ylabel": "Height [m]",
+
+    "b9_ref_ais": "ISOLATED displacement reference",
+    "b9_ref_abs": "Absolute (relative to ground)",
+    "b9_ref_iso": "Relative (to isolator)",
 })
 
 T["es"].update({
@@ -4955,6 +4959,10 @@ T["es"].update({
     "b9_tha_ok": "✅ THA listo – FIJA vs AISLADA.",
     "b9_xlabel": "Desplazamiento u [m]",
     "b9_ylabel": "Altura [m]",
+
+    "b9_ref_ais": "Referencia de desplazamientos AISLADA",
+    "b9_ref_abs": "Absoluto (respecto al suelo)",
+    "b9_ref_iso": "Relativo (respecto al aislador)",
 })
 
 st.markdown(f"## 🟦 {tr('b9_title')}")
@@ -5064,10 +5072,33 @@ else:
     st.error(f"❌ THA AISLADA: u_ais={u_ais.shape} no calza con n_pisos ni n_pisos+1.")
     st.stop()
 
+# -------------------- Selector de referencia para AISLADA --------------------
+ref_ais_disp = st.radio(
+    tr("b9_ref_ais"),
+    [tr("b9_ref_abs"), tr("b9_ref_iso")],
+    horizontal=True,
+    key="b9_ref_ais_disp"
+)
+usar_ref_ais_disp_relativa = ref_ais_disp == tr("b9_ref_iso")
+
+# Copia absoluta validada respecto al suelo
+u_ais_abs_use = np.asarray(u_ais_use, float)
+
+if usar_ref_ais_disp_relativa:
+    # Relativo al aislador:
+    # DOF 0 = 0; pisos = u_i - u_0
+    u_ais_plot_use = np.array(u_ais_abs_use, copy=True)
+    u_ais_plot_use[1:, :] = u_ais_abs_use[1:, :] - u_ais_abs_use[[0], :]
+    u_ais_plot_use[0, :] = 0.0
+else:
+    # Absoluto respecto al suelo:
+    # resultado actual validado con ETABS
+    u_ais_plot_use = u_ais_abs_use
+
 U_fix_max = np.max(u_fix, axis=1)
 U_fix_min = np.min(u_fix, axis=1)
-U_ais_max = np.max(u_ais_use, axis=1)
-U_ais_min = np.min(u_ais_use, axis=1)
+U_ais_max = np.max(u_ais_plot_use, axis=1)
+U_ais_min = np.min(u_ais_plot_use, axis=1)
 
 U_fix_plot_max = np.r_[0.0, U_fix_max]
 U_fix_plot_min = np.r_[0.0, U_fix_min]
@@ -5078,7 +5109,8 @@ st.session_state["cmp_tag_disp"]     = f"THA ({tr('b9_tha_tag_maxmin')})"
 
 # trazabilidad: estos desplazamientos ya provienen del análisis con registros escalados
 st.session_state["cmp_u_used_fix"] = np.asarray(u_fix, float)
-st.session_state["cmp_u_used_ais"] = np.asarray(u_ais_use, float)
+st.session_state["cmp_u_used_ais"] = np.asarray(u_ais_plot_use, float)
+st.session_state["cmp_u_used_ais_abs"] = np.asarray(u_ais_abs_use, float)
 
 # -----------------------------------------------------------------
 # historias completas por nivel para derivas THA exactas
@@ -5087,7 +5119,7 @@ nt_fix = u_fix.shape[1]
 U_fix_hist_levels = np.vstack([np.zeros((1, nt_fix)), u_fix])  # base fija = 0
 
 st.session_state["cmp_U_fix_hist_levels"] = np.asarray(U_fix_hist_levels, float)
-st.session_state["cmp_U_ais_hist_levels"] = np.asarray(u_ais_use, float)
+st.session_state["cmp_U_ais_hist_levels"] = np.asarray(u_ais_abs_use, float)
 
 niv = np.arange(0, n_pisos + 1)
 h_tab = np.r_[0.0, alt_fix]
@@ -5127,6 +5159,9 @@ with colR:
             U_ais_max, U_ais_min, y_levels,
             tr("b9_plot_iso_maxmin"), COLOR_AIS, nref=n_pisos
         )
+
+st.session_state["cmp_b9_ref_ais_disp"] = str(ref_ais_disp)
+st.session_state["cmp_b9_usar_ref_ais_disp_relativa"] = bool(usar_ref_ais_disp_relativa)
 
 st.success(tr("b9_tha_ok"))
 
