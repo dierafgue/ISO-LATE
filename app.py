@@ -6378,7 +6378,7 @@ with colD:
         """
 
         st.markdown(table_html, unsafe_allow_html=True)
-        st.markdown("<div style='height: 50px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 55px;'></div>", unsafe_allow_html=True)
         
         # trazabilidad del comparativo final
         st.session_state["cmp_final_tag_shear"] = str(tagV)
